@@ -1,0 +1,22 @@
+export const RELICS = [
+  { id: 'laser_toy', name: 'Laser Toy', desc: 'Draw 1 extra card each turn.', effect: 'draw_extra', value: 1 },
+  { id: 'catnip', name: 'Catnip', desc: 'Start each combat with 1 extra energy.', effect: 'bonus_energy', value: 1 },
+  { id: 'hairball', name: 'Hairball', desc: 'Deal 3 damage to enemy when you shuffle.', effect: 'shuffle_damage', value: 3 },
+  { id: 'yarn_ball', name: 'Yarn Ball', desc: 'Heal 2 HP after each combat.', effect: 'post_combat_heal', value: 2 },
+  { id: 'bell_collar', name: 'Bell Collar', desc: 'First attack each turn deals +3 damage.', effect: 'first_attack_bonus', value: 3 },
+  { id: 'cat_nap', name: 'Cat Nap', desc: 'Rest nodes heal 16 HP instead of 8.', effect: 'rest_heal_bonus', value: 8 },
+  { id: 'toy_mouse', name: 'Toy Mouse', desc: 'Start each combat with 3 block.', effect: 'bonus_block', value: 3 },
+  { id: 'fish_snack', name: 'Fish Snack', desc: 'Gain 10 gold after each elite fight.', effect: 'elite_gold', value: 10 },
+  { id: 'sundial', name: 'Purr Sundial', desc: 'Every 3 turns, gain 2 energy.', effect: 'turn_energy', value: 2, threshold: 3 },
+  { id: 'cursed_collar', name: 'Cursed Collar', desc: 'Start each combat with 2 Vulnerable. Deal double damage.', effect: 'cursed', value: 2 },
+  { id: 'ancient_tome', name: 'Ancient Tome', desc: 'Upgrade a random card at the start of each act.', effect: 'act_upgrade', value: 1 },
+  { id: 'lucky_paw', name: 'Lucky Paw', desc: 'Card rewards show 4 choices instead of 3.', effect: 'extra_reward', value: 1 },
+  { id: 'coffee_mug', name: 'Coffee Mug', desc: 'First card played each turn costs 0.', effect: 'first_free', value: 1 },
+  { id: 'mirror', name: 'Mirror', desc: 'Copy the last card played when you draw it again.', effect: 'copy_last', value: 1 },
+  { id: 'claw_sharpener', name: 'Claw Sharpener', desc: 'Attack cards deal +2 damage.', effect: 'attack_bonus', value: 2 },
+  { id: 'warm_blanket', name: 'Warm Blanket', desc: 'Skill cards give +2 block.', effect: 'skill_block_bonus', value: 2 },
+  { id: 'magnifying_glass', name: 'Magnifying Glass', desc: 'Status effects you apply last 1 extra turn.', effect: 'status_extend', value: 1 },
+  { id: 'tuna_can', name: 'Tuna Can', desc: 'Max HP +10.', effect: 'max_hp_bonus', value: 10 },
+  { id: 'golden_ball', name: 'Golden Ball', desc: 'Earn 25% more gold from all sources.', effect: 'gold_bonus', value: 0.25 },
+  { id: 'nine_lives', name: 'Nine Lives', desc: 'Once per run, survive a killing blow with 1 HP.', effect: 'revive', value: 1, used: false }
+];

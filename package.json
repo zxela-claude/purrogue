@@ -1,0 +1,9 @@
+{
+  "name": "purrogue",
+  "version": "1.0.0",
+  "description": "A cat roguelike deck builder",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "echo 'No tests yet'"
+  }
+}
