@@ -37,12 +37,15 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const heroes = Object.entries(HERO_CLASSES);
+    const heroSpriteKeys = { WARRIOR: 'warrior_idle', MAGE: 'mage_idle', ROGUE: 'rogue_idle' };
     heroes.forEach(([key, hero], i) => {
       const x = SCREEN_WIDTH/2 + (i - 1) * 280;
-      const card = this.add.rectangle(x, 430, 240, 200, COLORS.PANEL).setInteractive({ useHandCursor: true });
-      this.add.text(x, 360, hero.emoji, { fontSize: '48px' }).setOrigin(0.5);
-      this.add.text(x, 415, hero.name, { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6' }).setOrigin(0.5);
-      this.add.text(x, 445, `HP: ${hero.hp}`, { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4caf50' }).setOrigin(0.5);
+      const card = this.add.rectangle(x, 430, 240, 210, COLORS.PANEL).setInteractive({ useHandCursor: true });
+      // Hero sprite — scale to fit 100x100 within the card
+      const spriteKey = heroSpriteKeys[key];
+      const sprite = this.add.image(x, 365, spriteKey).setDisplaySize(100, 100);
+      this.add.text(x, 425, hero.name, { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6' }).setOrigin(0.5);
+      this.add.text(x, 450, `HP: ${hero.hp}`, { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4caf50' }).setOrigin(0.5);
       card.on('pointerdown', () => {
         const newGs = new GameState();
         newGs.startRun(key);

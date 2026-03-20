@@ -53,9 +53,21 @@ export class CombatScene extends Phaser.Scene {
     this.enemyStatusText = this.add.text(SCREEN_WIDTH/2, 120, '', { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700' }).setOrigin(0.5);
     this.enemyIntentText = this.add.text(SCREEN_WIDTH/2, 145, '', { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa' }).setOrigin(0.5);
 
-    // Enemy sprite (simple rectangle for v1)
-    this.enemySprite = this.add.rectangle(SCREEN_WIDTH/2, 280, 120, 120, 0x9b59b6);
-    this.add.text(SCREEN_WIDTH/2, 280, '👾', { fontSize: '64px' }).setOrigin(0.5);
+    // Enemy sprite — use generated asset if available, else colored rect fallback
+    const enemySpriteKey = this.enemy.id;
+    const enemyTexture = this.textures.exists(enemySpriteKey) ? enemySpriteKey : null;
+    if (enemyTexture) {
+      this.enemySprite = this.add.image(SCREEN_WIDTH/2, 280, enemyTexture).setDisplaySize(140, 140);
+    } else {
+      this.enemySprite = this.add.rectangle(SCREEN_WIDTH/2, 280, 120, 120, 0x9b59b6);
+      this.add.text(SCREEN_WIDTH/2, 280, '👾', { fontSize: '64px' }).setOrigin(0.5);
+    }
+
+    // Player hero sprite (bottom-left)
+    const heroKey = gs.heroClass ? gs.heroClass.toLowerCase() + '_idle' : null;
+    if (heroKey && this.textures.exists(heroKey)) {
+      this.heroSprite = this.add.image(80, SCREEN_HEIGHT - 220, heroKey).setDisplaySize(100, 100);
+    }
 
     // Player stats
     this.playerHpText = this.add.text(20, SCREEN_HEIGHT - 180, '', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4caf50' });
@@ -204,9 +216,10 @@ export class CombatScene extends Phaser.Scene {
     const energyGain = results.filter(r => r.type === 'gain_energy').reduce((s, r) => s + r.amount, 0);
     this.energy += energyGain;
 
-    // Track damage
+    // Track damage + animate hero/enemy
     const dmg = results.filter(r => r.type === 'damage').reduce((s, r) => s + r.amount, 0);
     this.gs.runStats.damage_dealt += dmg;
+    if (dmg > 0) this._flashAttack();
 
     this._updateStatsDisplay();
     this._renderHand();
@@ -245,8 +258,13 @@ export class CombatScene extends Phaser.Scene {
     this.playerBlock = player.block;
     if (result.type === 'attack') this.gs.runStats.damage_taken += result.amount;
 
-    // Enemy shake animation
-    this.tweens.add({ targets: this.enemySprite, x: this.enemySprite.x + 10, duration: 100, yoyo: true, repeat: 2 });
+    // Enemy lunges, hero flashes when hit
+    if (this.enemySprite) {
+      this.tweens.add({ targets: this.enemySprite, x: this.enemySprite.x - 20, duration: 100, yoyo: true });
+    }
+    if (result.type === 'attack' && this.heroSprite) {
+      this.tweens.add({ targets: this.heroSprite, alpha: 0.3, duration: 100, yoyo: true, repeat: 1 });
+    }
 
     this._updateStatsDisplay();
 
@@ -292,6 +310,16 @@ export class CombatScene extends Phaser.Scene {
         this.scene.start('RewardScene');
       }
     });
+  }
+
+  _flashAttack() {
+    // Hero swings forward, enemy flashes red
+    if (this.heroSprite) {
+      this.tweens.add({ targets: this.heroSprite, x: this.heroSprite.x + 30, duration: 80, yoyo: true });
+    }
+    if (this.enemySprite) {
+      this.tweens.add({ targets: this.enemySprite, alpha: 0.3, duration: 80, yoyo: true, repeat: 1 });
+    }
   }
 
   _playerDied() {

@@ -2,13 +2,13 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES } from '../constants.js
 import { MapGenerator } from '../MapGenerator.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 
-const NODE_ICONS = {
-  [NODE_TYPES.COMBAT]: '⚔️',
-  [NODE_TYPES.ELITE]: '💀',
-  [NODE_TYPES.SHOP]: '🛒',
-  [NODE_TYPES.EVENT]: '❓',
-  [NODE_TYPES.REST]: '🛏',
-  [NODE_TYPES.BOSS]: '👑'
+const NODE_SPRITE_KEYS = {
+  [NODE_TYPES.COMBAT]: 'node_combat',
+  [NODE_TYPES.ELITE]: 'node_elite',
+  [NODE_TYPES.SHOP]: 'node_shop',
+  [NODE_TYPES.EVENT]: 'node_event',
+  [NODE_TYPES.REST]: 'node_rest',
+  [NODE_TYPES.BOSS]: 'node_boss'
 };
 const NODE_COLORS = {
   [NODE_TYPES.COMBAT]: 0xe94560,
@@ -60,8 +60,9 @@ export class MapScene extends Phaser.Scene {
         // Draw node
         const isAvail = availableIds.has(node.id);
         const color = node.completed ? 0x444444 : NODE_COLORS[node.type];
-        const circle = this.add.circle(x, y, 24, color, node.completed ? 0.4 : 1);
-        this.add.text(x, y, NODE_ICONS[node.type], { fontSize: '18px' }).setOrigin(0.5);
+        const circle = this.add.circle(x, y, 28, color, node.completed ? 0.3 : 0.85);
+        const nodeSprite = this.add.image(x, y, NODE_SPRITE_KEYS[node.type]).setDisplaySize(40, 40);
+        if (node.completed) nodeSprite.setAlpha(0.35);
 
         if (isAvail && !node.completed) {
           circle.setInteractive({ useHandCursor: true });
