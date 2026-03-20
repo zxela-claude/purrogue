@@ -13,14 +13,20 @@ const EVENTS = [
     { label: 'Trade (lose 30g, gain relic)', action: gs => {
       if (gs.gold >= 30) { gs.spendGold(30); gs.addRelic('yarn_ball'); }
     }},
-    { label: 'Attack! (deal 10 dmg to next enemy)', action: gs => {} }
+    { label: 'Attack! (deal 10 dmg to next enemy)', action: gs => { gs.pendingEnemyDamage = (gs.pendingEnemyDamage || 0) + 10; } }
   ]},
   { title: 'The Old Cat', desc: 'A wise elder offers wisdom.', choices: [
-    { label: 'Listen (upgrade a random card)', action: gs => {} },
+    { label: 'Listen (upgrade a random card)', action: gs => {
+      const upgradeable = gs.deck.filter(id => !id.endsWith('_u'));
+      if (upgradeable.length > 0) {
+        const cardId = upgradeable[Math.floor(Math.random() * upgradeable.length)];
+        gs.upgradeCard(cardId);
+      }
+    }},
     { label: 'Nap instead (+8 HP)', action: gs => { gs.heal(8); } }
   ]},
   { title: 'Catnip Field', desc: 'A massive field of catnip.', choices: [
-    { label: 'Roll in it! (+1 energy this combat)', action: gs => {} },
+    { label: 'Roll in it! (+1 energy next combat)', action: gs => { gs.pendingEnergyBonus = (gs.pendingEnergyBonus || 0) + 1; } },
     { label: 'Resist (+3 max HP)', action: gs => { gs.maxHp += 3; gs.heal(3); } }
   ]}
 ];

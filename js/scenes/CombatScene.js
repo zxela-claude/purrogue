@@ -16,9 +16,16 @@ export class CombatScene extends Phaser.Scene {
     const gs = this.registry.get('gameState');
     this.gs = gs;
 
-    // Load all cards
+    // Load all cards (base + upgraded variants)
     const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
-    this.cardDb = Object.fromEntries(allCards.map(c => [c.id, c]));
+    this.cardDb = {};
+    for (const card of allCards) {
+      this.cardDb[card.id] = card;
+      const upgEffects = card.upgrades?.default?.effects;
+      if (upgEffects) {
+        this.cardDb[card.id + '_u'] = { ...card, id: card.id + '_u', name: card.name + '+', effects: upgEffects };
+      }
+    }
 
     // Setup enemy
     const enemy = this.isBoss ? getBoss(gs.act) : getRandomEnemy(gs.act, this.isElite);
@@ -28,14 +35,22 @@ export class CombatScene extends Phaser.Scene {
     this.drawPile = [...gs.deck].sort(() => Math.random() - 0.5);
     this.discardPile = [];
     this.hand = [];
-    this.energy = ENERGY_PER_TURN + (gs.relics.includes('catnip') ? 1 : 0);
+    this.energy = ENERGY_PER_TURN + (gs.relics.includes('catnip') ? 1 : 0) + (gs.pendingEnergyBonus || 0);
+    gs.pendingEnergyBonus = 0;
     this.maxEnergy = this.energy;
+    this.pendingEnemyDamage = gs.pendingEnemyDamage || 0;
+    gs.pendingEnemyDamage = 0;
     this.turnNumber = 0;
     this.playerBlock = 0;
     this.playerStatuses = {};
 
     // Apply bonus block relic
     if (gs.relics.includes('toy_mouse')) this.playerBlock = 3;
+
+    // Apply pre-combat enemy damage from events
+    if (this.pendingEnemyDamage > 0) {
+      this.enemy.hp = Math.max(0, this.enemy.hp - this.pendingEnemyDamage);
+    }
 
     this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
 
@@ -64,7 +79,7 @@ export class CombatScene extends Phaser.Scene {
     }
 
     // Player hero sprite (bottom-left)
-    const heroKey = gs.heroClass ? gs.heroClass.toLowerCase() + '_idle' : null;
+    const heroKey = gs.hero ? gs.hero.toLowerCase() + '_idle' : null;
     if (heroKey && this.textures.exists(heroKey)) {
       this.heroSprite = this.add.image(80, SCREEN_HEIGHT - 220, heroKey).setDisplaySize(100, 100);
     }
@@ -256,6 +271,7 @@ export class CombatScene extends Phaser.Scene {
 
     this.gs.hp = player.hp;
     this.playerBlock = player.block;
+    this.playerStatuses = player.statuses;
     if (result.type === 'attack') this.gs.runStats.damage_taken += result.amount;
 
     // Enemy lunges, hero flashes when hit

@@ -1,6 +1,7 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES } from '../constants.js';
 import { MapGenerator } from '../MapGenerator.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
+import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
 
 const NODE_SPRITE_KEYS = {
   [NODE_TYPES.COMBAT]: 'node_combat',
@@ -116,15 +117,74 @@ export class MapScene extends Phaser.Scene {
 
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40, `SMITH — Upgrade a card`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700' }).setOrigin(0.5).setDepth(11)
       .setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-        this.scene.start('MapScene'); // Upgrade UI TODO
+        overlay.destroy();
+        this._showSmithMenu(gs);
       });
   }
 
   _showDeck(gs) {
-    // Simple deck overlay
-    const overlay = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
-    this.add.text(SCREEN_WIDTH/2, 80, `DECK (${gs.deck.length} cards)`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#f0ead6' }).setOrigin(0.5).setDepth(21);
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 60, '[ CLOSE ]', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
-      .setInteractive({ useHandCursor: true }).on('pointerdown', () => { overlay.destroy(); this.scene.restart(); });
+    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const cardDb = {};
+    for (const c of allCards) {
+      cardDb[c.id] = c;
+      if (c.upgrades?.default?.effects) cardDb[c.id + '_u'] = { ...c, name: c.name + '+' };
+    }
+
+    const group = this.add.group();
+    const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
+    group.add(bg);
+    const title = this.add.text(SCREEN_WIDTH/2, 75, `DECK — ${gs.deck.length} cards`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#f0ead6' }).setOrigin(0.5).setDepth(21);
+    group.add(title);
+
+    const cols = 5, rowH = 36;
+    gs.deck.forEach((cardId, i) => {
+      const card = cardDb[cardId];
+      if (!card) return;
+      const col = i % cols, row = Math.floor(i / cols);
+      const x = 180 + col * 200, y = 130 + row * rowH;
+      const txt = this.add.text(x, y, card.name, { fontFamily: '"Press Start 2P"', fontSize: '8px', color: cardId.endsWith('_u') ? '#ffd700' : '#f0ead6' }).setDepth(21);
+      group.add(txt);
+    });
+
+    const closeBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CLOSE ]', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
+      .setInteractive({ useHandCursor: true }).on('pointerdown', () => { group.destroy(true); });
+    group.add(closeBtn);
+  }
+
+  _showSmithMenu(gs) {
+    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const cardDb = Object.fromEntries(allCards.map(c => [c.id, c]));
+    const upgradeable = gs.deck.filter(id => !id.endsWith('_u') && cardDb[id]?.upgrades?.default);
+
+    const group = this.add.group();
+    const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
+    group.add(bg);
+    const title = this.add.text(SCREEN_WIDTH/2, 90, 'SMITH — Pick a card to upgrade', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700' }).setOrigin(0.5).setDepth(21);
+    group.add(title);
+
+    if (upgradeable.length === 0) {
+      const t = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'No cards to upgrade!', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5).setDepth(21);
+      group.add(t);
+    } else {
+      upgradeable.forEach((cardId, i) => {
+        const card = cardDb[cardId];
+        const col = i % 3, row = Math.floor(i / 3);
+        const x = 320 + col * 220, y = 180 + row * 50;
+        const btn = this.add.text(x, y, `► ${card.name} → ${card.name}+`, { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6' })
+          .setDepth(21).setInteractive({ useHandCursor: true });
+        btn.on('pointerover', function() { this.setColor('#ffd700'); });
+        btn.on('pointerout', function() { this.setColor('#f0ead6'); });
+        btn.on('pointerdown', () => {
+          gs.upgradeCard(cardId);
+          group.destroy(true);
+          this.scene.start('MapScene');
+        });
+        group.add(btn);
+      });
+    }
+
+    const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
+      .setInteractive({ useHandCursor: true }).on('pointerdown', () => { group.destroy(true); this.scene.start('MapScene'); });
+    group.add(cancelBtn);
   }
 }

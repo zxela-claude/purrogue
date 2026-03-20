@@ -1,4 +1,4 @@
-import { HERO_CLASSES, PERSONALITY, ENERGY_PER_TURN, HAND_SIZE } from './constants.js';
+import { HERO_CLASSES, PERSONALITY, PERSONALITY_THRESHOLD, ENERGY_PER_TURN, HAND_SIZE } from './constants.js';
 
 const SAVE_KEY = 'purrogue_save';
 const SCORES_KEY = 'purrogue_scores';
@@ -34,6 +34,8 @@ export class GameState {
       turns: 0
     };
     this.combat = null;     // transient combat state
+    this.pendingEnergyBonus = 0;
+    this.pendingEnemyDamage = 0;
     this.inRun = false;
   }
 
@@ -72,6 +74,15 @@ export class GameState {
     this.save();
   }
 
+  upgradeCard(cardId) {
+    if (cardId.endsWith('_u')) return false;
+    const idx = this.deck.indexOf(cardId);
+    if (idx === -1) return false;
+    this.deck[idx] = cardId + '_u';
+    this.save();
+    return true;
+  }
+
   addRelic(relicId) {
     this.relics.push(relicId);
     this.save();
@@ -89,14 +100,14 @@ export class GameState {
     else if (cardType === 'skill') this.personality.cozy++;
     else if (cardType === 'power') this.personality.cunning++;
 
-    // check mood lock
-    if (!this.personality.mood) {
-      const { feisty, cozy, cunning } = this.personality;
-      const threshold = 10;
-      if (feisty >= threshold * 2) {
-        this.personality.mood = PERSONALITY.FERAL;
-        this.personality.feral = true;
-      } else if (feisty >= threshold && feisty >= cozy && feisty >= cunning) {
+    // check mood lock — feral overrides other moods
+    const { feisty, cozy, cunning } = this.personality;
+    const threshold = PERSONALITY_THRESHOLD;
+    if (!this.personality.feral && feisty >= threshold * 2) {
+      this.personality.mood = PERSONALITY.FERAL;
+      this.personality.feral = true;
+    } else if (!this.personality.mood) {
+      if (feisty >= threshold && feisty >= cozy && feisty >= cunning) {
         this.personality.mood = PERSONALITY.FEISTY;
       } else if (cozy >= threshold && cozy >= feisty && cozy >= cunning) {
         this.personality.mood = PERSONALITY.COZY;
