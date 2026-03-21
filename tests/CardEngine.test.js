@@ -104,6 +104,20 @@ describe('CardEngine.resolveEffect', () => {
     CardEngine.resolveEffect({ type: 'apply_status', status: 'poison', value: 3 }, { player, enemy }, 'cunning');
     expect(enemy.statuses.poison).toBe(4);
   });
+
+  it('strong status boosts damage by 2 per stack', () => {
+    const player = makePlayer({ statuses: { strong: 2 } });
+    const enemy = makeEnemy();
+    CardEngine.resolveEffect(makeEffect('damage', 6), { player, enemy });
+    expect(enemy.hp).toBe(40 - (6 + 4)); // base 6 + strong bonus 4
+  });
+
+  it('magnifying_glass relic adds 1 to applied status', () => {
+    const player = makePlayer();
+    const enemy = makeEnemy();
+    CardEngine.resolveEffect({ type: 'apply_status', status: 'poison', value: 3 }, { player, enemy, relics: ['magnifying_glass'] });
+    expect(enemy.statuses.poison).toBe(4);
+  });
 });
 
 // ── tickStatuses ──────────────────────────────────────────────────────────────
@@ -152,6 +166,33 @@ describe('CardEngine.tickStatuses', () => {
     const combatant = { hp: 40 };
     const result = CardEngine.tickStatuses(combatant);
     expect(result).toEqual([]);
+  });
+
+  it('bleed deals damage equal to stacks and decrements', () => {
+    const combatant = { hp: 30, statuses: { bleed: 3 } };
+    CardEngine.tickStatuses(combatant);
+    expect(combatant.hp).toBe(27);
+    expect(combatant.statuses.bleed).toBe(2);
+  });
+
+  it('bleed is deleted when it reaches 0', () => {
+    const combatant = { hp: 30, statuses: { bleed: 1 } };
+    const expired = CardEngine.tickStatuses(combatant);
+    expect(combatant.statuses.bleed).toBeUndefined();
+    expect(expired).toContain('bleed');
+  });
+
+  it('strong decrements each tick', () => {
+    const combatant = { hp: 30, statuses: { strong: 2 } };
+    CardEngine.tickStatuses(combatant);
+    expect(combatant.statuses.strong).toBe(1);
+  });
+
+  it('strong is deleted when it reaches 0', () => {
+    const combatant = { hp: 30, statuses: { strong: 1 } };
+    const expired = CardEngine.tickStatuses(combatant);
+    expect(combatant.statuses.strong).toBeUndefined();
+    expect(expired).toContain('strong');
   });
 });
 

@@ -46,8 +46,17 @@ export class CombatScene extends Phaser.Scene {
     this.turnNumber = 0;
     this.playerBlock = 0;
     this.playerStatuses = {};
+    this.usedNineLives = false;
+    this.coffeeMugUsed = false;
 
     if (gs.relics.includes('toy_mouse')) this.playerBlock = 3;
+    // Cursed collar: start combat with 2 stacks of vulnerable
+    if (gs.relics.includes('cursed_collar')) this.playerStatuses.vulnerable = 2;
+    // Bell collar: enemy starts with 1 weak stack
+    if (gs.relics.includes('bell_collar')) {
+      if (!this.enemy.statuses) this.enemy.statuses = {};
+      this.enemy.statuses.weak = (this.enemy.statuses.weak || 0) + 1;
+    }
     if (this.pendingEnemyDamage > 0) {
       this.enemy.hp = Math.max(0, this.enemy.hp - this.pendingEnemyDamage);
     }
@@ -273,6 +282,13 @@ export class CombatScene extends Phaser.Scene {
     this.gs.runStats.turns++;
     this.energy = this.maxEnergy;
     this.playerBlock = 0;
+    this.coffeeMugUsed = false;
+
+    // Sundial: gain +1 energy on turns after the first
+    if (this.gs.relics.includes('sundial') && this.turnNumber > 1) this.energy += 1;
+
+    // Thorns: grant block equal to thorns stacks at start of turn
+    if (this.playerStatuses?.thorns > 0) this.playerBlock += this.playerStatuses.thorns;
 
     const fakePlayer = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
     CardEngine.tickStatuses(fakePlayer);
@@ -280,7 +296,8 @@ export class CombatScene extends Phaser.Scene {
     this.playerBlock = fakePlayer.block;
     this.playerStatuses = fakePlayer.statuses;
 
-    this._drawCards(HAND_SIZE + (this.gs.relics.includes('laser_toy') ? 1 : 0));
+    const extraDraw = (this.gs.relics.includes('ancient_tome') && this.turnNumber === 1) ? 2 : 0;
+    this._drawCards(HAND_SIZE + (this.gs.relics.includes('laser_toy') ? 1 : 0) + extraDraw);
     this._updateStatsDisplay();
     this._renderHand();
     this._showTurnBanner('YOUR TURN', '#4caf50');
@@ -385,9 +402,12 @@ export class CombatScene extends Phaser.Scene {
     const card = this.cardDb[cardId];
     const mood = this.gs.getDominantPersonality();
     const cost = PersonalitySystem.getCardCost(card, mood);
-    if (this.energy < cost) return;
+    // Coffee mug: first card each turn costs 0
+    const actualCost = (!this.coffeeMugUsed && this.gs.relics.includes('coffee_mug')) ? 0 : cost;
+    if (actualCost === 0 && this.gs.relics.includes('coffee_mug')) this.coffeeMugUsed = true;
+    if (this.energy < actualCost) return;
 
-    this.energy -= cost;
+    this.energy -= actualCost;
     this.hand.splice(handIndex, 1);
     this.discardPile.push(cardId);
 
@@ -396,11 +416,23 @@ export class CombatScene extends Phaser.Scene {
 
     const prevHp = this.gs.hp;
     const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
-    const results = CardEngine.resolveCard(card, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile }, mood);
+    const results = CardEngine.resolveCard(card, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile, relics: this.gs.relics }, mood);
 
     this.gs.hp = player.hp;
     this.playerBlock = player.block;
     this.playerStatuses = player.statuses;
+
+    // Claw sharpener: attack cards deal 2 extra damage
+    if (this.gs.relics.includes('claw_sharpener') && card.type === 'attack') {
+      const sharpDmg = 2;
+      const sharpBlocked = Math.min(this.enemy.block || 0, sharpDmg);
+      this.enemy.block = Math.max(0, (this.enemy.block || 0) - sharpDmg);
+      this.enemy.hp -= (sharpDmg - sharpBlocked);
+    }
+    // Warm blanket: skill cards grant +2 block
+    if (this.gs.relics.includes('warm_blanket') && card.type === 'skill') {
+      this.playerBlock += 2;
+    }
 
     const draws = results.filter(r => r.type === 'draw').reduce((s, r) => s + r.amount, 0);
     if (draws > 0) this._drawCards(draws);
@@ -488,7 +520,8 @@ export class CombatScene extends Phaser.Scene {
 
   _enemyDefeated() {
     this.gs.runStats.enemies_killed++;
-    const goldGain = this.isElite ? 25 + (this.gs.relics.includes('fish_snack') ? 10 : 0) : 15;
+    const baseGold = this.isElite ? 25 + (this.gs.relics.includes('fish_snack') ? 10 : 0) : 15;
+    const goldGain = this.gs.relics.includes('golden_ball') ? Math.ceil(baseGold * 1.25) : baseGold;
     this.gs.gold += goldGain;
 
     if (this.gs.relics.includes('yarn_ball')) this.gs.heal(2);
@@ -525,6 +558,16 @@ export class CombatScene extends Phaser.Scene {
   }
 
   _playerDied() {
+    // Nine lives: survive the killing blow once
+    if (this.gs.relics.includes('nine_lives') && !this.usedNineLives) {
+      this.usedNineLives = true;
+      this.gs.hp = 1;
+      const idx = this.gs.relics.indexOf('nine_lives');
+      if (idx !== -1) this.gs.relics.splice(idx, 1);
+      this._showTurnBanner('NINE LIVES! ❤️', '#ffd700');
+      this._updateStatsDisplay();
+      return;
+    }
     this.gs.saveScore(false);
     this.gs.endRun();
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 480, 90, 0x000000, 0.85).setDepth(20);

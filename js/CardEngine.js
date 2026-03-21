@@ -10,7 +10,7 @@ export class CardEngine {
     return results;
   }
 
-  static resolveEffect(effect, { player, enemy }, personality) {
+  static resolveEffect(effect, { player, enemy, relics = [] }, personality) {
     let value = effect.value || 0;
 
     // Personality modifiers
@@ -24,6 +24,7 @@ export class CardEngine {
     switch (effect.type) {
       case 'damage': {
         let dmg = value;
+        if (player.statuses?.strong) dmg += 2 * player.statuses.strong;
         if (enemy.statuses?.vulnerable) dmg = Math.floor(dmg * 1.5);
         if (player.statuses?.weak) dmg = Math.floor(dmg * 0.75);
         const blocked = Math.min(enemy.block || 0, dmg);
@@ -46,10 +47,12 @@ export class CardEngine {
       case 'gain_energy':
         return { type: 'gain_energy', amount: value };
 
-      case 'apply_status':
+      case 'apply_status': {
         if (!enemy.statuses) enemy.statuses = {};
-        enemy.statuses[effect.status] = (enemy.statuses[effect.status] || 0) + value;
-        return { type: 'apply_status', status: effect.status, amount: value };
+        const statusAmt = value + (relics.includes('magnifying_glass') ? 1 : 0);
+        enemy.statuses[effect.status] = (enemy.statuses[effect.status] || 0) + statusAmt;
+        return { type: 'apply_status', status: effect.status, amount: statusAmt };
+      }
 
       case 'apply_self_status':
         if (!player.statuses) player.statuses = {};
@@ -97,6 +100,19 @@ export class CardEngine {
         if (statuses[s] <= 0) { delete statuses[s]; expired.push(s); }
       }
     });
+
+    // Bleed: deal damage equal to stacks, then reduce by 1
+    if (statuses.bleed > 0) {
+      combatant.hp -= statuses.bleed;
+      statuses.bleed--;
+      if (statuses.bleed <= 0) { delete statuses.bleed; expired.push('bleed'); }
+    }
+
+    // Strong: decrement (damage boost is applied in resolveEffect during damage calc)
+    if (statuses.strong > 0) {
+      statuses.strong--;
+      if (statuses.strong <= 0) { delete statuses.strong; expired.push('strong'); }
+    }
 
     return expired;
   }
