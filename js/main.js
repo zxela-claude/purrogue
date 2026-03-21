@@ -16,8 +16,12 @@ const config = {
   scene: [BootScene, MenuScene, MapScene, CombatScene, ShopScene, EventScene, RewardScene, GameOverScene],
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH
-  }
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    expandParent: false,
+  },
+  input: {
+    activePointers: 3, // support multi-touch (e.g. two-finger scroll prevention)
+  },
 };
 
 new Phaser.Game(config);

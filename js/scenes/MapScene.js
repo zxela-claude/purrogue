@@ -66,12 +66,14 @@ export class MapScene extends Phaser.Scene {
         if (node.completed) nodeSprite.setAlpha(0.35);
 
         if (isAvail && !node.completed) {
-          circle.setInteractive({ useHandCursor: true });
           // Pulsing outline
           const outline = this.add.circle(x, y, 28, 0xffd700, 0).setStrokeStyle(2, 0xffd700);
           this.tweens.add({ targets: outline, alpha: { from: 0.3, to: 1 }, duration: 800, yoyo: true, repeat: -1 });
 
-          circle.on('pointerdown', () => {
+          // Invisible 48px hit zone for easy mobile tapping
+          const hitZone = this.add.circle(x, y, 48, 0xffffff, 0)
+            .setInteractive({ useHandCursor: true });
+          hitZone.on('pointerdown', () => {
             node.completed = true;
             gs.map.currentNode = node.id;
             gs.map.currentFloor = fi;
@@ -83,12 +85,13 @@ export class MapScene extends Phaser.Scene {
       });
     });
 
-    // Deck viewer button
+    // Deck viewer button (backed by a 200×44 hit zone for mobile)
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 20, '[ VIEW DECK ]', {
       fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa'
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-      this._showDeck(gs);
-    });
+    }).setOrigin(0.5);
+    this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT - 20, 200, 44, 0xffffff, 0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this._showDeck(gs));
   }
 
   _enterNode(node, gs) {

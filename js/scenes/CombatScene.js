@@ -89,10 +89,18 @@ export class CombatScene extends Phaser.Scene {
     this.playerBlockText = this.add.text(20, SCREEN_HEIGHT - 160, '', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4fc3f7' });
     this.energyText = this.add.text(20, SCREEN_HEIGHT - 140, '', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700' });
 
-    // End turn button
+    // End turn button — backed by a large invisible hit zone for mobile tapping
+    const endTurnHitZone = this.add.rectangle(SCREEN_WIDTH - 110, SCREEN_HEIGHT - 160, 220, 60, 0x000000, 0)
+      .setInteractive({ useHandCursor: true });
     this.endTurnBtn = this.add.text(SCREEN_WIDTH - 20, SCREEN_HEIGHT - 160, '[ END TURN ]', {
       fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
-    }).setOrigin(1).setInteractive({ useHandCursor: true }).on('pointerdown', () => this._endPlayerTurn());
+    }).setOrigin(1);
+    endTurnHitZone.on('pointerdown', () => {
+      if (!endTurnHitZone.input?.enabled) return;
+      this._endPlayerTurn();
+    });
+    // Store hit zone for enable/disable alongside the text button
+    this._endTurnHitZone = endTurnHitZone;
 
     // Personality indicator
     const mood = gs.getDominantPersonality();
@@ -193,7 +201,11 @@ export class CombatScene extends Phaser.Scene {
       if (canPlay) {
         bg.on('pointerover', () => bg.setFillStyle(0x3a3a7e));
         bg.on('pointerout', () => bg.setFillStyle(0x2a2a5e));
-        bg.on('pointerdown', () => this._playCard(cardId, i));
+        bg.on('pointerdown', () => {
+          // Brief flash for touch feedback
+          bg.setFillStyle(0xffd700);
+          this.time.delayedCall(80, () => this._playCard(cardId, i));
+        });
       }
 
       this.handObjects.push(bg, nameText, costText, descText);
@@ -249,7 +261,7 @@ export class CombatScene extends Phaser.Scene {
     this.hand = [];
 
     // Enemy turn
-    this.endTurnBtn.removeInteractive();
+    this._endTurnHitZone.removeInteractive();
     this.time.delayedCall(500, () => this._enemyTurn());
   }
 
@@ -260,7 +272,7 @@ export class CombatScene extends Phaser.Scene {
       CardEngine.tickStatuses(this.enemy);
       this._updateStatsDisplay();
       this.time.delayedCall(500, () => this._startPlayerTurn());
-      this.endTurnBtn.setInteractive({ useHandCursor: true });
+      this._endTurnHitZone.setInteractive({ useHandCursor: true });
       return;
     }
 
@@ -288,7 +300,7 @@ export class CombatScene extends Phaser.Scene {
       this.time.delayedCall(500, () => this._playerDied());
     } else {
       this.time.delayedCall(600, () => {
-        this.endTurnBtn.setInteractive({ useHandCursor: true });
+        this._endTurnHitZone.setInteractive({ useHandCursor: true });
         this._startPlayerTurn();
       });
     }

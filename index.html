@@ -2,16 +2,80 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>Purrogue</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-    canvas { image-rendering: pixelated; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #1a1a2e;
+      overflow: hidden;
+      /* Prevent iOS bounce scroll */
+      overscroll-behavior: none;
+      /* Prevent tap highlight on mobile */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* iOS safe area padding (notch/home bar) */
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      touch-action: none;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      touch-action: none;
+      display: block;
+    }
+
+    /* Portrait orientation overlay — ask user to rotate */
+    #rotate-prompt {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #1a1a2e;
+      color: #f0ead6;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      text-align: center;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      line-height: 1.8;
+    }
+
+    #rotate-prompt .icon {
+      font-size: 52px;
+      animation: spin 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(-15deg); }
+      to   { transform: rotate(15deg); }
+    }
+
+    @media (max-width: 600px) and (orientation: portrait) {
+      #rotate-prompt { display: flex; }
+    }
   </style>
 </head>
 <body>
+  <div id="rotate-prompt">
+    <div class="icon">📱</div>
+    <div>ROTATE TO<br>LANDSCAPE<br>TO PLAY</div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
