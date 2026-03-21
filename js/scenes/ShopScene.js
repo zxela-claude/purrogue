@@ -20,9 +20,9 @@ export class ShopScene extends Phaser.Scene {
       const price = card.cost === 0 ? 50 : card.cost === 1 ? 75 : 100;
       const canAfford = gs.gold >= price;
       const bg = this.add.rectangle(x, 280, 220, 180, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });
-      this.add.text(x, 215, card.name, { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6' }).setOrigin(0.5);
-      this.add.text(x, 245, card.description, { fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#aaaaaa', wordWrap: { width: 200 }, align: 'center' }).setOrigin(0.5);
-      this.add.text(x, 310, `💰 ${price}g`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: canAfford ? '#ffd700' : '#666666' }).setOrigin(0.5);
+      this.add.text(x, 210, card.name, { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6', wordWrap: { width: 200 }, align: 'center' }).setOrigin(0.5);
+      this.add.text(x, 248, card.description, { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa', wordWrap: { width: 200 }, align: 'center' }).setOrigin(0.5);
+      this.add.text(x, 315, `💰 ${price}g`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: canAfford ? '#ffd700' : '#666666' }).setOrigin(0.5);
       if (canAfford) {
         bg.on('pointerover', () => bg.setFillStyle(0x2a2a5e));
         bg.on('pointerout', () => bg.setFillStyle(COLORS.PANEL));
@@ -41,7 +41,7 @@ export class ShopScene extends Phaser.Scene {
       const price = 150;
       const canAfford = gs.gold >= price;
       const bg = this.add.rectangle(x, 480, 280, 100, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });
-      this.add.text(x, 450, `${relic.name} — ${relic.desc}`, { fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#ffd700', wordWrap: { width: 260 }, align: 'center' }).setOrigin(0.5);
+      this.add.text(x, 450, `${relic.name} — ${relic.desc}`, { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700', wordWrap: { width: 260 }, align: 'center' }).setOrigin(0.5);
       this.add.text(x, 510, `💰 ${price}g`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: canAfford ? '#ffd700' : '#666666' }).setOrigin(0.5);
       if (canAfford) {
         bg.on('pointerover', () => bg.setFillStyle(0x2a2a5e));

@@ -40,12 +40,12 @@ export class EventScene extends Phaser.Scene {
 
     this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
     this.add.text(SCREEN_WIDTH/2, 100, '❓ EVENT', { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#4fc3f7' }).setOrigin(0.5);
-    this.add.text(SCREEN_WIDTH/2, 160, event.title, { fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#f0ead6' }).setOrigin(0.5);
-    this.add.text(SCREEN_WIDTH/2, 220, event.desc, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#aaaaaa', wordWrap: { width: 600 }, align: 'center' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, 160, event.title, { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#f0ead6' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#aaaaaa', wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
 
     event.choices.forEach((choice, i) => {
-      const btn = this.add.text(SCREEN_WIDTH/2, 340 + i * 70, `► ${choice.label}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
+      const btn = this.add.text(SCREEN_WIDTH/2, 350 + i * 80, `► ${choice.label}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6'
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       btn.on('pointerover', function() { this.setColor('#ffd700'); });

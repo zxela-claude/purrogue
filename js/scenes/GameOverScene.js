@@ -52,7 +52,7 @@ export class GameOverScene extends Phaser.Scene {
       this.add.graphics().lineStyle(1, Phaser.Display.Color.HexStringToColor(moodInfo.color).color)
         .strokeRect(W/2 - 110, 131, 220, 28);
       this.add.text(W/2, 145, `Personality: ${moodInfo.name}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: moodInfo.color
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: moodInfo.color
       }).setOrigin(0.5);
     }
 
@@ -82,12 +82,12 @@ export class GameOverScene extends Phaser.Scene {
       // Alternating row shading
       if (i % 2 === 1) this.add.rectangle(W/2, rowY, panelW - 4, 34, 0xffffff, 0.03);
       this.add.text(panelX + 18, rowY, row.label, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#888888'
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888'
       }).setOrigin(0, 0.5);
       // Animate stat value ticking up (numbers only)
       if (typeof row.value === 'number' && row.value > 0) {
         const valText = this.add.text(panelX + panelW - 18, rowY, '0', {
-          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6'
+          fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
         }).setOrigin(1, 0.5);
         this.tweens.addCounter({
           from: 0, to: row.value, duration: 900, delay: 200 + i * 80,
@@ -95,7 +95,7 @@ export class GameOverScene extends Phaser.Scene {
         });
       } else {
         this.add.text(panelX + panelW - 18, rowY, String(row.value), {
-          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6'
+          fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
         }).setOrigin(1, 0.5);
       }
     });
@@ -107,7 +107,7 @@ export class GameOverScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
       this.add.graphics().lineStyle(1, 0x4fc3f7, 0.7).strokeRect(W/2 - 230, 520, 220, 36);
       this.add.text(W/2 - 120, 538, 'COPY DECK CODE', {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#4fc3f7'
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4fc3f7'
       }).setOrigin(0.5);
       deckBtn.on('pointerover', () => deckBtn.setFillStyle(0x0a2a3a));
       deckBtn.on('pointerout',  () => deckBtn.setFillStyle(0x0a1a2a));
@@ -128,7 +128,7 @@ export class GameOverScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     this.add.graphics().lineStyle(1, 0x4caf50, 0.8).strokeRect(W/2 + (W > 800 ? 10 : -110), 520, 220, 36);
     this.add.text(W/2 + (W > 800 ? 120 : 0), 538, 'PLAY AGAIN', {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#4caf50'
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#4caf50'
     }).setOrigin(0.5);
     btn.on('pointerover', () => btn.setFillStyle(0x0a3a0a));
     btn.on('pointerout',  () => btn.setFillStyle(0x0a2a0a));

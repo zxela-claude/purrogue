@@ -65,32 +65,32 @@ export class RewardScene extends Phaser.Scene {
       const typeBanner = this.add.rectangle(0, -cardH/2 + 18, cardW, 36, typeColor, 0.25);
       cardGroup.add(typeBanner);
       const typeLabel = this.add.text(0, -cardH/2 + 18, card.type.toUpperCase(), {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: typeLabelColor
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: typeLabelColor
       }).setOrigin(0.5);
       cardGroup.add(typeLabel);
 
       // Card name
-      const nameText = this.add.text(0, -cardH/2 + 50, card.name, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6',
+      const nameText = this.add.text(0, -cardH/2 + 54, card.name, {
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6',
         wordWrap: { width: cardW - 20 }, align: 'center'
       }).setOrigin(0.5);
       cardGroup.add(nameText);
 
       // Cost
-      const costText = this.add.text(0, -cardH/2 + 76, `Cost: ${card.cost} ⚡`, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffd700'
+      const costText = this.add.text(0, -cardH/2 + 84, `Cost: ${card.cost} ⚡`, {
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700'
       }).setOrigin(0.5);
       cardGroup.add(costText);
 
       // Separator line
       const sep = this.add.graphics();
       sep.lineStyle(1, 0x444444);
-      sep.lineBetween(-cardW/2 + 16, -cardH/2 + 94, cardW/2 - 16, -cardH/2 + 94);
+      sep.lineBetween(-cardW/2 + 16, -cardH/2 + 100, cardW/2 - 16, -cardH/2 + 100);
       cardGroup.add(sep);
 
       // Description
-      const descText = this.add.text(0, -cardH/2 + 140, card.description, {
-        fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#aaaaaa',
+      const descText = this.add.text(0, -cardH/2 + 150, card.description, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa',
         wordWrap: { width: cardW - 24 }, align: 'center'
       }).setOrigin(0.5);
       cardGroup.add(descText);
@@ -104,7 +104,7 @@ export class RewardScene extends Phaser.Scene {
           badgeBorder.lineStyle(1, 0x4caf50, 0.8);
           badgeBorder.strokeRect(-cardW/2 + 10, cardH/2 - 42, cardW - 20, 28);
           const badgeText = this.add.text(0, cardH/2 - 28, `✨ ${mood} upgrade ready`, {
-            fontFamily: '"Press Start 2P"', fontSize: '6px', color: '#4caf50'
+            fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#4caf50'
           }).setOrigin(0.5);
           cardGroup.add(badge);
           cardGroup.add(badgeBorder);
@@ -135,7 +135,7 @@ export class RewardScene extends Phaser.Scene {
 
     // Skip
     this.add.text(W/2, H - 40, '[ SKIP ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#555555'
+      fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#555555'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#aaaaaa'); })
       .on('pointerout',  function() { this.setColor('#555555'); })

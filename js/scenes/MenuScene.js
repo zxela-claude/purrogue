@@ -39,7 +39,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     this.add.text(W/2, 178, 'A  Cat  Roguelike', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6'
+      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#f0ead6'
     }).setOrigin(0.5).setAlpha(0.7);
 
     // ── Continue run ─────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ export class MenuScene extends Phaser.Scene {
       const contBg = this.add.rectangle(W/2, 232, 300, 36, 0x1a1a00).setInteractive({ useHandCursor: true });
       this.add.graphics().lineStyle(2, 0xffd700, 0.8).strokeRect(W/2 - 150, 214, 300, 36);
       this.add.text(W/2, 232, '► CONTINUE RUN', {
-        fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: '17px', color: '#ffd700'
       }).setOrigin(0.5).setDepth(1);
       contBg.on('pointerover', () => contBg.setFillStyle(0x333300));
       contBg.on('pointerout', () => contBg.setFillStyle(0x1a1a00));
@@ -60,7 +60,7 @@ export class MenuScene extends Phaser.Scene {
 
     // ── Hero select label ─────────────────────────────────────────────────────
     this.add.text(W/2, 285, '— CHOOSE YOUR CAT —', {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#888888'
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#888888'
     }).setOrigin(0.5);
 
     // ── Hero cards ────────────────────────────────────────────────────────────
@@ -97,15 +97,15 @@ export class MenuScene extends Phaser.Scene {
       }
 
       this.add.text(x, cardY + 28, hero.name, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6'
+        fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6'
       }).setOrigin(0.5);
 
-      this.add.text(x, cardY + 52, HERO_FLAVOUR[key], {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#888888'
+      this.add.text(x, cardY + 54, HERO_FLAVOUR[key], {
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888'
       }).setOrigin(0.5);
 
-      this.add.text(x, cardY + 76, `HP: ${hero.hp}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#4caf50'
+      this.add.text(x, cardY + 80, `HP: ${hero.hp}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50'
       }).setOrigin(0.5);
 
       card.on('pointerover', () => { card.setFillStyle(0x2a2a5e); drawBorder(1); });
@@ -121,7 +121,7 @@ export class MenuScene extends Phaser.Scene {
 
     // ── Import deck code ──────────────────────────────────────────────────────
     this.add.text(W/2, H - 52, '[ IMPORT DECK CODE ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#444444'
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#444444'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#888888'); })
       .on('pointerout',  function() { this.setColor('#444444'); })
@@ -141,13 +141,13 @@ export class MenuScene extends Phaser.Scene {
       this.add.rectangle(panelX, 120, 270, 190, 0x0d0d1a, 0.9);
       this.add.graphics().lineStyle(1, 0xffd700, 0.3).strokeRect(panelX - 135, 25, 270, 190);
       this.add.text(panelX, 38, 'BEST RUNS', {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700'
       }).setOrigin(0.5);
       scores.slice(0, 6).forEach((s, i) => {
         const col = s.won ? '#4caf50' : '#e94560';
-        this.add.text(panelX - 128, 58 + i * 24,
+        this.add.text(panelX - 128, 60 + i * 26,
           `${s.won ? '✓' : '✗'} ${s.hero.slice(0,7).padEnd(7)} A${s.act}F${s.floor}`,
-          { fontFamily: '"Press Start 2P"', fontSize: '8px', color: col }
+          { fontFamily: '"Press Start 2P"', fontSize: '11px', color: col }
         );
       });
     }

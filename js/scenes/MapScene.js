@@ -30,8 +30,8 @@ export class MapScene extends Phaser.Scene {
     this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
 
     // Header
-    this.add.text(20, 20, `ACT ${gs.act} — FLOOR ${gs.floor + 1}/7`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6' });
-    this.add.text(SCREEN_WIDTH - 20, 20, `❤️ ${gs.hp}/${gs.maxHp}  💰 ${gs.gold}`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6' }).setOrigin(1, 0);
+    this.add.text(20, 20, `ACT ${gs.act} — FLOOR ${gs.floor + 1}/7`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 });
+    this.add.text(SCREEN_WIDTH - 20, 20, `❤️ ${gs.hp}/${gs.maxHp}  💰 ${gs.gold}`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(1, 0);
 
     const available = MapGenerator.getAvailableNodes(gs.map);
     const availableIds = new Set(available.map(n => n.id));
@@ -87,7 +87,7 @@ export class MapScene extends Phaser.Scene {
 
     // Deck viewer button (backed by a 200×44 hit zone for mobile)
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 20, '[ VIEW DECK ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa'
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#aaaaaa'
     }).setOrigin(0.5);
     this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT - 20, 200, 44, 0xffffff, 0)
       .setInteractive({ useHandCursor: true })
@@ -107,10 +107,10 @@ export class MapScene extends Phaser.Scene {
 
   _showRestMenu(gs) {
     const overlay = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 400, 300, COLORS.PANEL).setDepth(10);
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 100, '🛏 REST SITE', { fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#f0ead6' }).setOrigin(0.5).setDepth(11);
+    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 100, '🛏 REST SITE', { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#f0ead6' }).setOrigin(0.5).setDepth(11);
 
     const healAmt = 8 + (gs.relics.includes('cat_nap') ? 8 : 0);
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20, `REST — Heal ${healAmt} HP`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4caf50' }).setOrigin(0.5).setDepth(11)
+    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20, `REST — Heal ${healAmt} HP`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#4caf50' }).setOrigin(0.5).setDepth(11)
       .setInteractive({ useHandCursor: true }).on('pointerdown', () => {
         if (PersonalitySystem.canHeal(gs.getDominantPersonality())) {
           gs.heal(healAmt);
@@ -118,7 +118,7 @@ export class MapScene extends Phaser.Scene {
         this.scene.start('MapScene');
       });
 
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40, `SMITH — Upgrade a card`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700' }).setOrigin(0.5).setDepth(11)
+    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40, `SMITH — Upgrade a card`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#ffd700' }).setOrigin(0.5).setDepth(11)
       .setInteractive({ useHandCursor: true }).on('pointerdown', () => {
         overlay.destroy();
         this._showSmithMenu(gs);
@@ -136,7 +136,7 @@ export class MapScene extends Phaser.Scene {
     const group = this.add.group();
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
     group.add(bg);
-    const title = this.add.text(SCREEN_WIDTH/2, 75, `DECK — ${gs.deck.length} cards`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#f0ead6' }).setOrigin(0.5).setDepth(21);
+    const title = this.add.text(SCREEN_WIDTH/2, 75, `DECK — ${gs.deck.length} cards`, { fontFamily: '"Press Start 2P"', fontSize: '17px', color: '#f0ead6' }).setOrigin(0.5).setDepth(21);
     group.add(title);
 
     const cols = 5, rowH = 36;
@@ -145,11 +145,11 @@ export class MapScene extends Phaser.Scene {
       if (!card) return;
       const col = i % cols, row = Math.floor(i / cols);
       const x = 180 + col * 200, y = 130 + row * rowH;
-      const txt = this.add.text(x, y, card.name, { fontFamily: '"Press Start 2P"', fontSize: '8px', color: cardId.endsWith('_u') ? '#ffd700' : '#f0ead6' }).setDepth(21);
+      const txt = this.add.text(x, y, card.name, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: cardId.endsWith('_u') ? '#ffd700' : '#f0ead6' }).setDepth(21);
       group.add(txt);
     });
 
-    const closeBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CLOSE ]', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
+    const closeBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CLOSE ]', { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
       .setInteractive({ useHandCursor: true }).on('pointerdown', () => { group.destroy(true); });
     group.add(closeBtn);
   }
@@ -162,18 +162,18 @@ export class MapScene extends Phaser.Scene {
     const group = this.add.group();
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
     group.add(bg);
-    const title = this.add.text(SCREEN_WIDTH/2, 90, 'SMITH — Pick a card to upgrade', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700' }).setOrigin(0.5).setDepth(21);
+    const title = this.add.text(SCREEN_WIDTH/2, 90, 'SMITH — Pick a card to upgrade', { fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#ffd700' }).setOrigin(0.5).setDepth(21);
     group.add(title);
 
     if (upgradeable.length === 0) {
-      const t = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'No cards to upgrade!', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5).setDepth(21);
+      const t = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'No cards to upgrade!', { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#aaaaaa' }).setOrigin(0.5).setDepth(21);
       group.add(t);
     } else {
       upgradeable.forEach((cardId, i) => {
         const card = cardDb[cardId];
         const col = i % 3, row = Math.floor(i / 3);
         const x = 320 + col * 220, y = 180 + row * 50;
-        const btn = this.add.text(x, y, `► ${card.name} → ${card.name}+`, { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6' })
+        const btn = this.add.text(x, y, `► ${card.name} → ${card.name}+`, { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6' })
           .setDepth(21).setInteractive({ useHandCursor: true });
         btn.on('pointerover', function() { this.setColor('#ffd700'); });
         btn.on('pointerout', function() { this.setColor('#f0ead6'); });
@@ -186,7 +186,7 @@ export class MapScene extends Phaser.Scene {
       });
     }
 
-    const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
+    const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
       .setInteractive({ useHandCursor: true }).on('pointerdown', () => { group.destroy(true); this.scene.start('MapScene'); });
     group.add(cancelBtn);
   }
