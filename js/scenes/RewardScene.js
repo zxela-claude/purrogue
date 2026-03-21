@@ -2,44 +2,143 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
 
+const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
+const CARD_TYPE_LABEL_COLORS = { attack: '#e94560', skill: '#4fc3f7', power: '#bb86fc' };
+
 export class RewardScene extends Phaser.Scene {
   constructor() { super('RewardScene'); }
 
   create() {
     const gs = this.registry.get('gameState');
-    this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
-    this.add.text(SCREEN_WIDTH/2, 60, '🏆 CHOOSE A CARD', { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffd700' }).setOrigin(0.5);
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+
+    this.add.rectangle(W/2, H/2, W, H, COLORS.BG);
+
+    // Decorative star field (light version)
+    const gfx = this.add.graphics().setDepth(-1);
+    for (let i = 0; i < 40; i++) {
+      gfx.fillStyle(0xffffff, Math.random() * 0.3 + 0.05);
+      gfx.fillCircle(Math.random() * W, Math.random() * H, Math.random() * 1.5 + 0.5);
+    }
+
+    // Title
+    this.add.text(W/2, 55, 'CHOOSE A CARD', {
+      fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffd700',
+      stroke: '#7a6000', strokeThickness: 3
+    }).setOrigin(0.5);
 
     const heroCards = gs.hero === 'WARRIOR' ? WARRIOR_CARDS : gs.hero === 'MAGE' ? MAGE_CARDS : ROGUE_CARDS;
     const count = gs.relics.includes('lucky_paw') ? 4 : 3;
     const choices = [...heroCards].sort(() => Math.random() - 0.5).slice(0, count);
-
     const mood = gs.getDominantPersonality();
 
     choices.forEach((card, i) => {
-      const x = SCREEN_WIDTH / (count + 1) * (i + 1);
-      const bg = this.add.rectangle(x, 360, 200, 280, COLORS.PANEL).setInteractive({ useHandCursor: true });
-      this.add.text(x, 240, card.name, { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6' }).setOrigin(0.5);
-      this.add.text(x, 270, card.description, { fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#aaaaaa', wordWrap: { width: 180 }, align: 'center' }).setOrigin(0.5);
-      this.add.text(x, 360, `Cost: ${card.cost}⚡`, { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffd700' }).setOrigin(0.5);
-      this.add.text(x, 390, `Type: ${card.type}`, { fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#4fc3f7' }).setOrigin(0.5);
+      const x = W / (count + 1) * (i + 1);
+      const cardY = 370;
+      const cardW = 210, cardH = 310;
+      const typeColor = CARD_TYPE_COLORS[card.type] || 0x666666;
+      const typeLabelColor = CARD_TYPE_LABEL_COLORS[card.type] || '#aaaaaa';
+
+      // Animate slide-in from below
+      const cardGroup = this.add.container(x, cardY + 80).setAlpha(0);
+      this.tweens.add({
+        targets: cardGroup, y: cardY, alpha: 1,
+        duration: 280, delay: i * 100, ease: 'Back.easeOut'
+      });
+
+      // Shadow
+      const shadow = this.add.rectangle(4, 6, cardW, cardH, 0x000000, 0.45);
+      cardGroup.add(shadow);
+
+      // Card body
+      const bg = this.add.rectangle(0, 0, cardW, cardH, COLORS.PANEL)
+        .setInteractive({ useHandCursor: true });
+      cardGroup.add(bg);
+
+      // Colored border
+      const border = this.add.graphics();
+      border.lineStyle(3, typeColor);
+      border.strokeRect(-cardW/2, -cardH/2, cardW, cardH);
+      cardGroup.add(border);
+
+      // Type banner at top
+      const typeBanner = this.add.rectangle(0, -cardH/2 + 18, cardW, 36, typeColor, 0.25);
+      cardGroup.add(typeBanner);
+      const typeLabel = this.add.text(0, -cardH/2 + 18, card.type.toUpperCase(), {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: typeLabelColor
+      }).setOrigin(0.5);
+      cardGroup.add(typeLabel);
+
+      // Card name
+      const nameText = this.add.text(0, -cardH/2 + 50, card.name, {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6',
+        wordWrap: { width: cardW - 20 }, align: 'center'
+      }).setOrigin(0.5);
+      cardGroup.add(nameText);
+
+      // Cost
+      const costText = this.add.text(0, -cardH/2 + 76, `Cost: ${card.cost} ⚡`, {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffd700'
+      }).setOrigin(0.5);
+      cardGroup.add(costText);
+
+      // Separator line
+      const sep = this.add.graphics();
+      sep.lineStyle(1, 0x444444);
+      sep.lineBetween(-cardW/2 + 16, -cardH/2 + 94, cardW/2 - 16, -cardH/2 + 94);
+      cardGroup.add(sep);
+
+      // Description
+      const descText = this.add.text(0, -cardH/2 + 140, card.description, {
+        fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#aaaaaa',
+        wordWrap: { width: cardW - 24 }, align: 'center'
+      }).setOrigin(0.5);
+      cardGroup.add(descText);
+
+      // Upgrade badge
       if (mood && card.upgrades) {
         const upgradePath = PersonalitySystem.getUpgradePath(card, mood);
         if (upgradePath !== card) {
-          this.add.text(x, 440, `Upgrade (${mood}): available`, { fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#4caf50', wordWrap: { width: 180 }, align: 'center' }).setOrigin(0.5);
+          const badge = this.add.rectangle(0, cardH/2 - 28, cardW - 20, 28, 0x1a3a1a);
+          const badgeBorder = this.add.graphics();
+          badgeBorder.lineStyle(1, 0x4caf50, 0.8);
+          badgeBorder.strokeRect(-cardW/2 + 10, cardH/2 - 42, cardW - 20, 28);
+          const badgeText = this.add.text(0, cardH/2 - 28, `✨ ${mood} upgrade ready`, {
+            fontFamily: '"Press Start 2P"', fontSize: '6px', color: '#4caf50'
+          }).setOrigin(0.5);
+          cardGroup.add(badge);
+          cardGroup.add(badgeBorder);
+          cardGroup.add(badgeText);
         }
       }
 
-      bg.on('pointerover', () => bg.setFillStyle(0x2a2a5e));
-      bg.on('pointerout', () => bg.setFillStyle(COLORS.PANEL));
+      bg.on('pointerover', () => {
+        bg.setFillStyle(0x2a2a5e);
+        border.clear();
+        border.lineStyle(4, typeColor);
+        border.strokeRect(-cardW/2, -cardH/2, cardW, cardH);
+      });
+      bg.on('pointerout', () => {
+        bg.setFillStyle(COLORS.PANEL);
+        border.clear();
+        border.lineStyle(3, typeColor);
+        border.strokeRect(-cardW/2, -cardH/2, cardW, cardH);
+      });
       bg.on('pointerdown', () => {
-        gs.addCard(card.id);
-        this.scene.start('MapScene');
+        bg.setFillStyle(0xffd700);
+        this.time.delayedCall(100, () => {
+          gs.addCard(card.id);
+          this.scene.start('MapScene');
+        });
       });
     });
 
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 40, '[ SKIP ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#aaaaaa'
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.scene.start('MapScene'));
+    // Skip
+    this.add.text(W/2, H - 40, '[ SKIP ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#555555'
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+      .on('pointerover', function() { this.setColor('#aaaaaa'); })
+      .on('pointerout',  function() { this.setColor('#555555'); })
+      .on('pointerdown', () => this.scene.start('MapScene'));
   }
 }
