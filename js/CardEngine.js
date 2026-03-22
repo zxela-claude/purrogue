@@ -10,7 +10,7 @@ export class CardEngine {
     return results;
   }
 
-  static resolveEffect(effect, { player, enemy, relics = [] }, personality) {
+  static resolveEffect(effect, { player, enemy, enemies, relics = [] }, personality) {
     let value = effect.value || 0;
 
     // Personality modifiers
@@ -59,9 +59,20 @@ export class CardEngine {
         player.statuses[effect.status] = (player.statuses[effect.status] || 0) + value;
         return { type: 'apply_self_status', status: effect.status, amount: value };
 
-      case 'damage_all':
-        // handled externally for multi-enemy (v2)
-        return { type: 'damage_all', amount: value };
+      case 'damage_all': {
+        const targets = enemies && enemies.length > 0 ? enemies : (enemy ? [enemy] : []);
+        const allResults = targets.map(target => {
+          let dmg = value;
+          if (player.statuses?.strong) dmg += 2 * player.statuses.strong;
+          if (target.statuses?.vulnerable) dmg = Math.floor(dmg * 1.5);
+          if (player.statuses?.weak) dmg = Math.floor(dmg * 0.75);
+          const blocked = Math.min(target.block || 0, dmg);
+          target.block = Math.max(0, (target.block || 0) - dmg);
+          target.hp -= Math.max(0, dmg - blocked);
+          return { type: 'damage', amount: dmg, blocked };
+        });
+        return { type: 'damage_all', amount: value, hits: allResults };
+      }
 
       default:
         return { type: 'noop' };
