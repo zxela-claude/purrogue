@@ -133,6 +133,23 @@ export class CombatScene extends Phaser.Scene {
     this.tweens.add({ targets: [txt, bg], alpha: 1, duration: 180 });
   }
 
+  _showPersonalityToast(label, colorHex) {
+    const W = SCREEN_WIDTH;
+    const colorNum = Phaser.Display.Color.HexStringToColor(colorHex).color;
+    const bg = this.add.rectangle(W/2, 80, 360, 40, 0x000000, 0.8).setDepth(38);
+    const border = this.add.graphics().setDepth(38);
+    border.lineStyle(2, colorNum);
+    border.strokeRect(W/2 - 180, 60, 360, 40);
+    const txt = this.add.text(W/2, 80, label, {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: colorHex,
+      stroke: '#000000', strokeThickness: 2
+    }).setOrigin(0.5).setDepth(39);
+    this.tweens.add({
+      targets: [txt, bg, border], alpha: 0, duration: 600, delay: 2000, ease: 'Power2',
+      onComplete: () => { txt.destroy(); bg.destroy(); border.destroy(); }
+    });
+  }
+
   // ── UI Layout ───────────────────────────────────────────────────────────────
 
   _drawUI() {
@@ -663,9 +680,21 @@ export class CombatScene extends Phaser.Scene {
     this.hand.splice(handIndex, 1);
     this.discardPile.push(cardId);
 
+    const prevPersonality = this.gs.getDominantPersonality();
+    const prevMoodLocked = this.gs.personality.mood;
     this.gs.trackPersonality(card.type);
     this.gs.runStats.cards_played++;
     this.lastPlayedCard = card;
+
+    // NAN-48: show toast when personality changes this turn
+    const newPersonality = this.gs.getDominantPersonality();
+    const newMoodLocked = this.gs.personality.mood;
+    if (newPersonality !== prevPersonality || newMoodLocked !== prevMoodLocked) {
+      const moodInfo = newPersonality ? PersonalitySystem.getMoodDescription(newPersonality) : null;
+      if (moodInfo) {
+        this._showPersonalityToast(`\u2192 ${moodInfo.name}`, moodInfo.color);
+      }
+    }
 
     const prevHp = this.gs.hp;
     const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
