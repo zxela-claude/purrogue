@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES } from '../constants.js';
+import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES, PERSONALITY, FERAL_WARNING_THRESHOLD } from '../constants.js';
 import { MapGenerator } from '../MapGenerator.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
@@ -130,7 +130,12 @@ export class MapScene extends Phaser.Scene {
     const cardDb = {};
     for (const c of allCards) {
       cardDb[c.id] = c;
-      if (c.upgrades?.default?.effects) cardDb[c.id + '_u'] = { ...c, name: c.name + '+' };
+      if (c.upgrades) {
+        for (const [mood, upgrade] of Object.entries(c.upgrades)) {
+          const upgradeId = mood === 'default' ? `${c.id}_u` : `${c.id}_u_${mood}`;
+          cardDb[upgradeId] = { ...c, id: upgradeId, name: c.name + '+', effects: upgrade.effects };
+        }
+      }
     }
 
     const group = this.add.group();
@@ -155,9 +160,19 @@ export class MapScene extends Phaser.Scene {
   }
 
   _showSmithMenu(gs) {
+    const mood = gs.getDominantPersonality();
     const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
-    const cardDb = Object.fromEntries(allCards.map(c => [c.id, c]));
-    const upgradeable = gs.deck.filter(id => !id.endsWith('_u') && cardDb[id]?.upgrades?.default);
+    const cardDb = {};
+    for (const c of allCards) {
+      cardDb[c.id] = c;
+      if (c.upgrades) {
+        for (const [m, upgrade] of Object.entries(c.upgrades)) {
+          const upgradeId = m === 'default' ? `${c.id}_u` : `${c.id}_u_${m}`;
+          cardDb[upgradeId] = { ...c, id: upgradeId, name: c.name + '+', effects: upgrade.effects };
+        }
+      }
+    }
+    const upgradeable = gs.deck.filter(id => !id.includes('_u') && cardDb[id]?.upgrades);
 
     const group = this.add.group();
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
@@ -178,7 +193,7 @@ export class MapScene extends Phaser.Scene {
         btn.on('pointerover', function() { this.setColor('#ffd700'); });
         btn.on('pointerout', function() { this.setColor('#f0ead6'); });
         btn.on('pointerdown', () => {
-          gs.upgradeCard(cardId);
+          gs.upgradeCard(cardId, mood);
           group.destroy(true);
           this.scene.start('MapScene');
         });
