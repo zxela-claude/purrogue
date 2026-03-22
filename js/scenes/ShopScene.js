@@ -124,6 +124,7 @@ export class ShopScene extends Phaser.Scene {
       btn.on('pointerover', function() { this.setColor('#e94560'); });
       btn.on('pointerout', function() { this.setColor('#f0ead6'); });
       btn.on('pointerdown', () => {
+        if (gs.deck.length <= 1) return;
         gs.spendGold(cost);
         gs.removeCard(cardId);
         group.destroy(true);
