@@ -4,6 +4,7 @@ import { PersonalitySystem } from '../PersonalitySystem.js';
 import { getRandomEnemy, getBoss } from '../data/enemies.js';
 import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
 import { SoundManager } from '../SoundManager.js';
+import { MusicManager } from '../MusicManager.js';
 
 const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
 const STATUS_COLORS = { poison: '#4caf50', burn: '#ff6b35', freeze: '#a0d8ef', vulnerable: '#e67e22', weak: '#95a5a6', strong: '#f1c40f' };
@@ -63,6 +64,10 @@ export class CombatScene extends Phaser.Scene {
 
     // Sound effects (NAN-5)
     this.soundManager = new SoundManager(this);
+
+    // Background music (NAN-33): boss uses intense pattern, else combat
+    const music = MusicManager.getInstance(this);
+    music.play(this.isBoss ? 'boss' : 'combat');
 
     const bgKey = this.isBoss ? 'bg_boss' : `bg_combat_${Math.min(gs.act || 1, 3)}`;
     if (this.textures.exists(bgKey)) {

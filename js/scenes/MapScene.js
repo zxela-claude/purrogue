@@ -2,6 +2,7 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES, PERSONALITY, FERAL_WAR
 import { MapGenerator } from '../MapGenerator.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
+import { MusicManager } from '../MusicManager.js';
 
 const NODE_SPRITE_KEYS = {
   [NODE_TYPES.COMBAT]: 'node_combat',
@@ -26,6 +27,9 @@ export class MapScene extends Phaser.Scene {
   create() {
     const gs = this.registry.get('gameState');
     if (!gs.map) gs.map = MapGenerator.generate(gs.act);
+
+    // Background music: return to ambient menu/map track between battles
+    MusicManager.getInstance(this).play('menu');
 
     const mapBgKey = `bg_combat_${Math.min(gs.act || 1, 3)}`;
     if (this.textures.exists(mapBgKey)) {
