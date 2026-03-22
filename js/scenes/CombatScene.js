@@ -3,6 +3,7 @@ import { CardEngine } from '../CardEngine.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { getRandomEnemy, getBoss } from '../data/enemies.js';
 import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
+import { SoundManager } from '../SoundManager.js';
 
 const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
 const STATUS_COLORS = { poison: '#4caf50', burn: '#ff6b35', freeze: '#a0d8ef', vulnerable: '#e67e22', weak: '#95a5a6', strong: '#f1c40f' };
@@ -59,6 +60,9 @@ export class CombatScene extends Phaser.Scene {
     if (this.pendingEnemyDamage > 0) {
       this.enemy.hp = Math.max(0, this.enemy.hp - this.pendingEnemyDamage);
     }
+
+    // Sound effects (NAN-5)
+    this.soundManager = new SoundManager(this);
 
     const bgKey = this.isBoss ? 'bg_boss' : `bg_combat_${Math.min(gs.act || 1, 3)}`;
     if (this.textures.exists(bgKey)) {
@@ -260,6 +264,13 @@ export class CombatScene extends Phaser.Scene {
 
     // Keyboard shortcut D to open deck view
     this.input.keyboard.on('keydown-D', () => this._showDeckOverlay());
+
+    // M key — mute/unmute sound effects
+    this.input.keyboard.on('keydown-M', () => {
+      const nowEnabled = this.soundManager.toggle();
+      this._spawnFloatingText(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 80,
+        nowEnabled ? 'SFX ON' : 'SFX OFF', nowEnabled ? '#4caf50' : '#e94560');
+    });
 
     // Act indicator top-left
     this.add.text(20, 22, `ACT ${this.gs.act}${this.isBoss ? ' — BOSS' : this.isElite ? ' — ELITE' : ''}`, {
@@ -521,13 +532,20 @@ export class CombatScene extends Phaser.Scene {
   }
 
   _drawCards(count) {
+    let drew = 0;
     for (let i = 0; i < count; i++) {
       if (this.drawPile.length === 0) {
         this.drawPile = [...this.discardPile].sort(() => Math.random() - 0.5);
         this.discardPile = [];
         if (this.gs.relics.includes('hairball')) this.enemy.hp -= 3;
       }
-      if (this.drawPile.length > 0) this.hand.push(this.drawPile.pop());
+      if (this.drawPile.length > 0) { this.hand.push(this.drawPile.pop()); drew++; }
+    }
+    // SFX: one soft tick per drawn card (staggered via timeout to avoid overlap)
+    if (drew > 0 && this.soundManager) {
+      for (let d = 0; d < drew; d++) {
+        this.time.delayedCall(d * 60, () => this.soundManager.play('card_draw'));
+      }
     }
   }
 
@@ -680,6 +698,9 @@ export class CombatScene extends Phaser.Scene {
     this.hand.splice(handIndex, 1);
     this.discardPile.push(cardId);
 
+    // SFX: card play
+    this.soundManager.play('card_play');
+
     const prevPersonality = this.gs.getDominantPersonality();
     const prevMoodLocked = this.gs.personality.mood;
     this.gs.trackPersonality(card.type);
@@ -736,10 +757,14 @@ export class CombatScene extends Phaser.Scene {
       this._flashAttack();
       this._showDamageNumber(SCREEN_WIDTH/2, 220, dmg);
       this.cameras.main.shake(100, 0.005);
+      // SFX: damage dealt
+      this.soundManager.play('damage_dealt');
     }
     // Show heal if hp increased
     if (this.gs.hp > prevHp) {
       this._showHealNumber(100, SCREEN_HEIGHT - 220, this.gs.hp - prevHp);
+      // SFX: heal
+      this.soundManager.play('heal');
     }
 
     this._updateStatsDisplay();
@@ -855,6 +880,8 @@ export class CombatScene extends Phaser.Scene {
           // Hit-flash on player HP bar area
           const flashRect = this.add.rectangle(170, SCREEN_HEIGHT - 173, 200, 14, 0xffffff, 0.85).setDepth(5);
           this.tweens.add({ targets: flashRect, alpha: 0, duration: 200, onComplete: () => flashRect.destroy() });
+          // SFX: player hit
+          this.soundManager.play('player_hit');
         }
       }
 
@@ -917,6 +944,8 @@ export class CombatScene extends Phaser.Scene {
     }
 
     const delay = this.enemySprite ? 480 : 0;
+    // SFX: victory fanfare
+    this.soundManager.play('victory');
     this.time.delayedCall(delay, () => {
       const victoryBg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 500, 90, 0x000000, 0.85).setDepth(20);
       this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, `VICTORY!  +${goldGain} 💰`, {
@@ -1089,6 +1118,8 @@ export class CombatScene extends Phaser.Scene {
       this._updateStatsDisplay();
       return;
     }
+    // SFX: death
+    this.soundManager.play('death');
     this.gs.saveScore(false);
     this.gs.endRun();
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 480, 90, 0x000000, 0.85).setDepth(20);
