@@ -92,6 +92,10 @@ export class MapScene extends Phaser.Scene {
     this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT - 20, 200, 44, 0xffffff, 0)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this._showDeck(gs));
+
+    if (gs.personality.feralPending && !gs.personality.feral) {
+      this._showFeralWarning(gs);
+    }
   }
 
   _enterNode(node, gs) {
@@ -204,5 +208,55 @@ export class MapScene extends Phaser.Scene {
     const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
       .setInteractive({ useHandCursor: true }).on('pointerdown', () => { group.destroy(true); this.scene.start('MapScene'); });
     group.add(cancelBtn);
+  }
+
+  _showFeralWarning(gs) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.7).setDepth(30);
+
+    const panel = this.add.rectangle(W/2, H/2, 520, 320, COLORS.PANEL).setDepth(31);
+    const border = this.add.graphics().setDepth(31);
+    border.lineStyle(3, 0xe67e22);
+    border.strokeRect(W/2 - 260, H/2 - 160, 520, 320);
+
+    this.add.text(W/2, H/2 - 120, '⚠️ GOING FERAL', {
+      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#e67e22'
+    }).setOrigin(0.5).setDepth(32);
+
+    this.add.text(W/2, H/2 - 55, 'Your combat instincts are taking over.\nGoing FERAL doubles all damage,\nbut you can NEVER heal again.', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6',
+      align: 'center', lineSpacing: 8
+    }).setOrigin(0.5).setDepth(32);
+
+    // Accept
+    const acceptBtn = this.add.text(W/2 - 90, H/2 + 60, '[ GO FERAL ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#e67e22'
+    }).setOrigin(0.5).setDepth(32).setInteractive({ useHandCursor: true });
+
+    acceptBtn.on('pointerover', () => acceptBtn.setColor('#ff9944'));
+    acceptBtn.on('pointerout', () => acceptBtn.setColor('#e67e22'));
+    acceptBtn.on('pointerdown', () => {
+      gs.personality.feralPending = false;
+      gs.personality.mood = PERSONALITY.FERAL;
+      gs.personality.feral = true;
+      gs.save();
+      overlay.destroy(); panel.destroy(); border.destroy();
+      this.scene.restart();
+    });
+
+    // Decline
+    const declineBtn = this.add.text(W/2 + 90, H/2 + 60, '[ STAY CALM ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4fc3f7'
+    }).setOrigin(0.5).setDepth(32).setInteractive({ useHandCursor: true });
+
+    declineBtn.on('pointerover', () => declineBtn.setColor('#88ddff'));
+    declineBtn.on('pointerout', () => declineBtn.setColor('#4fc3f7'));
+    declineBtn.on('pointerdown', () => {
+      gs.personality.feralPending = false;
+      gs.personality.feralDeclined = true;
+      gs.personality.feisty = FERAL_WARNING_THRESHOLD - 1;
+      gs.save();
+      overlay.destroy(); panel.destroy(); border.destroy();
+    });
   }
 }
