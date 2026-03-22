@@ -17,10 +17,10 @@ const EVENTS = [
   ]},
   { title: 'The Old Cat', desc: 'A wise elder offers wisdom.', choices: [
     { label: 'Listen (upgrade a random card)', action: gs => {
-      const upgradeable = gs.deck.filter(id => !id.endsWith('_u'));
+      const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
       if (upgradeable.length > 0) {
         const cardId = upgradeable[Math.floor(Math.random() * upgradeable.length)];
-        gs.upgradeCard(cardId);
+        gs.upgradeCard(cardId, gs.getDominantPersonality());
       }
     }},
     { label: 'Nap instead (+8 HP)', action: gs => { gs.heal(8); } }
