@@ -58,7 +58,65 @@ export class MapGenerator {
       });
     }
 
+    // Post-generation fixup: ensure every path to the boss has at least one
+    // shop and one rest site. Walk all paths and force a node type if missing.
+    MapGenerator._ensureShopAndRest(floors);
+
     return { act, floors, currentFloor: 0, currentNode: null };
+  }
+
+  static _ensureShopAndRest(floors) {
+    // Collect all paths from floor 0 to the boss (last floor).
+    const bossFloor = floors.length - 1;
+    const paths = [];
+
+    function walk(floorIdx, nodeId, path) {
+      const node = floors[floorIdx].find(n => n.id === nodeId);
+      if (!node) return;
+      const newPath = [...path, node];
+      if (floorIdx === bossFloor) {
+        paths.push(newPath);
+        return;
+      }
+      for (const connId of node.connections) {
+        walk(floorIdx + 1, connId, newPath);
+      }
+    }
+
+    for (const startNode of floors[0]) {
+      walk(0, startNode.id, []);
+    }
+
+    for (const path of paths) {
+      const hasShop = path.some(n => n.type === NODE_TYPES.SHOP);
+      const hasRest = path.some(n => n.type === NODE_TYPES.REST);
+
+      if (!hasShop) {
+        // Pick the node closest to the boss (highest floor index) that is
+        // not already a shop, rest, or boss — and isn't floor 0 (always combat).
+        const candidates = path.filter(n =>
+          n.floor > 0 &&
+          n.type !== NODE_TYPES.SHOP &&
+          n.type !== NODE_TYPES.REST &&
+          n.type !== NODE_TYPES.BOSS
+        );
+        if (candidates.length > 0) {
+          candidates[candidates.length - 1].type = NODE_TYPES.SHOP;
+        }
+      }
+
+      if (!hasRest) {
+        const candidates = path.filter(n =>
+          n.floor > 0 &&
+          n.type !== NODE_TYPES.SHOP &&
+          n.type !== NODE_TYPES.REST &&
+          n.type !== NODE_TYPES.BOSS
+        );
+        if (candidates.length > 0) {
+          candidates[candidates.length - 1].type = NODE_TYPES.REST;
+        }
+      }
+    }
   }
 
   static getAvailableNodes(map) {
