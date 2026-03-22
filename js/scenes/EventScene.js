@@ -38,7 +38,13 @@ export class EventScene extends Phaser.Scene {
     const gs = this.registry.get('gameState');
     const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
 
-    this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
+    const eventBgKey = `bg_combat_${Math.min(gs.act || 1, 3)}`;
+    if (this.textures.exists(eventBgKey)) {
+      this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, eventBgKey).setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.65).setDepth(-1);
+    } else {
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
+    }
     this.add.text(SCREEN_WIDTH/2, 100, '❓ EVENT', { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#4fc3f7' }).setOrigin(0.5);
     this.add.text(SCREEN_WIDTH/2, 160, event.title, { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#f0ead6' }).setOrigin(0.5);
     this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#aaaaaa', wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);

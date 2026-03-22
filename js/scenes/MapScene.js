@@ -27,7 +27,13 @@ export class MapScene extends Phaser.Scene {
     const gs = this.registry.get('gameState');
     if (!gs.map) gs.map = MapGenerator.generate(gs.act);
 
-    this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
+    const mapBgKey = `bg_combat_${Math.min(gs.act || 1, 3)}`;
+    if (this.textures.exists(mapBgKey)) {
+      this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, mapBgKey).setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.6).setDepth(-1);
+    } else {
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
+    }
 
     // Header
     this.add.text(20, 20, `ACT ${gs.act} — FLOOR ${gs.floor + 1}/7`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 });
@@ -111,7 +117,10 @@ export class MapScene extends Phaser.Scene {
 
   _showRestMenu(gs) {
     const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
-    const overlay = this.add.rectangle(W/2, H/2, 420, 360, COLORS.PANEL).setDepth(10);
+    if (this.textures.exists('bg_rest')) {
+      this.add.image(W/2, H/2, 'bg_rest').setDisplaySize(420, 360).setDepth(9).setAlpha(0.35);
+    }
+    const overlay = this.add.rectangle(W/2, H/2, 420, 360, COLORS.PANEL, 0.85).setDepth(10);
     const border = this.add.graphics().setDepth(10);
     border.lineStyle(2, 0x4caf50);
     border.strokeRect(W/2 - 210, H/2 - 180, 420, 360);

@@ -48,6 +48,43 @@ export class BootScene extends Phaser.Scene {
     this.load.image('block_shield', 'assets/ui/block_shield.png');
     this.load.image('mood_feisty', 'assets/ui/mood_feisty.png');
     this.load.image('mood_cozy', 'assets/ui/mood_cozy.png');
+
+    // Backgrounds
+    this.load.image('bg_combat_1', 'assets/backgrounds/bg_combat_1.png');
+    this.load.image('bg_combat_2', 'assets/backgrounds/bg_combat_2.png');
+    this.load.image('bg_combat_3', 'assets/backgrounds/bg_combat_3.png');
+    this.load.image('bg_shop', 'assets/backgrounds/bg_shop.png');
+    this.load.image('bg_rest', 'assets/backgrounds/bg_rest.png');
+    this.load.image('bg_boss', 'assets/backgrounds/bg_boss.png');
+
+    // Relic icons
+    const relicIds = ['laser_toy','catnip','hairball','yarn_ball','bell_collar','cat_nap',
+      'toy_mouse','fish_snack','sundial','cursed_collar','ancient_tome','lucky_paw',
+      'coffee_mug','mirror','claw_sharpener','warm_blanket','magnifying_glass',
+      'tuna_can','golden_ball','nine_lives','power_cell'];
+    for (const id of relicIds) {
+      this.load.image(`relic_${id}`, `assets/relics/${id}.png`);
+    }
+
+    // Card art — warrior
+    const warriorCards = ['w_strike','w_defend','w_bash','w_cleave','w_armored','w_headbutt',
+      'w_rage','w_pummel','w_entrench','w_sword_boomerang','w_war_cry','w_shield_bash',
+      'w_flex','w_double_tap','w_infernal_blade','w_spot_weakness','w_bloodletting',
+      'w_immovable','w_true_grit','w_limit_break'];
+    for (const id of warriorCards) this.load.image(`card_art_${id}`, `assets/cards/${id}.png`);
+
+    // Card art — mage
+    const mageCards = ['m_zap','m_frost','m_fireball','m_arcane','m_poison_claw','m_ice_barrier',
+      'm_thunder','m_mana_burn','m_blizzard','m_study','m_corruption','m_dual_cast',
+      'm_reflex','m_meteor','m_echo','m_slow','m_adrenaline','m_burn_wave','m_barrier','m_static'];
+    for (const id of mageCards) this.load.image(`card_art_${id}`, `assets/cards/${id}.png`);
+
+    // Card art — rogue
+    const rogueCards = ['r_shiv','r_dodge','r_backstab','r_poison_dart','r_sprint','r_blade_dance',
+      'r_caltrops','r_predator','r_acrobatics','r_calculated_gamble','r_flechettes',
+      'r_masterful_stab','r_concentrate','r_noxious_fumes','r_sucker_punch','r_infiltrate',
+      'r_terror','r_bullet_time','r_storm_of_steel','r_wraith_form'];
+    for (const id of rogueCards) this.load.image(`card_art_${id}`, `assets/cards/${id}.png`);
   }
 
   create() {

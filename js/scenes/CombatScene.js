@@ -63,7 +63,13 @@ export class CombatScene extends Phaser.Scene {
       this.enemy.hp = Math.max(0, this.enemy.hp - this.pendingEnemyDamage);
     }
 
-    this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
+    const bgKey = this.isBoss ? 'bg_boss' : `bg_combat_${Math.min(gs.act || 1, 3)}`;
+    if (this.textures.exists(bgKey)) {
+      this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, bgKey).setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.45).setDepth(-1);
+    } else {
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
+    }
 
     this._drawUI();
     this._startPlayerTurn();
@@ -381,9 +387,20 @@ export class CombatScene extends Phaser.Scene {
       // Type pip
       const pip = this.add.rectangle(cardW / 2 - 10, -cardH / 2 + 10, 18, 18, typeColor).setDepth(3);
 
+      // Card art (middle zone)
+      const baseCardId = cardId.replace(/_u(_\w+)?$/, '');
+      const artKey = `card_art_${baseCardId}`;
+      const artItems = [];
+      if (this.textures.exists(artKey)) {
+        const artBg = this.add.rectangle(0, -8, cardW - 8, 56, 0x000000, 0.3).setDepth(2);
+        const art = this.add.image(0, -8, artKey).setDisplaySize(cardW - 8, 56).setDepth(2);
+        if (!canPlay) art.setTint(0x444466);
+        artItems.push(artBg, art);
+      }
+
       // Texts
-      const nameText = this.add.text(0, -52, card.name, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px',
+      const nameText = this.add.text(0, -61, card.name, {
+        fontFamily: '"Press Start 2P"', fontSize: '8px',
         color: canPlay ? '#f0ead6' : '#666666',
         wordWrap: { width: 104 }, align: 'center'
       }).setOrigin(0.5).setDepth(3);
@@ -392,13 +409,13 @@ export class CombatScene extends Phaser.Scene {
         fontFamily: '"Press Start 2P"', fontSize: '11px', color: canPlay ? '#ffd700' : '#555555'
       }).setDepth(3);
 
-      const descText = this.add.text(0, 18, card.description, {
+      const descText = this.add.text(0, 36, card.description, {
         fontFamily: '"Press Start 2P"', fontSize: '8px',
         color: canPlay ? '#aaaaaa' : '#444444',
         wordWrap: { width: 104 }, align: 'center'
       }).setOrigin(0.5).setDepth(3);
 
-      container.add([shadow, bg, border, pip, nameText, costText, descText]);
+      container.add([shadow, bg, border, pip, ...artItems, nameText, costText, descText]);
 
       // Make container interactive using card bounds
       container.setInteractive(

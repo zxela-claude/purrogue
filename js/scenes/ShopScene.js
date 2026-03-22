@@ -7,7 +7,12 @@ export class ShopScene extends Phaser.Scene {
 
   create() {
     const gs = this.registry.get('gameState');
-    this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
+    if (this.textures.exists('bg_shop')) {
+      this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'bg_shop').setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.5).setDepth(-1);
+    } else {
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
+    }
     this.add.text(SCREEN_WIDTH/2, 40, '🛒 SHOP', { fontFamily: '"Press Start 2P"', fontSize: '24px', color: '#ffd700' }).setOrigin(0.5);
     this.add.text(SCREEN_WIDTH/2, 80, `💰 ${gs.gold} gold`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#f0ead6' }).setOrigin(0.5);
 
@@ -40,9 +45,14 @@ export class ShopScene extends Phaser.Scene {
       const x = 300 + i * 400;
       const price = 150;
       const canAfford = gs.gold >= price;
-      const bg = this.add.rectangle(x, 480, 280, 100, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });
-      this.add.text(x, 450, `${relic.name} — ${relic.desc}`, { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700', wordWrap: { width: 260 }, align: 'center' }).setOrigin(0.5);
-      this.add.text(x, 510, `💰 ${price}g`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: canAfford ? '#ffd700' : '#666666' }).setOrigin(0.5);
+      const bg = this.add.rectangle(x, 480, 280, 110, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });
+      const iconKey = `relic_${relic.id}`;
+      if (this.textures.exists(iconKey)) {
+        this.add.image(x - 110, 468, iconKey).setDisplaySize(44, 44);
+      }
+      this.add.text(x + (this.textures.exists(iconKey) ? 10 : 0), 450, relic.name, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700', wordWrap: { width: 200 }, align: 'center' }).setOrigin(0.5);
+      this.add.text(x, 476, relic.desc, { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#aaaaaa', wordWrap: { width: 260 }, align: 'center' }).setOrigin(0.5);
+      this.add.text(x, 513, `💰 ${price}g`, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: canAfford ? '#ffd700' : '#666666' }).setOrigin(0.5);
       if (canAfford) {
         bg.on('pointerover', () => bg.setFillStyle(0x2a2a5e));
         bg.on('pointerout', () => bg.setFillStyle(COLORS.PANEL));
