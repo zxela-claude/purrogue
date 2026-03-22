@@ -167,7 +167,7 @@ export class CombatScene extends Phaser.Scene {
 
     this.enemyBlockText = this.add.text(W/2, 285, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4fc3f7', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5);
     this.enemyStatusContainer = this.add.container(W/2, 310).setDepth(5);
-    this.enemyIntentText = this.add.text(W/2, 335, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#cccccc', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5);
+    this.enemyIntentContainer = this.add.container(W/2, 335).setDepth(5);
 
     // ── Player section ──
     const heroKey = gs.hero ? gs.hero.toLowerCase() + '_idle' : null;
@@ -257,7 +257,19 @@ export class CombatScene extends Phaser.Scene {
     // Enemy intent
     const move = this.enemy.movePattern[this.enemy.moveIndex % this.enemy.movePattern.length];
     const intentIcon = move.type === 'attack' ? '⚔️' : move.type === 'block' ? '🛡' : '✨';
-    this.enemyIntentText.setText(`${intentIcon} ${move.desc}`);
+    const intentColor = move.type === 'attack' ? 0xe94560 : move.type === 'block' ? 0x4fc3f7 : 0x9b59b6;
+    const intentLabel = `${intentIcon} ${move.desc}`;
+
+    this.enemyIntentContainer.removeAll(true);
+    const pillW = Math.min(260, intentLabel.length * 10 + 32);
+    const pillBg = this.add.rectangle(0, 0, pillW, 28, intentColor, 0.25);
+    const pillBorder = this.add.graphics();
+    pillBorder.lineStyle(1, intentColor, 0.8);
+    pillBorder.strokeRoundedRect(-pillW / 2, -14, pillW, 28, 8);
+    const pillText = this.add.text(0, 0, intentLabel, {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffffff'
+    }).setOrigin(0.5);
+    this.enemyIntentContainer.add([pillBg, pillBorder, pillText]);
 
     // Player HP bar
     this._drawHPBar(this.playerHpBar, 160, H - 180, 200, 14, gs.hp, gs.maxHp);
@@ -321,101 +333,124 @@ export class CombatScene extends Phaser.Scene {
   }
 
   _renderHand() {
-    if (this.handObjects) this.handObjects.forEach(o => o.destroy());
+    if (this.handObjects) this.handObjects.forEach(c => c.destroy(true));
     this.handObjects = [];
 
-    const cardW = 118, cardH = 158, gap = 12;
-    const totalW = this.hand.length * (cardW + gap) - gap;
-    const startX = (SCREEN_WIDTH - totalW) / 2 + cardW / 2;
-    const y = SCREEN_HEIGHT - 102;
+    if (this.hand.length === 0) return;
+
+    const cardW = 118, cardH = 158;
+    const n = this.hand.length;
+    const arcRadius = 900;
+    const arcCenterX = SCREEN_WIDTH / 2;
+    const arcCenterY = SCREEN_HEIGHT - 102 + arcRadius;
+
+    // Spread angle compression by hand size
+    const totalDeg = n <= 4 ? 36 : n <= 7 ? 30 : n <= 9 ? 24 : 20;
+    const mood = this.gs.getDominantPersonality();
 
     this.hand.forEach((cardId, i) => {
       const card = this.cardDb[cardId];
       if (!card) return;
 
-      const x = startX + i * (cardW + gap);
-      const mood = this.gs.getDominantPersonality();
+      const angle = n === 1 ? 0 : -totalDeg / 2 + totalDeg * i / (n - 1);
+      const rad = angle * Math.PI / 180;
+      const baseX = arcCenterX + arcRadius * Math.sin(rad);
+      const baseY = arcCenterY - arcRadius * Math.cos(rad);
+
       const cost = PersonalitySystem.getCardCost(card, mood);
       const canPlay = this.energy >= cost;
       const typeColor = CARD_TYPE_COLORS[card.type] || 0x666666;
 
+      // Build container
+      const container = this.add.container(baseX, baseY).setDepth(5).setRotation(rad);
+      container.setData({ baseX, baseY, baseAngle: angle, index: i, cardId, canPlay });
+
       // Shadow
-      const shadow = this.add.rectangle(x + 3, y + 4, cardW, cardH, 0x000000, 0.4).setDepth(4);
+      const shadow = this.add.rectangle(3, 4, cardW, cardH, 0x000000, 0.4).setDepth(0);
 
       // Card body
-      const bg = this.add.rectangle(x, y, cardW, cardH, canPlay ? 0x1e2a4a : 0x111622)
-        .setInteractive({ useHandCursor: canPlay }).setDepth(5);
+      const bg = this.add.rectangle(0, 0, cardW, cardH, canPlay ? 0x1e2a4a : 0x111622);
+      bg.setDepth(1);
 
-      // Colored type border (3px)
-      const border = this.add.graphics().setDepth(6);
-      border.lineStyle(3, canPlay ? typeColor : 0x444444);
-      border.strokeRect(x - cardW/2, y - cardH/2, cardW, cardH);
+      // Border
+      const border = this.add.graphics().setDepth(2);
+      const borderColor = cardId.includes('_u') ? 0xffd700 : (canPlay ? typeColor : 0x444444);
+      border.lineStyle(3, borderColor);
+      border.strokeRect(-cardW / 2, -cardH / 2, cardW, cardH);
 
-      // Type pip (top-right corner)
-      const pip = this.add.rectangle(x + cardW/2 - 10, y - cardH/2 + 10, 18, 18, typeColor).setDepth(7);
+      // Type pip
+      const pip = this.add.rectangle(cardW / 2 - 10, -cardH / 2 + 10, 18, 18, typeColor).setDepth(3);
 
-      // Upgraded card — gold shimmer on left edge
-      if (cardId.endsWith('_u')) {
-        border.lineStyle(3, 0xffd700);
-        border.strokeRect(x - cardW/2, y - cardH/2, cardW, cardH);
-      }
-
-      // Card texts
-      const nameText = this.add.text(x, y - 52, card.name, {
+      // Texts
+      const nameText = this.add.text(0, -52, card.name, {
         fontFamily: '"Press Start 2P"', fontSize: '9px',
         color: canPlay ? '#f0ead6' : '#666666',
         wordWrap: { width: 104 }, align: 'center'
-      }).setOrigin(0.5).setDepth(8);
+      }).setOrigin(0.5).setDepth(3);
 
-      const costText = this.add.text(x - cardW/2 + 8, y - cardH/2 + 8, `${cost}`, {
+      const costText = this.add.text(-cardW / 2 + 8, -cardH / 2 + 8, `${cost}`, {
         fontFamily: '"Press Start 2P"', fontSize: '11px', color: canPlay ? '#ffd700' : '#555555'
-      }).setDepth(8);
+      }).setDepth(3);
 
-      const descText = this.add.text(x, y + 18, card.description, {
+      const descText = this.add.text(0, 18, card.description, {
         fontFamily: '"Press Start 2P"', fontSize: '8px',
         color: canPlay ? '#aaaaaa' : '#444444',
         wordWrap: { width: 104 }, align: 'center'
-      }).setOrigin(0.5).setDepth(8);
+      }).setOrigin(0.5).setDepth(3);
+
+      container.add([shadow, bg, border, pip, nameText, costText, descText]);
+
+      // Make container interactive using card bounds
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-cardW / 2, -cardH / 2, cardW, cardH),
+        Phaser.Geom.Rectangle.Contains
+      );
+
+      // Track tooltip
+      let tooltipTimer = null;
+      let tooltip = null;
 
       if (canPlay) {
-        bg.on('pointerover', () => {
+        container.on('pointerover', () => {
           bg.setFillStyle(0x2e3f6e);
-          border.clear();
-          border.lineStyle(3, typeColor === 0xffd700 ? 0xffee55 : Phaser.Display.Color.IntegerToColor(typeColor).brighten(30).color32);
-          border.strokeRect(x - cardW/2, y - cardH/2, cardW, cardH);
+          this.tweens.add({ targets: container, y: baseY - 28, angle: 0, scaleX: 1.18, scaleY: 1.18, duration: 150, ease: 'Power2' });
+          // Push neighbors
+          const siblings = this.handObjects;
+          if (i > 0 && siblings[i - 1]) this.tweens.add({ targets: siblings[i - 1], x: siblings[i - 1].getData('baseX') - 12, duration: 150 });
+          if (i < siblings.length - 1 && siblings[i + 1]) this.tweens.add({ targets: siblings[i + 1], x: siblings[i + 1].getData('baseX') + 12, duration: 150 });
+          // Tooltip after 300ms
+          tooltipTimer = this.time.delayedCall(300, () => {
+            tooltip = this._showCardTooltip(card, cost, baseX, baseY - 200);
+          });
         });
-        bg.on('pointerout', () => {
+
+        container.on('pointerout', () => {
           bg.setFillStyle(0x1e2a4a);
-          border.clear();
-          border.lineStyle(3, typeColor);
-          border.strokeRect(x - cardW/2, y - cardH/2, cardW, cardH);
+          this.tweens.add({ targets: container, x: baseX, y: baseY, angle: angle, scaleX: 1, scaleY: 1, duration: 120 });
+          // Reset neighbors
+          const siblings = this.handObjects;
+          if (i > 0 && siblings[i - 1]) this.tweens.add({ targets: siblings[i - 1], x: siblings[i - 1].getData('baseX'), duration: 120 });
+          if (i < siblings.length - 1 && siblings[i + 1]) this.tweens.add({ targets: siblings[i + 1], x: siblings[i + 1].getData('baseX'), duration: 120 });
+          // Cancel tooltip
+          if (tooltipTimer) { tooltipTimer.remove(); tooltipTimer = null; }
+          if (tooltip) { tooltip.destroy(true); tooltip = null; }
         });
-        bg.on('pointerdown', () => {
+
+        container.on('pointerdown', () => {
           bg.setFillStyle(0xffd700);
+          if (tooltipTimer) { tooltipTimer.remove(); tooltipTimer = null; }
+          if (tooltip) { tooltip.destroy(true); tooltip = null; }
           this.time.delayedCall(80, () => this._playCard(cardId, i));
         });
       }
 
-      this.handObjects.push(shadow, bg, border, pip, nameText, costText, descText);
+      this.handObjects.push(container);
     });
 
-    // Animate each card sliding up from below, staggered
-    const objectsPerCard = 7;
-    this.hand.forEach((_, i) => {
-      const start = i * objectsPerCard;
-      const cardObjs = this.handObjects.slice(start, start + objectsPerCard);
-      cardObjs.forEach(o => {
-        if (o && o.y !== undefined) o.y += 55;
-        if (o) o.setAlpha(0);
-      });
-      this.tweens.add({
-        targets: cardObjs,
-        y: '-=55',
-        alpha: 1,
-        duration: 180,
-        delay: i * 55,
-        ease: 'Back.easeOut'
-      });
+    // Card draw animation: scale + fade in, staggered
+    this.handObjects.forEach((container, i) => {
+      container.setAlpha(0).setScale(0.8);
+      this.tweens.add({ targets: container, alpha: 1, scaleX: 1, scaleY: 1, duration: 180, delay: i * 55, ease: 'Back.easeOut' });
     });
   }
 
@@ -476,28 +511,23 @@ export class CombatScene extends Phaser.Scene {
 
     this._updateStatsDisplay();
 
-    // Card play animation: spawn ghost at played card's position, zoom to center, fade
-    const cardW = 118, cardH = 158, gap = 12;
-    // Calculate position of the played card BEFORE hand was spliced (hand.length + 1 was the original size)
-    const origLen = this.hand.length + 1; // hand already spliced above
-    const totalW = origLen * (cardW + gap) - gap;
-    const startX = (SCREEN_WIDTH - totalW) / 2 + cardW / 2;
-    const playedX = startX + handIndex * (cardW + gap);
-    const playedY = SCREEN_HEIGHT - 102;
-
-    const ghost = this.add.rectangle(playedX, playedY, cardW, cardH,
-      CARD_TYPE_COLORS[card.type] || 0x4444aa, 0.85).setDepth(50);
-    this.tweens.add({
-      targets: ghost,
-      x: SCREEN_WIDTH / 2,
-      y: SCREEN_HEIGHT / 2 - 60,
-      scaleX: 1.25,
-      scaleY: 1.25,
-      alpha: 0,
-      duration: 220,
-      ease: 'Power2',
-      onComplete: () => ghost.destroy()
-    });
+    // Card play animation: spawn ghost at container's position
+    const playedContainer = this.handObjects[handIndex];
+    if (playedContainer) {
+      const ghost = this.add.rectangle(playedContainer.x, playedContainer.y, 118, 158,
+        CARD_TYPE_COLORS[card.type] || 0x4444aa, 0.85).setDepth(50);
+      this.tweens.add({
+        targets: ghost,
+        x: SCREEN_WIDTH / 2,
+        y: SCREEN_HEIGHT / 2 - 60,
+        scaleX: 1.25,
+        scaleY: 1.25,
+        alpha: 0,
+        duration: 220,
+        ease: 'Power2',
+        onComplete: () => ghost.destroy()
+      });
+    }
 
     this._renderHand();
 
@@ -509,37 +539,32 @@ export class CombatScene extends Phaser.Scene {
     this.discardPile.push(...this.hand);
     this.hand = [];
 
-    const sweepObjects = this.handObjects ? [...this.handObjects] : [];
+    const sweepContainers = this.handObjects ? [...this.handObjects] : [];
     this.handObjects = [];
 
-    if (sweepObjects.length === 0) {
+    if (sweepContainers.length === 0) {
       this._continueEndTurn();
       return;
     }
 
-    // Sweep: cards rotate and fly to discard pile area (bottom-right)
-    const objectsPerCard = 7;
-    const cardCount = Math.ceil(sweepObjects.length / objectsPerCard);
     let completed = 0;
-    for (let i = 0; i < cardCount; i++) {
-      const start = i * objectsPerCard;
-      const cardObjs = sweepObjects.slice(start, start + objectsPerCard);
+    sweepContainers.forEach((container, i) => {
       this.tweens.add({
-        targets: cardObjs,
-        x: '+=300',
-        y: '+=120',
+        targets: container,
+        x: container.x + 300,
+        y: container.y + 120,
         alpha: 0,
-        angle: 25,
+        angle: container.angle + 25,
         duration: 200,
         delay: i * 40,
         ease: 'Power1',
         onComplete: () => {
-          cardObjs.forEach(o => o.destroy());
+          container.destroy(true);
           completed++;
-          if (completed === cardCount) this._continueEndTurn();
+          if (completed === sweepContainers.length) this._continueEndTurn();
         }
       });
-    }
+    });
   }
 
   _continueEndTurn() {
@@ -666,6 +691,43 @@ export class CombatScene extends Phaser.Scene {
     if (this.enemySprite) {
       this.tweens.add({ targets: this.enemySprite, alpha: 0.2, duration: 75, yoyo: true, repeat: 1 });
     }
+  }
+
+  _showCardTooltip(card, cost, x, y) {
+    const W = 200, H = 270;
+    const clampedX = Math.max(W / 2 + 10, Math.min(SCREEN_WIDTH - W / 2 - 10, x));
+    const clampedY = Math.max(H / 2 + 10, Math.min(SCREEN_HEIGHT - H / 2 - 10, y));
+
+    const tip = this.add.container(clampedX, clampedY).setDepth(100);
+    const typeColor = CARD_TYPE_COLORS[card.type] || 0x666666;
+
+    const bg = this.add.rectangle(0, 0, W, H, 0x0a0a1e);
+    const border = this.add.graphics();
+    border.lineStyle(3, typeColor);
+    border.strokeRect(-W / 2, -H / 2, W, H);
+    const typeBanner = this.add.rectangle(0, -H / 2 + 18, W, 32, typeColor, 0.3);
+    const typeLabel = this.add.text(0, -H / 2 + 18, card.type.toUpperCase(), {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffffff'
+    }).setOrigin(0.5);
+    const nameText = this.add.text(0, -H / 2 + 50, card.name, {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700',
+      wordWrap: { width: W - 20 }, align: 'center'
+    }).setOrigin(0.5);
+    const costLabel = this.add.text(0, -H / 2 + 78, `Cost: ${cost} ⚡`, {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffcc44'
+    }).setOrigin(0.5);
+    const sep = this.add.graphics();
+    sep.lineStyle(1, 0x333355);
+    sep.lineBetween(-W / 2 + 12, -H / 2 + 96, W / 2 - 12, -H / 2 + 96);
+    const descText = this.add.text(0, 10, card.description, {
+      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#cccccc',
+      wordWrap: { width: W - 24 }, align: 'center'
+    }).setOrigin(0.5);
+
+    tip.add([bg, border, typeBanner, typeLabel, nameText, costLabel, sep, descText]);
+    tip.setAlpha(0);
+    this.tweens.add({ targets: tip, alpha: 1, duration: 120 });
+    return tip;
   }
 
   _playerDied() {
