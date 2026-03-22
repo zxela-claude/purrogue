@@ -110,23 +110,107 @@ export class MapScene extends Phaser.Scene {
   }
 
   _showRestMenu(gs) {
-    const overlay = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 400, 300, COLORS.PANEL).setDepth(10);
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 100, '🛏 REST SITE', { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#f0ead6' }).setOrigin(0.5).setDepth(11);
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    const overlay = this.add.rectangle(W/2, H/2, 420, 360, COLORS.PANEL).setDepth(10);
+    const border = this.add.graphics().setDepth(10);
+    border.lineStyle(2, 0x4caf50);
+    border.strokeRect(W/2 - 210, H/2 - 180, 420, 360);
+
+    this.add.text(W/2, H/2 - 148, '🛏 REST SITE', {
+      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#f0ead6'
+    }).setOrigin(0.5).setDepth(11);
 
     const healAmt = 8 + (gs.relics.includes('cat_nap') ? 8 : 0);
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20, `REST — Heal ${healAmt} HP`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#4caf50' }).setOrigin(0.5).setDepth(11)
-      .setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-        if (PersonalitySystem.canHeal(gs.getDominantPersonality())) {
-          gs.heal(healAmt);
-        }
+    const canHeal = PersonalitySystem.canHeal(gs.getDominantPersonality());
+
+    // Option 1: Rest
+    this.add.text(W/2, H/2 - 80, `REST — Heal ${healAmt} HP`, {
+      fontFamily: '"Press Start 2P"', fontSize: '14px',
+      color: canHeal ? '#4caf50' : '#555555'
+    }).setOrigin(0.5).setDepth(11)
+      .setInteractive({ useHandCursor: canHeal })
+      .on('pointerdown', () => {
+        if (canHeal) gs.heal(healAmt);
         this.scene.start('MapScene');
       });
 
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40, `SMITH — Upgrade a card`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#ffd700' }).setOrigin(0.5).setDepth(11)
-      .setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-        overlay.destroy();
+    // Option 2: Smith
+    this.add.text(W/2, H/2 - 20, 'SMITH — Upgrade a card', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#ffd700'
+    }).setOrigin(0.5).setDepth(11)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => {
+        overlay.destroy(); border.destroy();
         this._showSmithMenu(gs);
       });
+
+    // Option 3: Reflect (remove a card)
+    const removable = gs.deck.length > 1; // keep at least 1 card
+    this.add.text(W/2, H/2 + 40, 'REFLECT — Remove a card', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px',
+      color: removable ? '#e94560' : '#555555'
+    }).setOrigin(0.5).setDepth(11)
+      .setInteractive({ useHandCursor: removable })
+      .on('pointerdown', () => {
+        if (!removable) return;
+        overlay.destroy(); border.destroy();
+        this._showRemoveMenu(gs, 'MapScene');
+      });
+
+    // Cancel
+    this.add.text(W/2, H/2 + 130, '[ LEAVE ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#aaaaaa'
+    }).setOrigin(0.5).setDepth(11)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.scene.start('MapScene'));
+  }
+
+  _showRemoveMenu(gs, returnScene) {
+    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const cardDb = {};
+    for (const c of allCards) {
+      cardDb[c.id] = c;
+      if (c.upgrades) {
+        for (const [mood, upgrade] of Object.entries(c.upgrades)) {
+          const uid = mood === 'default' ? `${c.id}_u` : `${c.id}_u_${mood}`;
+          cardDb[uid] = { ...c, id: uid, name: c.name + '+', effects: upgrade.effects };
+        }
+      }
+    }
+
+    const group = this.add.group();
+    const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
+    group.add(bg);
+    const title = this.add.text(SCREEN_WIDTH/2, 80, 'REFLECT — Choose a card to remove', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
+    }).setOrigin(0.5).setDepth(21);
+    group.add(title);
+
+    const removable = gs.deck.slice(0, gs.deck.length - 1); // keep at least 1
+    removable.forEach((cardId, i) => {
+      const card = cardDb[cardId];
+      if (!card) return;
+      const col = i % 4, row = Math.floor(i / 4);
+      const x = 220 + col * 220, y = 160 + row * 46;
+      const btn = this.add.text(x, y, `✕ ${card.name}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
+      }).setDepth(21).setInteractive({ useHandCursor: true });
+      btn.on('pointerover', function() { this.setColor('#e94560'); });
+      btn.on('pointerout', function() { this.setColor('#f0ead6'); });
+      btn.on('pointerdown', () => {
+        gs.removeCard(cardId);
+        group.destroy(true);
+        this.scene.start(returnScene);
+      });
+      group.add(btn);
+    });
+
+    const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#aaaaaa'
+    }).setOrigin(0.5).setDepth(21)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => { group.destroy(true); this.scene.start(returnScene); });
+    group.add(cancelBtn);
   }
 
   _showDeck(gs) {
