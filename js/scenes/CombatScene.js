@@ -398,6 +398,25 @@ export class CombatScene extends Phaser.Scene {
 
       this.handObjects.push(shadow, bg, border, pip, nameText, costText, descText);
     });
+
+    // Animate each card sliding up from below, staggered
+    const objectsPerCard = 7;
+    this.hand.forEach((_, i) => {
+      const start = i * objectsPerCard;
+      const cardObjs = this.handObjects.slice(start, start + objectsPerCard);
+      cardObjs.forEach(o => {
+        if (o && o.y !== undefined) o.y += 55;
+        if (o) o.setAlpha(0);
+      });
+      this.tweens.add({
+        targets: cardObjs,
+        y: '-=55',
+        alpha: 1,
+        duration: 180,
+        delay: i * 55,
+        ease: 'Back.easeOut'
+      });
+    });
   }
 
   // ── Card Play / Enemy Turn ──────────────────────────────────────────────────
