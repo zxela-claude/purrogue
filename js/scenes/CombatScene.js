@@ -171,9 +171,12 @@ export class CombatScene extends Phaser.Scene {
       this.enemySprite = this.add.text(W/2, 200, this.enemy.emoji || '👾', { fontSize: '56px' }).setOrigin(0.5);
     }
 
+    // Intent pill sits just below the HP bar so the player always sees
+    // what the enemy plans to do next turn before committing their actions.
+    this.enemyIntentContainer = this.add.container(W/2, 78).setDepth(5);
+
     this.enemyBlockText = this.add.text(W/2, 285, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4fc3f7', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5);
     this.enemyStatusContainer = this.add.container(W/2, 310).setDepth(5);
-    this.enemyIntentContainer = this.add.container(W/2, 335).setDepth(5);
 
     // ── Player section ──
     const heroKey = gs.hero ? gs.hero.toLowerCase() + '_idle' : null;
