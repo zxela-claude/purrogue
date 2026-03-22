@@ -223,6 +223,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   _showDeck(gs) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
     const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
     const cardDb = {};
     for (const c of allCards) {
@@ -235,25 +236,95 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
+    const CARD_TYPE_COLORS = { attack: '#e94560', skill: '#4fc3f7', power: '#9b59b6' };
+
     const group = this.add.group();
-    const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
+
+    // Backdrop — click outside to close
+    const backdrop = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.75)
+      .setDepth(20).setInteractive();
+    backdrop.on('pointerdown', () => { group.destroy(true); escKey.removeAllListeners(); });
+    group.add(backdrop);
+
+    const panelW = Math.min(W - 60, 760);
+    const panelH = H - 80;
+    const panelX = W / 2, panelY = H / 2;
+
+    const bg = this.add.rectangle(panelX, panelY, panelW, panelH, COLORS.PANEL).setDepth(21);
+    const border = this.add.graphics().setDepth(21);
+    border.lineStyle(2, 0x4fc3f7);
+    border.strokeRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH);
     group.add(bg);
-    const title = this.add.text(SCREEN_WIDTH/2, 75, `DECK — ${gs.deck.length} cards`, { fontFamily: '"Press Start 2P"', fontSize: '17px', color: '#f0ead6' }).setOrigin(0.5).setDepth(21);
+    group.add(border);
+
+    const title = this.add.text(panelX, panelY - panelH / 2 + 22, `FULL DECK — ${gs.deck.length} cards`, {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#4fc3f7'
+    }).setOrigin(0.5).setDepth(22);
     group.add(title);
 
-    const cols = 5, rowH = 36;
+    const sub = this.add.text(panelX, panelY - panelH / 2 + 44, '[ESC] or click outside to close', {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#666666'
+    }).setOrigin(0.5).setDepth(22);
+    group.add(sub);
+
+    const sep = this.add.graphics().setDepth(22);
+    sep.lineStyle(1, 0x222244);
+    sep.lineBetween(panelX - panelW / 2 + 16, panelY - panelH / 2 + 56, panelX + panelW / 2 - 16, panelY - panelH / 2 + 56);
+    group.add(sep);
+
+    const cols = 3;
+    const rowH = 34;
+    const colW = Math.floor((panelW - 32) / cols);
+    const startY = panelY - panelH / 2 + 74;
+
     gs.deck.forEach((cardId, i) => {
       const card = cardDb[cardId];
       if (!card) return;
       const col = i % cols, row = Math.floor(i / cols);
-      const x = 180 + col * 200, y = 130 + row * rowH;
-      const txt = this.add.text(x, y, card.name, { fontFamily: '"Press Start 2P"', fontSize: '12px', color: cardId.endsWith('_u') ? '#ffd700' : '#f0ead6' }).setDepth(21);
-      group.add(txt);
+      const cx = panelX - panelW / 2 + 16 + col * colW;
+      const cy = startY + row * rowH;
+
+      const typeCol = CARD_TYPE_COLORS[card.type] || '#888888';
+      const isUpgraded = cardId.includes('_u');
+
+      const pip = this.add.rectangle(cx + 6, cy + rowH / 2 - 1, 10, 10,
+        Phaser.Display.Color.HexStringToColor(typeCol).color).setDepth(22);
+      group.add(pip);
+
+      const nameText = this.add.text(cx + 18, cy + 4, card.name + (isUpgraded ? '+' : ''), {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: isUpgraded ? '#ffd700' : '#f0ead6'
+      }).setDepth(22);
+      group.add(nameText);
+
+      const effects = card.effects || [];
+      const dmgEffect = effects.find(e => e.type === 'damage');
+      const blockEffect = effects.find(e => e.type === 'block');
+      const statParts = [`Cost:${card.cost ?? '?'}`, card.type.toUpperCase()];
+      if (dmgEffect) statParts.push(`DMG:${dmgEffect.value}`);
+      if (blockEffect) statParts.push(`BLK:${blockEffect.value}`);
+
+      const statText = this.add.text(cx + 18, cy + 18, statParts.join('  '), {
+        fontFamily: '"Press Start 2P"', fontSize: '7px', color: typeCol
+      }).setDepth(22);
+      group.add(statText);
+
+      if (row > 0) {
+        const rowSep = this.add.graphics().setDepth(21);
+        rowSep.lineStyle(1, 0x111133);
+        rowSep.lineBetween(cx, cy, cx + colW - 4, cy);
+        group.add(rowSep);
+      }
     });
 
-    const closeBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CLOSE ]', { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
-      .setInteractive({ useHandCursor: true }).on('pointerdown', () => { group.destroy(true); });
+    const closeBtn = this.add.text(panelX, panelY + panelH / 2 - 16, '[ CLOSE ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560'
+    }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => { group.destroy(true); escKey.removeAllListeners(); });
     group.add(closeBtn);
+
+    // Escape key to close
+    const escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    escKey.once('down', () => { group.destroy(true); });
   }
 
   _showSmithMenu(gs) {
