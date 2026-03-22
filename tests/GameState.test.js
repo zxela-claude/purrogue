@@ -176,12 +176,6 @@ describe('GameState', () => {
       expect(gs.personality.mood).toBe('feisty');
     });
 
-    it('locks feral mood at double threshold', () => {
-      for (let i = 0; i < 20; i++) gs.trackPersonality('attack');
-      expect(gs.personality.mood).toBe('feral');
-      expect(gs.personality.feral).toBe(true);
-    });
-
     it('mood does not change once locked', () => {
       for (let i = 0; i < 10; i++) gs.trackPersonality('attack');
       for (let i = 0; i < 15; i++) gs.trackPersonality('skill');
@@ -189,9 +183,28 @@ describe('GameState', () => {
     });
 
     it('does not track after feral lock', () => {
-      for (let i = 0; i < 20; i++) gs.trackPersonality('attack');
+      gs.personality.feral = true;
       gs.trackPersonality('skill');
       expect(gs.personality.cozy).toBe(0);
+    });
+
+    it('sets feralPending at FERAL_WARNING_THRESHOLD (15 attack plays) instead of locking', () => {
+      for (let i = 0; i < 15; i++) gs.trackPersonality('attack');
+      expect(gs.personality.feralPending).toBe(true);
+      expect(gs.personality.feral).toBe(false);
+      expect(gs.personality.mood).not.toBe('feral');
+    });
+
+    it('does not auto-lock feral even at 20+ attack plays', () => {
+      for (let i = 0; i < 22; i++) gs.trackPersonality('attack');
+      expect(gs.personality.feral).toBe(false);
+      expect(gs.personality.feralPending).toBe(true);
+    });
+
+    it('does not set feralPending if feralDeclined is true', () => {
+      gs.personality.feralDeclined = true;
+      for (let i = 0; i < 20; i++) gs.trackPersonality('attack');
+      expect(gs.personality.feralPending).toBeFalsy();
     });
 
     it('locks cozy when cozy dominant at threshold', () => {

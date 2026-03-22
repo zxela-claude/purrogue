@@ -1,4 +1,4 @@
-import { HERO_CLASSES, PERSONALITY, PERSONALITY_THRESHOLD, ENERGY_PER_TURN, HAND_SIZE } from './constants.js';
+import { HERO_CLASSES, PERSONALITY, PERSONALITY_THRESHOLD, FERAL_WARNING_THRESHOLD, ENERGY_PER_TURN, HAND_SIZE } from './constants.js';
 
 const SAVE_KEY = 'purrogue_save';
 const SCORES_KEY = 'purrogue_scores';
@@ -24,7 +24,9 @@ export class GameState {
       cozy: 0,
       cunning: 0,
       mood: null,           // locked mood once threshold hit
-      feral: false
+      feral: false,
+      feralPending: false,
+      feralDeclined: false
     };
     this.runStats = {
       damage_dealt: 0,
@@ -98,16 +100,23 @@ export class GameState {
   trackPersonality(cardType) {
     // cardType: 'attack' | 'skill' | 'power' | 'status'
     if (this.personality.feral) return;
-    if (cardType === 'attack') this.personality.feisty++;
-    else if (cardType === 'skill') this.personality.cozy++;
-    else if (cardType === 'power') this.personality.cunning++;
+    if (this.personality.feralDeclined) {
+      // Still track but cap feisty below warning threshold
+      if (cardType === 'attack') this.personality.feisty = Math.min(this.personality.feisty + 1, FERAL_WARNING_THRESHOLD - 1);
+      else if (cardType === 'skill') this.personality.cozy++;
+      else if (cardType === 'power') this.personality.cunning++;
+    } else {
+      if (cardType === 'attack') this.personality.feisty++;
+      else if (cardType === 'skill') this.personality.cozy++;
+      else if (cardType === 'power') this.personality.cunning++;
+    }
 
-    // check mood lock — feral overrides other moods
     const { feisty, cozy, cunning } = this.personality;
     const threshold = PERSONALITY_THRESHOLD;
-    if (!this.personality.feral && feisty >= threshold * 2) {
-      this.personality.mood = PERSONALITY.FERAL;
-      this.personality.feral = true;
+
+    // Feral: pending prompt instead of auto-lock
+    if (!this.personality.feralDeclined && feisty >= FERAL_WARNING_THRESHOLD) {
+      this.personality.feralPending = true;
     } else if (!this.personality.mood) {
       if (feisty >= threshold && feisty >= cozy && feisty >= cunning) {
         this.personality.mood = PERSONALITY.FEISTY;
