@@ -440,6 +440,7 @@ export class CombatScene extends Phaser.Scene {
           bg.setFillStyle(0xffd700);
           if (tooltipTimer) { tooltipTimer.remove(); tooltipTimer = null; }
           if (tooltip) { tooltip.destroy(true); tooltip = null; }
+          container.disableInteractive();
           this.time.delayedCall(80, () => this._playCard(cardId, i));
         });
       }
