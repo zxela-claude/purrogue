@@ -50,15 +50,11 @@ export class CombatScene extends Phaser.Scene {
     this.playerStatuses = {};
     this.usedNineLives = false;
     this.coffeeMugUsed = false;
+    this.bellCollarUsed = false;
 
     if (gs.relics.includes('toy_mouse')) this.playerBlock = 3;
     // Cursed collar: start combat with 2 stacks of vulnerable
     if (gs.relics.includes('cursed_collar')) this.playerStatuses.vulnerable = 2;
-    // Bell collar: enemy starts with 1 weak stack
-    if (gs.relics.includes('bell_collar')) {
-      if (!this.enemy.statuses) this.enemy.statuses = {};
-      this.enemy.statuses.weak = (this.enemy.statuses.weak || 0) + 1;
-    }
     if (this.pendingEnemyDamage > 0) {
       this.enemy.hp = Math.max(0, this.enemy.hp - this.pendingEnemyDamage);
     }
@@ -504,6 +500,14 @@ export class CombatScene extends Phaser.Scene {
       const sharpBlocked = Math.min(this.enemy.block || 0, sharpDmg);
       this.enemy.block = Math.max(0, (this.enemy.block || 0) - sharpDmg);
       this.enemy.hp -= (sharpDmg - sharpBlocked);
+    }
+    // Bell collar: first attack card each combat deals +3 damage
+    if (this.gs.relics.includes('bell_collar') && card.type === 'attack' && !this.bellCollarUsed) {
+      this.bellCollarUsed = true;
+      const bellDmg = 3;
+      const bellBlocked = Math.min(this.enemy.block || 0, bellDmg);
+      this.enemy.block = Math.max(0, (this.enemy.block || 0) - bellDmg);
+      this.enemy.hp -= (bellDmg - bellBlocked);
     }
     // Warm blanket: skill cards grant +2 block
     if (this.gs.relics.includes('warm_blanket') && card.type === 'skill') {
