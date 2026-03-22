@@ -29,8 +29,8 @@ export class RewardScene extends Phaser.Scene {
 
     const heroCards = gs.hero === 'WARRIOR' ? WARRIOR_CARDS : gs.hero === 'MAGE' ? MAGE_CARDS : ROGUE_CARDS;
     const count = gs.relics.includes('lucky_paw') ? 4 : 3;
-    const choices = [...heroCards].sort(() => Math.random() - 0.5).slice(0, count);
     const mood = gs.getDominantPersonality();
+    const choices = this._weightedCardDraft(heroCards, gs.act, mood, count);
 
     choices.forEach((card, i) => {
       const x = W / (count + 1) * (i + 1);
@@ -140,5 +140,45 @@ export class RewardScene extends Phaser.Scene {
       .on('pointerover', function() { this.setColor('#aaaaaa'); })
       .on('pointerout',  function() { this.setColor('#555555'); })
       .on('pointerdown', () => this.scene.start('MapScene'));
+  }
+
+  _weightedCardDraft(heroCards, act, mood, count) {
+    // Rarity weights by act: [common%, uncommon%, rare%]
+    const weights = act === 1 ? [70, 25, 5] : act === 2 ? [40, 40, 20] : [15, 40, 45];
+
+    const byRarity = { common: [], uncommon: [], rare: [] };
+    for (const c of heroCards) {
+      const r = c.rarity || 'common';
+      byRarity[r].push(c);
+    }
+
+    // Personality weighting: boost cards whose type aligns with mood
+    const personalityType = { feisty: 'attack', cozy: 'skill', cunning: 'power', feral: 'attack' };
+    const boostedType = mood ? personalityType[mood] : null;
+
+    const pool = [];
+    const addWithWeight = (cards, weight) => {
+      for (const c of cards) {
+        const w = (boostedType && c.type === boostedType) ? weight * 2 : weight;
+        for (let i = 0; i < w; i++) pool.push(c);
+      }
+    };
+    addWithWeight(byRarity.common, weights[0]);
+    addWithWeight(byRarity.uncommon, weights[1]);
+    addWithWeight(byRarity.rare, weights[2]);
+
+    // Pick `count` unique cards
+    const chosen = new Set();
+    const result = [];
+    let attempts = 0;
+    while (result.length < count && attempts < 200) {
+      const card = pool[Math.floor(Math.random() * pool.length)];
+      if (!chosen.has(card.id)) {
+        chosen.add(card.id);
+        result.push(card);
+      }
+      attempts++;
+    }
+    return result;
   }
 }
