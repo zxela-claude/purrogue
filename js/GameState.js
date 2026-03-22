@@ -88,6 +88,8 @@ export class GameState {
   }
 
   addRelic(relicId) {
+    const copies = this.relics.filter(r => r === relicId).length;
+    if (copies >= 3) return;
     this.relics.push(relicId);
     this.save();
   }
