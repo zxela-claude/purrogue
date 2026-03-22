@@ -1,4 +1,5 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
+import { RELICS } from '../data/relics.js';
 
 const EVENTS = [
   { title: 'Mysterious Fisherman', desc: 'A fisherman offers you fish. Take it?', choices: [
@@ -11,7 +12,18 @@ const EVENTS = [
   ]},
   { title: 'Suspicious Dog', desc: 'A dog wants to trade.', choices: [
     { label: 'Trade (lose 30g, gain relic)', action: gs => {
-      if (gs.gold >= 30) { gs.spendGold(30); gs.addRelic('yarn_ball'); }
+      if (gs.gold >= 30) {
+        gs.spendGold(30);
+        if (!gs.relics.includes('yarn_ball')) {
+          gs.addRelic('yarn_ball');
+        } else {
+          const available = RELICS.filter(r => !gs.relics.includes(r.id));
+          if (available.length > 0) {
+            const chosen = available[Math.floor(Math.random() * available.length)];
+            gs.addRelic(chosen.id);
+          }
+        }
+      }
     }},
     { label: 'Attack! (deal 10 dmg to next enemy)', action: gs => { gs.pendingEnemyDamage = (gs.pendingEnemyDamage || 0) + 10; } }
   ]},
