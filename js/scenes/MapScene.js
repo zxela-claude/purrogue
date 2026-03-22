@@ -144,11 +144,15 @@ export class MapScene extends Phaser.Scene {
       });
 
     // Option 2: Smith
+    const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
+    const hasUpgradeable = upgradeable.length > 0;
     this.add.text(W/2, H/2 - 20, 'SMITH — Upgrade a card', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: '14px',
+      color: hasUpgradeable ? '#ffd700' : '#555555'
     }).setOrigin(0.5).setDepth(11)
-      .setInteractive({ useHandCursor: true })
+      .setInteractive({ useHandCursor: hasUpgradeable })
       .on('pointerdown', () => {
+        if (!hasUpgradeable) return;
         overlay.destroy(); border.destroy();
         this._showSmithMenu(gs);
       });
