@@ -27,4 +27,11 @@ export class PersonalitySystem {
     if (!card.upgrades) return card.upgraded || card;
     return card.upgrades[mood] || card.upgrades.default || card;
   }
+
+  static getUpgradeId(baseCardId, card, mood) {
+    if (mood && card?.upgrades?.[mood]) {
+      return `${baseCardId}_u_${mood}`;
+    }
+    return `${baseCardId}_u`;
+  }
 }

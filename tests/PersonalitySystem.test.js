@@ -84,6 +84,38 @@ describe('PersonalitySystem', () => {
     });
   });
 
+  // ── getUpgradeId ──────────────────────────────────────────────────────────
+  describe('getUpgradeId', () => {
+    const card = {
+      id: 'w_strike',
+      upgrades: {
+        default: { effects: [{ type: 'damage', value: 9 }] },
+        feisty: { effects: [{ type: 'damage', value: 10 }] }
+      }
+    };
+
+    it('returns personality-suffixed id when mood upgrade exists', () => {
+      expect(PersonalitySystem.getUpgradeId('w_strike', card, 'feisty'))
+        .toBe('w_strike_u_feisty');
+    });
+
+    it('falls back to _u when mood has no specific upgrade', () => {
+      expect(PersonalitySystem.getUpgradeId('w_strike', card, 'cozy'))
+        .toBe('w_strike_u');
+    });
+
+    it('returns _u when mood is null', () => {
+      expect(PersonalitySystem.getUpgradeId('w_strike', card, null))
+        .toBe('w_strike_u');
+    });
+
+    it('returns _u when card has no upgrades object', () => {
+      const plain = { id: 'x', cost: 1 };
+      expect(PersonalitySystem.getUpgradeId('x', plain, 'feisty'))
+        .toBe('x_u');
+    });
+  });
+
   // ── getUpgradePath ────────────────────────────────────────────────────────
   describe('getUpgradePath', () => {
     const baseCard = {
