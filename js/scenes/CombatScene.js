@@ -24,9 +24,11 @@ export class CombatScene extends Phaser.Scene {
     this.cardDb = {};
     for (const card of allCards) {
       this.cardDb[card.id] = card;
-      const upgEffects = card.upgrades?.default?.effects;
-      if (upgEffects) {
-        this.cardDb[card.id + '_u'] = { ...card, id: card.id + '_u', name: card.name + '+', effects: upgEffects };
+      if (card.upgrades) {
+        for (const [mood, upgrade] of Object.entries(card.upgrades)) {
+          const upgradeId = mood === 'default' ? `${card.id}_u` : `${card.id}_u_${mood}`;
+          this.cardDb[upgradeId] = { ...card, id: upgradeId, name: card.name + '+', effects: upgrade.effects };
+        }
       }
     }
 
