@@ -56,8 +56,76 @@ export class ShopScene extends Phaser.Scene {
       }
     });
 
+    // Card removal section
+    const removalCost = 75;
+    const canRemove = gs.gold >= removalCost && gs.deck.length > 1;
+    const removalY = 590;
+
+    this.add.text(SCREEN_WIDTH/2, removalY, '━━━━━━━━━━━━━━━━━━━━━', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#333355'
+    }).setOrigin(0.5);
+
+    const removeLabel = this.add.text(SCREEN_WIDTH/2, removalY + 32,
+      `REMOVE A CARD — 💰 ${removalCost}g`,
+      { fontFamily: '"Press Start 2P"', fontSize: '14px', color: canRemove ? '#e94560' : '#555555' }
+    ).setOrigin(0.5);
+
+    if (canRemove) {
+      removeLabel.setInteractive({ useHandCursor: true });
+      removeLabel.on('pointerover', () => removeLabel.setColor('#ff7777'));
+      removeLabel.on('pointerout', () => removeLabel.setColor('#e94560'));
+      removeLabel.on('pointerdown', () => this._showRemoveMenu(gs, removalCost));
+    }
+
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 40, '[ LEAVE SHOP ]', {
       fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.scene.start('MapScene'));
+  }
+
+  _showRemoveMenu(gs, cost) {
+    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const cardDb = {};
+    for (const c of allCards) {
+      cardDb[c.id] = c;
+      if (c.upgrades) {
+        for (const [mood, upgrade] of Object.entries(c.upgrades)) {
+          const uid = mood === 'default' ? `${c.id}_u` : `${c.id}_u_${mood}`;
+          cardDb[uid] = { ...c, id: uid, name: c.name + '+', effects: upgrade.effects };
+        }
+      }
+    }
+
+    const group = this.add.group();
+    const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
+    group.add(bg);
+    group.add(this.add.text(SCREEN_WIDTH/2, 80, `REMOVE A CARD — costs ${cost}g`, {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
+    }).setOrigin(0.5).setDepth(21));
+
+    const removable = gs.deck.slice(0, gs.deck.length - 1);
+    removable.forEach((cardId, i) => {
+      const card = cardDb[cardId];
+      if (!card) return;
+      const col = i % 4, row = Math.floor(i / 4);
+      const x = 220 + col * 220, y = 160 + row * 46;
+      const btn = this.add.text(x, y, `✕ ${card.name}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
+      }).setDepth(21).setInteractive({ useHandCursor: true });
+      btn.on('pointerover', function() { this.setColor('#e94560'); });
+      btn.on('pointerout', function() { this.setColor('#f0ead6'); });
+      btn.on('pointerdown', () => {
+        gs.spendGold(cost);
+        gs.removeCard(cardId);
+        group.destroy(true);
+        this.scene.restart();
+      });
+      group.add(btn);
+    });
+
+    group.add(this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#aaaaaa'
+    }).setOrigin(0.5).setDepth(21)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => group.destroy(true)));
   }
 }
