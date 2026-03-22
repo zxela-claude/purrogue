@@ -508,9 +508,41 @@ export class CombatScene extends Phaser.Scene {
   _endPlayerTurn() {
     this.discardPile.push(...this.hand);
     this.hand = [];
-    if (this.handObjects) this.handObjects.forEach(o => o.destroy());
+
+    const sweepObjects = this.handObjects ? [...this.handObjects] : [];
     this.handObjects = [];
 
+    if (sweepObjects.length === 0) {
+      this._continueEndTurn();
+      return;
+    }
+
+    // Sweep: cards rotate and fly to discard pile area (bottom-right)
+    const objectsPerCard = 7;
+    const cardCount = Math.ceil(sweepObjects.length / objectsPerCard);
+    let completed = 0;
+    for (let i = 0; i < cardCount; i++) {
+      const start = i * objectsPerCard;
+      const cardObjs = sweepObjects.slice(start, start + objectsPerCard);
+      this.tweens.add({
+        targets: cardObjs,
+        x: '+=300',
+        y: '+=120',
+        alpha: 0,
+        angle: 25,
+        duration: 200,
+        delay: i * 40,
+        ease: 'Power1',
+        onComplete: () => {
+          cardObjs.forEach(o => o.destroy());
+          completed++;
+          if (completed === cardCount) this._continueEndTurn();
+        }
+      });
+    }
+  }
+
+  _continueEndTurn() {
     this._endTurnHitZone.removeInteractive();
     this.time.delayedCall(400, () => this._enemyTurn());
   }
