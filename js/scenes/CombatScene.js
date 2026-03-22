@@ -689,7 +689,7 @@ export class CombatScene extends Phaser.Scene {
         if (this.isBoss && this.gs.act >= 3) {
           this.gs.saveScore(true);
           this.gs.endRun();
-          this.scene.start('GameOverScene', { won: true });
+          this.scene.start('RunSummaryScene', { won: true });
         } else if (this.isBoss) {
           this.gs.act++;
           this.gs.map = null;
@@ -765,6 +765,6 @@ export class CombatScene extends Phaser.Scene {
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'YOU DIED  😿', {
       fontFamily: '"Press Start 2P"', fontSize: '30px', color: '#e94560'
     }).setOrigin(0.5).setDepth(21);
-    this.time.delayedCall(2000, () => this.scene.start('GameOverScene', { won: false }));
+    this.time.delayedCall(2000, () => this.scene.start('RunSummaryScene', { won: false }));
   }
 }
