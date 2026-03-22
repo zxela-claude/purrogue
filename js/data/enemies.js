@@ -39,7 +39,15 @@ export const ENEMIES = {
       {type:'block',value:15,desc:'Hides in folds (block 15)'},
       {type:'attack',value:18,desc:'Suffocates for 18'},
       {type:'buff',status:'vulnerable',value:2,desc:'Exposes weakness'}
-    ]
+    ],
+    thresholdBehavior: {
+      below: 0.5,
+      pattern: [
+        {type:'attack',value:22,desc:'Desperate grasp for 22'},
+        {type:'buff',status:'vulnerable',value:3,desc:'Exposes deep weakness'},
+        {type:'attack',value:26,desc:'Smothers for 26'}
+      ]
+    }
   },
   // ACT 2
   guard_dog: {
@@ -81,7 +89,15 @@ export const ENEMIES = {
       {type:'block',value:18,desc:'Sits (block 18)'},
       {type:'attack',value:22,desc:'Fetch tackle for 22'},
       {type:'buff',status:'strong',value:3,desc:'Fetches strength'}
-    ]
+    ],
+    thresholdBehavior: {
+      below: 0.5,
+      pattern: [
+        {type:'buff',status:'strong',value:4,desc:'Goes berserk (+4 str)'},
+        {type:'attack',value:26,desc:'Frenzy bite for 26'},
+        {type:'attack',value:26,desc:'Frenzy bite for 26'}
+      ]
+    }
   },
   // ACT 3
   alley_cat: {
@@ -123,7 +139,16 @@ export const ENEMIES = {
       {type:'block',value:20,desc:'Guards (block 20)'},
       {type:'attack',value:28,desc:'Mauls for 28'},
       {type:'buff',status:'strong',value:4,desc:'Goes berserk'}
-    ]
+    ],
+    thresholdBehavior: {
+      below: 0.5,
+      pattern: [
+        {type:'buff',status:'strong',value:5,desc:'Primal fury (+5 str)'},
+        {type:'attack',value:34,desc:'Savage mauling for 34'},
+        {type:'attack',value:34,desc:'Savage mauling for 34'},
+        {type:'buff',status:'vulnerable',value:2,desc:'Crushes defenses'}
+      ]
+    }
   },
   // BOSSES
   the_dog: {
@@ -136,7 +161,17 @@ export const ENEMIES = {
       {type:'attack',value:20,desc:'Howls for 20'},
       {type:'buff',status:'strong',value:3,desc:'Goes alpha (+3 str)'},
       {type:'attack',value:25,desc:'Alpha bite for 25'}
-    ]
+    ],
+    thresholdBehavior: {
+      below: 0.5,
+      pattern: [
+        {type:'buff',status:'strong',value:4,desc:'Rabid fury (+4 str)'},
+        {type:'attack',value:28,desc:'Rabid bite for 28'},
+        {type:'attack',value:28,desc:'Rabid bite for 28'},
+        {type:'buff',status:'vulnerable',value:2,desc:'Pins you down'},
+        {type:'attack',value:35,desc:'Death shake for 35'}
+      ]
+    }
   },
   vacuum_boss: {
     id: 'vacuum_boss', name: 'The Vacuum', hp: 180, maxHp: 180, block: 0, statuses: {},
@@ -148,7 +183,17 @@ export const ENEMIES = {
       {type:'buff',status:'strong',value:5,desc:'Overheats (+5 str)'},
       {type:'attack',value:28,desc:'Mega suction for 28'},
       {type:'block',value:20,desc:'Full power (block 20)'}
-    ]
+    ],
+    thresholdBehavior: {
+      below: 0.5,
+      pattern: [
+        {type:'buff',status:'strong',value:6,desc:'Critical overheat (+6 str)'},
+        {type:'attack',value:32,desc:'Vortex for 32'},
+        {type:'attack',value:32,desc:'Vortex for 32'},
+        {type:'block',value:25,desc:'Emergency shield (block 25)'},
+        {type:'attack',value:40,desc:'Supernova suction for 40'}
+      ]
+    }
   },
   the_vet: {
     id: 'the_vet', name: 'The Vet', hp: 200, maxHp: 200, block: 0, statuses: {},
@@ -160,7 +205,16 @@ export const ENEMIES = {
       {type:'attack',value:25,desc:'Scalpel for 25'},
       {type:'block',value:25,desc:'Puts on gloves (block 25)'},
       {type:'attack',value:35,desc:'Operation for 35'}
-    ]
+    ],
+    thresholdBehavior: {
+      below: 0.5,
+      pattern: [
+        {type:'buff',status:'vulnerable',value:4,desc:'Injects sedative (4 vuln)'},
+        {type:'attack',value:40,desc:'Emergency surgery for 40'},
+        {type:'buff',status:'strong',value:5,desc:'Adrenaline surge (+5 str)'},
+        {type:'attack',value:45,desc:'Final procedure for 45'}
+      ]
+    }
   }
 };
 

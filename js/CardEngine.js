@@ -118,7 +118,11 @@ export class CardEngine {
   }
 
   static resolveEnemyIntent(enemy, player) {
-    const move = enemy.movePattern[enemy.moveIndex % enemy.movePattern.length];
+    // Check if enemy has dropped below HP threshold — if so use the escalated pattern
+    const tb = enemy.thresholdBehavior;
+    const useThreshold = tb && (enemy.hp / enemy.maxHp) < tb.below;
+    const pattern = useThreshold ? tb.pattern : enemy.movePattern;
+    const move = pattern[enemy.moveIndex % pattern.length];
     enemy.moveIndex = (enemy.moveIndex || 0) + 1;
     return move;
   }

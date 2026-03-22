@@ -260,11 +260,14 @@ export class CombatScene extends Phaser.Scene {
       this.enemyStatusContainer.add(badge);
     });
 
-    // Enemy intent
-    const move = this.enemy.movePattern[this.enemy.moveIndex % this.enemy.movePattern.length];
+    // Enemy intent — use threshold pattern when below HP threshold
+    const _tb = this.enemy.thresholdBehavior;
+    const _useThreshold = _tb && (this.enemy.hp / this.enemy.maxHp) < _tb.below;
+    const _intentPattern = _useThreshold ? _tb.pattern : this.enemy.movePattern;
+    const move = _intentPattern[this.enemy.moveIndex % _intentPattern.length];
     const intentIcon = move.type === 'attack' ? '⚔️' : move.type === 'block' ? '🛡' : '✨';
     const intentColor = move.type === 'attack' ? 0xe94560 : move.type === 'block' ? 0x4fc3f7 : 0x9b59b6;
-    const intentLabel = `${intentIcon} ${move.desc}`;
+    const intentLabel = (_useThreshold ? '⚠️ ' : '') + `${intentIcon} ${move.desc}`;
 
     this.enemyIntentContainer.removeAll(true);
     const pillW = Math.min(260, intentLabel.length * 10 + 32);
