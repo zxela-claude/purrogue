@@ -1,9 +1,10 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { RELICS } from '../data/relics.js';
+import { PersonalitySystem } from '../PersonalitySystem.js';
 
 const EVENTS = [
   { title: 'Mysterious Fisherman', desc: 'A fisherman offers you fish. Take it?', choices: [
-    { label: 'Take the fish (+15 HP)', action: gs => { gs.heal(15); } },
+    { label: 'Take the fish (+15 HP)', action: gs => { if (PersonalitySystem.canHeal(gs.getDominantPersonality())) gs.heal(15); } },
     { label: 'Decline (nothing)', action: gs => {} }
   ]},
   { title: 'Ancient Cat Shrine', desc: 'A golden shrine pulses with energy.', choices: [
@@ -35,7 +36,7 @@ const EVENTS = [
         gs.upgradeCard(cardId, gs.getDominantPersonality());
       }
     }},
-    { label: 'Nap instead (+8 HP)', action: gs => { gs.heal(8); } }
+    { label: 'Nap instead (+8 HP)', action: gs => { if (PersonalitySystem.canHeal(gs.getDominantPersonality())) gs.heal(8); } }
   ]},
   { title: 'Catnip Field', desc: 'A massive field of catnip.', choices: [
     { label: 'Roll in it! (+1 energy next combat)', action: gs => { gs.pendingEnergyBonus = (gs.pendingEnergyBonus || 0) + 1; } },
