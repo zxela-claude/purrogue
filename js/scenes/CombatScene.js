@@ -102,20 +102,20 @@ export class CombatScene extends Phaser.Scene {
     }
   }
 
-  _showDamageNumber(x, y, amount, color = '#ff4444') {
-    const txt = this.add.text(x, y, `-${amount}`, {
+  _spawnFloatingText(x, y, text, color) {
+    const txt = this.add.text(x, y, text, {
       fontFamily: '"Press Start 2P"', fontSize: '20px', color,
       stroke: '#000000', strokeThickness: 3
     }).setOrigin(0.5).setDepth(40);
-    this.tweens.add({ targets: txt, y: y - 80, alpha: 0, duration: 900, ease: 'Power2', onComplete: () => txt.destroy() });
+    this.tweens.add({ targets: txt, y: y - 60, alpha: 0, duration: 800, ease: 'Power2', onComplete: () => txt.destroy() });
+  }
+
+  _showDamageNumber(x, y, amount, color = '#e94560') {
+    this._spawnFloatingText(x, y, `-${amount}`, color);
   }
 
   _showHealNumber(x, y, amount) {
-    const txt = this.add.text(x, y, `+${amount}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#4caf50',
-      stroke: '#000000', strokeThickness: 3
-    }).setOrigin(0.5).setDepth(40);
-    this.tweens.add({ targets: txt, y: y - 60, alpha: 0, duration: 800, ease: 'Power2', onComplete: () => txt.destroy() });
+    this._spawnFloatingText(x, y, `+${amount}`, '#4caf50');
   }
 
   _showTurnBanner(label, color) {
@@ -706,6 +706,7 @@ export class CombatScene extends Phaser.Scene {
     if (dmg > 0) {
       this._flashAttack();
       this._showDamageNumber(SCREEN_WIDTH/2, 220, dmg);
+      this.cameras.main.shake(100, 0.005);
     }
     // Show heal if hp increased
     if (this.gs.hp > prevHp) {
@@ -819,7 +820,13 @@ export class CombatScene extends Phaser.Scene {
       if (result.type === 'attack') {
         this.gs.runStats.damage_taken += result.amount;
         const dmgTaken = prevHp - this.gs.hp;
-        if (dmgTaken > 0) this._showDamageNumber(100, SCREEN_HEIGHT - 240, dmgTaken, '#ff8888');
+        if (dmgTaken > 0) {
+          this._showDamageNumber(100, SCREEN_HEIGHT - 240, dmgTaken, '#ff8888');
+          this.cameras.main.shake(150, 0.008);
+          // Hit-flash on player HP bar area
+          const flashRect = this.add.rectangle(170, SCREEN_HEIGHT - 173, 200, 14, 0xffffff, 0.85).setDepth(5);
+          this.tweens.add({ targets: flashRect, alpha: 0, duration: 200, onComplete: () => flashRect.destroy() });
+        }
       }
 
       if (this.enemySprite?.type === 'Image' || this.enemySprite?.type === 'Text') {
@@ -910,6 +917,11 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.enemySprite) {
       this.tweens.add({ targets: this.enemySprite, alpha: 0.2, duration: 75, yoyo: true, repeat: 1 });
+      // Hit-flash tint: white then back to normal over ~200ms
+      if (this.enemySprite.setTint) {
+        this.enemySprite.setTint(0xffffff);
+        this.time.delayedCall(200, () => { if (this.enemySprite?.clearTint) this.enemySprite.clearTint(); });
+      }
     }
   }
 
