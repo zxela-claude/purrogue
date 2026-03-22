@@ -283,7 +283,8 @@ export class CombatScene extends Phaser.Scene {
   _startPlayerTurn() {
     this.turnNumber++;
     this.gs.runStats.turns++;
-    this.energy = this.maxEnergy;
+    const carried = this.gs.relics.includes('power_cell') ? Math.min(this.energy, 1) : 0;
+    this.energy = this.maxEnergy + carried;
     this.playerBlock = 0;
     this.coffeeMugUsed = false;
 
