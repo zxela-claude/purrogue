@@ -114,6 +114,7 @@ export class MenuScene extends Phaser.Scene {
         const newGs = new GameState();
         newGs.startRun(key);
         newGs.deck = this._getStartingDeck(key);
+        newGs.save();
         this.registry.set('gameState', newGs);
         this.scene.start('MapScene');
       });
