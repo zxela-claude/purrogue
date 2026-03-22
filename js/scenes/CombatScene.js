@@ -602,28 +602,60 @@ export class CombatScene extends Phaser.Scene {
     const baseGold = this.isElite ? 25 + (this.gs.relics.includes('fish_snack') ? 10 : 0) : 15;
     const goldGain = this.gs.relics.includes('golden_ball') ? Math.ceil(baseGold * 1.25) : baseGold;
     this.gs.gold += goldGain;
-
     if (this.gs.relics.includes('yarn_ball')) this.gs.heal(2);
     this.gs.save();
 
-    const victoryBg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 500, 90, 0x000000, 0.85).setDepth(20);
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, `VICTORY!  +${goldGain} 💰`, {
-      fontFamily: '"Press Start 2P"', fontSize: '28px', color: '#ffd700'
-    }).setOrigin(0.5).setDepth(21);
+    // Death collapse: tilt and slide down
+    if (this.enemySprite) {
+      this.tweens.add({
+        targets: this.enemySprite,
+        angle: 35,
+        y: this.enemySprite.y + 90,
+        alpha: 0,
+        duration: 420,
+        ease: 'Power2'
+      });
 
-    this.time.delayedCall(1500, () => {
-      if (this.isBoss && this.gs.act >= 3) {
-        this.gs.saveScore(true);
-        this.gs.endRun();
-        this.scene.start('GameOverScene', { won: true });
-      } else if (this.isBoss) {
-        this.gs.act++;
-        this.gs.map = null;
-        this.gs.save();
-        this.scene.start('MapScene');
-      } else {
-        this.scene.start('RewardScene');
+      // Burst particles using graphics circles
+      for (let p = 0; p < 8; p++) {
+        const px = this.enemySprite.x + (Math.random() - 0.5) * 80;
+        const py = (this.enemySprite.y || 200) + (Math.random() - 0.5) * 60;
+        const particle = this.add.circle(px, py, 4 + Math.random() * 5, 0xffd700).setDepth(25).setAlpha(0.9);
+        this.tweens.add({
+          targets: particle,
+          x: px + (Math.random() - 0.5) * 120,
+          y: py - 40 - Math.random() * 60,
+          alpha: 0,
+          scaleX: 0,
+          scaleY: 0,
+          duration: 400 + Math.random() * 200,
+          ease: 'Power2',
+          onComplete: () => particle.destroy()
+        });
       }
+    }
+
+    const delay = this.enemySprite ? 480 : 0;
+    this.time.delayedCall(delay, () => {
+      const victoryBg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 500, 90, 0x000000, 0.85).setDepth(20);
+      this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, `VICTORY!  +${goldGain} 💰`, {
+        fontFamily: '"Press Start 2P"', fontSize: '28px', color: '#ffd700'
+      }).setOrigin(0.5).setDepth(21);
+
+      this.time.delayedCall(1500, () => {
+        if (this.isBoss && this.gs.act >= 3) {
+          this.gs.saveScore(true);
+          this.gs.endRun();
+          this.scene.start('GameOverScene', { won: true });
+        } else if (this.isBoss) {
+          this.gs.act++;
+          this.gs.map = null;
+          this.gs.save();
+          this.scene.start('MapScene');
+        } else {
+          this.scene.start('RewardScene');
+        }
+      });
     });
   }
 
