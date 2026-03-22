@@ -475,6 +475,30 @@ export class CombatScene extends Phaser.Scene {
     }
 
     this._updateStatsDisplay();
+
+    // Card play animation: spawn ghost at played card's position, zoom to center, fade
+    const cardW = 118, cardH = 158, gap = 12;
+    // Calculate position of the played card BEFORE hand was spliced (hand.length + 1 was the original size)
+    const origLen = this.hand.length + 1; // hand already spliced above
+    const totalW = origLen * (cardW + gap) - gap;
+    const startX = (SCREEN_WIDTH - totalW) / 2 + cardW / 2;
+    const playedX = startX + handIndex * (cardW + gap);
+    const playedY = SCREEN_HEIGHT - 102;
+
+    const ghost = this.add.rectangle(playedX, playedY, cardW, cardH,
+      CARD_TYPE_COLORS[card.type] || 0x4444aa, 0.85).setDepth(50);
+    this.tweens.add({
+      targets: ghost,
+      x: SCREEN_WIDTH / 2,
+      y: SCREEN_HEIGHT / 2 - 60,
+      scaleX: 1.25,
+      scaleY: 1.25,
+      alpha: 0,
+      duration: 220,
+      ease: 'Power2',
+      onComplete: () => ghost.destroy()
+    });
+
     this._renderHand();
 
     if (this.enemy.hp <= 0) this._enemyDefeated();
