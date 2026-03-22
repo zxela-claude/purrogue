@@ -51,6 +51,7 @@ export class CombatScene extends Phaser.Scene {
     this.usedNineLives = false;
     this.coffeeMugUsed = false;
     this.bellCollarUsed = false;
+    this.lastPlayedCard = null;
 
     if (gs.relics.includes('toy_mouse')) this.playerBlock = 3;
     // Cursed collar: start combat with 2 stacks of vulnerable
@@ -485,6 +486,7 @@ export class CombatScene extends Phaser.Scene {
 
     this.gs.trackPersonality(card.type);
     this.gs.runStats.cards_played++;
+    this.lastPlayedCard = card;
 
     const prevHp = this.gs.hp;
     const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
@@ -558,6 +560,23 @@ export class CombatScene extends Phaser.Scene {
   }
 
   _endPlayerTurn() {
+    // Mirror relic: replay the last card played this turn at end of turn
+    if (this.gs.relics.includes('mirror') && this.lastPlayedCard) {
+      const mood = this.gs.getDominantPersonality();
+      const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
+      const results = CardEngine.resolveCard(this.lastPlayedCard, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile, relics: this.gs.relics }, mood);
+      this.gs.hp = player.hp;
+      this.playerBlock = player.block;
+      this.playerStatuses = player.statuses;
+      const dmg = results.filter(r => r.type === 'damage').reduce((s, r) => s + r.amount, 0);
+      this.gs.runStats.damage_dealt += dmg;
+      if (dmg > 0) this._showDamageNumber(SCREEN_WIDTH/2, 220, dmg);
+      this._updateStatsDisplay();
+      if (this.enemy.hp <= 0) { this._enemyDefeated(); return; }
+      if (this.gs.hp <= 0) { this._playerDied(); return; }
+    }
+    this.lastPlayedCard = null;
+
     this.discardPile.push(...this.hand);
     this.hand = [];
 
