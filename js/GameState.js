@@ -74,11 +74,13 @@ export class GameState {
     this.save();
   }
 
-  upgradeCard(cardId) {
-    if (cardId.endsWith('_u')) return false;
+  upgradeCard(cardId, personality = null) {
+    // Already upgraded: id ends with '_u' or '_u_<mood>'
+    if (/_u(_\w+)?$/.test(cardId)) return false;
     const idx = this.deck.indexOf(cardId);
     if (idx === -1) return false;
-    this.deck[idx] = cardId + '_u';
+    const newId = personality ? `${cardId}_u_${personality}` : `${cardId}_u`;
+    this.deck[idx] = newId;
     this.save();
     return true;
   }

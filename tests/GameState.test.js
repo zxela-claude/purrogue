@@ -102,25 +102,37 @@ describe('GameState', () => {
 
   // ── upgradeCard ────────────────────────────────────────────────────────────
   describe('upgradeCard', () => {
-    it('upgrades card id to id_u', () => {
+    it('upgrades card id to id_u when no personality', () => {
       gs.addCard('w_strike');
-      gs.upgradeCard('w_strike');
+      gs.upgradeCard('w_strike', null);
       expect(gs.deck).toContain('w_strike_u');
+      expect(gs.deck).not.toContain('w_strike');
+    });
+
+    it('upgrades to personality variant when personality given', () => {
+      gs.addCard('w_strike');
+      gs.upgradeCard('w_strike', 'feisty');
+      expect(gs.deck).toContain('w_strike_u_feisty');
       expect(gs.deck).not.toContain('w_strike');
     });
 
     it('returns true on success', () => {
       gs.addCard('w_strike');
-      expect(gs.upgradeCard('w_strike')).toBe(true);
+      expect(gs.upgradeCard('w_strike', null)).toBe(true);
     });
 
     it('returns false when card not in deck', () => {
-      expect(gs.upgradeCard('w_strike')).toBe(false);
+      expect(gs.upgradeCard('w_strike', null)).toBe(false);
     });
 
-    it('returns false when card already upgraded', () => {
+    it('returns false when card already upgraded (default suffix)', () => {
       gs.addCard('w_strike_u');
-      expect(gs.upgradeCard('w_strike_u')).toBe(false);
+      expect(gs.upgradeCard('w_strike_u', null)).toBe(false);
+    });
+
+    it('returns false when card already upgraded (personality suffix)', () => {
+      gs.addCard('w_strike_u_feisty');
+      expect(gs.upgradeCard('w_strike_u_feisty', null)).toBe(false);
     });
   });
 
