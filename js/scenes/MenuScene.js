@@ -143,17 +143,39 @@ export class MenuScene extends Phaser.Scene {
     // ── High scores ───────────────────────────────────────────────────────────
     const scores = GameState.getScores();
     if (scores.length > 0) {
-      const panelX = W - 160;
-      this.add.rectangle(panelX, 120, 270, 190, 0x0d0d1a, 0.9);
-      this.add.graphics().lineStyle(1, 0xffd700, 0.3).strokeRect(panelX - 135, 25, 270, 190);
-      this.add.text(panelX, 38, 'BEST RUNS', {
-        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700'
+      const ROW_H = 52;
+      const panelW = 310;
+      const panelRows = Math.min(scores.length, 5);
+      const panelH = 36 + panelRows * ROW_H + 8;
+      const panelX = W - panelW / 2 - 8;
+      const panelTop = 20;
+
+      this.add.rectangle(panelX, panelTop + panelH / 2, panelW, panelH, 0x0d0d1a, 0.92);
+      this.add.graphics().lineStyle(1, 0xffd700, 0.3).strokeRect(panelX - panelW / 2, panelTop, panelW, panelH);
+      this.add.text(panelX, panelTop + 16, 'BEST RUNS', {
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
       }).setOrigin(0.5);
-      scores.slice(0, 6).forEach((s, i) => {
-        const col = s.won ? '#4caf50' : '#e94560';
-        this.add.text(panelX - 128, 60 + i * 26,
-          `${s.won ? '✓' : '✗'} ${s.hero.slice(0,7).padEnd(7)} A${s.act}F${s.floor}`,
-          { fontFamily: '"Press Start 2P"', fontSize: '11px', color: col }
+
+      const MOOD_COLORS = { feisty: '#e94560', cozy: '#4caf50', cunning: '#4fc3f7', feral: '#ce93d8' };
+
+      scores.slice(0, 5).forEach((s, i) => {
+        const rowY = panelTop + 36 + i * ROW_H;
+        const resultCol = s.won ? '#4caf50' : '#e94560';
+        const moodCol = MOOD_COLORS[s.personality] || '#aaaaaa';
+        const scoreVal = s.score != null ? s.score : (s.act - 1) * 1000 + s.floor * 100;
+        const relicStr = s.relics && s.relics.length > 0
+          ? s.relics.slice(0, 3).join(' ').replace(/_/g, ' ')
+          : '—';
+
+        // Row 1: result + hero + act/floor + score
+        this.add.text(panelX - panelW / 2 + 8, rowY,
+          `${s.won ? '✓' : '✗'} ${s.hero.slice(0, 6).padEnd(6)} A${s.act}F${String(s.floor).padEnd(2)} ${String(scoreVal).padStart(5)}pts`,
+          { fontFamily: '"Press Start 2P"', fontSize: '9px', color: resultCol }
+        );
+        // Row 2: personality + relics
+        this.add.text(panelX - panelW / 2 + 8, rowY + 18,
+          `${(s.personality || '—').padEnd(8)} ${relicStr}`,
+          { fontFamily: '"Press Start 2P"', fontSize: '8px', color: moodCol }
         );
       });
     }

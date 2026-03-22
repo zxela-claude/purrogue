@@ -91,15 +91,53 @@ const EVENTS = [
     }}
   ]},
   { title: 'The Sunny Spot', desc: 'A perfect patch of warm sunlight filters through a broken window.', choices: [
-    { label: () => {}, label2: 'Rest and heal', action: gs => {
+    { label: 'Rest here (+10 HP)', action: gs => {
       const bonus = gs.getDominantPersonality() === 'cozy' ? 5 : 0;
       gs.heal(10 + bonus);
     }},
-    { label: 'Skip it (draw 1 extra card next combat)', action: gs => { gs.pendingEnergyBonus = (gs.pendingEnergyBonus || 0) + 0; gs._pendingDrawBonus = (gs._pendingDrawBonus || 0) + 1; gs.save(); } }
-  ].map(c => c.label2 ? { ...c, label: `Rest here (+10 HP${''})`, action: gs => {
-      const bonus = gs.getDominantPersonality() === 'cozy' ? 5 : 0;
-      gs.heal(10 + bonus);
-  }} : c)}
+    { label: 'Skip it (draw 1 extra card next combat)', action: gs => { gs._pendingDrawBonus = (gs._pendingDrawBonus || 0) + 1; gs.save(); } }
+  ]},
+  { title: 'Shiny Vending Machine', desc: 'An ancient machine hums. It wants gold.', choices: [
+    { label: 'Pay 50g (random relic)', action: gs => {
+      if (gs.gold >= 50) {
+        gs.spendGold(50);
+        const available = RELICS.filter(r => !gs.relics.includes(r.id));
+        if (available.length > 0) gs.addRelic(available[Math.floor(Math.random() * available.length)].id);
+      }
+    }},
+    { label: 'Smash it! (10 dmg to you, 3 gold)', action: gs => { gs.takeDamage(10); gs.gainGold(3); } }
+  ]},
+  { title: 'Haunted Litter Box', desc: 'Something stirs within. Dare you look?', choices: [
+    { label: 'Investigate (upgrade 2 random cards)', action: gs => {
+      const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
+      const picks = upgradeable.sort(() => Math.random() - 0.5).slice(0, 2);
+      picks.forEach(id => gs.upgradeCard(id, gs.getDominantPersonality()));
+    }},
+    { label: 'Walk away (+20 gold)', action: gs => { gs.gainGold(20); } }
+  ]},
+  { title: 'Travelling Merchant', desc: 'A robed figure sells forbidden knowledge.', choices: [
+    { label: 'Buy a curse (-20g, -1 max HP, draw +1/turn)', action: gs => {
+      if (gs.gold >= 20) { gs.spendGold(20); gs.maxHp = Math.max(1, gs.maxHp - 1); gs.pendingDrawBonus = (gs.pendingDrawBonus || 0) + 1; }
+    }},
+    { label: 'Buy a tonic (-15g, +20 HP)', action: gs => {
+      if (gs.gold >= 15) { gs.spendGold(15); gs.heal(20); }
+    }},
+    { label: 'Ignore (nothing)', action: gs => {} }
+  ]},
+  { title: 'Thunderstorm', desc: 'Lightning crackles. The air smells electric.', choices: [
+    { label: 'Channel it (+2 Strong next combat)', action: gs => { gs.pendingStatusBonus = gs.pendingStatusBonus || {}; gs.pendingStatusBonus.strong = (gs.pendingStatusBonus.strong || 0) + 2; } },
+    { label: 'Shelter (nothing bad happens)', action: gs => {} }
+  ]},
+  { title: 'The Doppelganger', desc: 'A cat that looks exactly like you blocks the path.', choices: [
+    { label: 'Fight! (take 15 dmg, gain 40 gold)', action: gs => { gs.takeDamage(15); gs.gainGold(40); } },
+    { label: 'Befriend it (lose 20g, copy its relic)', action: gs => {
+      if (gs.gold >= 20) {
+        gs.spendGold(20);
+        const available = RELICS.filter(r => !gs.relics.includes(r.id));
+        if (available.length > 0) gs.addRelic(available[Math.floor(Math.random() * available.length)].id);
+      }
+    }}
+  ]}
 ];
 
 export class EventScene extends Phaser.Scene {

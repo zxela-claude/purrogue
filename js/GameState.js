@@ -160,6 +160,13 @@ export class GameState {
     } catch(e) { return null; }
   }
 
+  computeScore(won) {
+    const base = (this.act - 1) * 1000 + this.floor * 100;
+    const killBonus = (this.runStats.enemies_killed || 0) * 25;
+    const winBonus = won ? 500 : 0;
+    return base + killBonus + winBonus;
+  }
+
   saveScore(won) {
     const scores = GameState.getScores();
     scores.push({
@@ -168,10 +175,12 @@ export class GameState {
       act: this.act,
       floor: this.floor,
       personality: this.getDominantPersonality(),
+      relics: [...this.relics],
+      score: this.computeScore(won),
       stats: this.runStats,
       date: new Date().toISOString()
     });
-    scores.sort((a,b) => (b.act - a.act) || (b.floor - a.floor));
+    scores.sort((a,b) => (b.score ?? 0) - (a.score ?? 0));
     try {
       localStorage.setItem(SCORES_KEY, JSON.stringify(scores.slice(0, 20)));
     } catch(e) {}
