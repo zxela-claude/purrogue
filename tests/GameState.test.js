@@ -172,12 +172,14 @@ describe('GameState', () => {
     });
 
     it('locks feisty mood at threshold', () => {
-      for (let i = 0; i < 10; i++) gs.trackPersonality('attack');
+      gs.personality.feralDeclined = true;
+      for (let i = 0; i < 15; i++) gs.trackPersonality('attack');
       expect(gs.personality.mood).toBe('feisty');
     });
 
     it('mood does not change once locked', () => {
-      for (let i = 0; i < 10; i++) gs.trackPersonality('attack');
+      gs.personality.feralDeclined = true;
+      for (let i = 0; i < 15; i++) gs.trackPersonality('attack');
       for (let i = 0; i < 15; i++) gs.trackPersonality('skill');
       expect(gs.personality.mood).toBe('feisty'); // locked, not cozy
     });
@@ -208,12 +210,12 @@ describe('GameState', () => {
     });
 
     it('locks cozy when cozy dominant at threshold', () => {
-      for (let i = 0; i < 10; i++) gs.trackPersonality('skill');
+      for (let i = 0; i < 15; i++) gs.trackPersonality('skill');
       expect(gs.personality.mood).toBe('cozy');
     });
 
     it('locks cunning when cunning dominant at threshold', () => {
-      for (let i = 0; i < 10; i++) gs.trackPersonality('power');
+      for (let i = 0; i < 15; i++) gs.trackPersonality('power');
       expect(gs.personality.mood).toBe('cunning');
     });
   });
@@ -225,7 +227,8 @@ describe('GameState', () => {
     });
 
     it('returns locked mood when set', () => {
-      for (let i = 0; i < 10; i++) gs.trackPersonality('attack');
+      gs.personality.feralDeclined = true;
+      for (let i = 0; i < 15; i++) gs.trackPersonality('attack');
       expect(gs.getDominantPersonality()).toBe('feisty');
     });
 

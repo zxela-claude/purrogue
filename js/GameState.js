@@ -102,7 +102,7 @@ export class GameState {
     if (this.personality.feral) return;
     if (this.personality.feralDeclined) {
       // Still track but cap feisty below warning threshold
-      if (cardType === 'attack') this.personality.feisty = Math.min(this.personality.feisty + 1, FERAL_WARNING_THRESHOLD - 1);
+      if (cardType === 'attack') this.personality.feisty = Math.min(this.personality.feisty + 1, PERSONALITY_THRESHOLD);
       else if (cardType === 'skill') this.personality.cozy++;
       else if (cardType === 'power') this.personality.cunning++;
     } else {

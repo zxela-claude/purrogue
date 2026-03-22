@@ -11,7 +11,7 @@ export const PERSONALITY = {
   FERAL: 'feral'
 };
 
-export const PERSONALITY_THRESHOLD = 10;
+export const PERSONALITY_THRESHOLD = 15;
 export const FERAL_WARNING_THRESHOLD = 15;
 
 export const NODE_TYPES = {
