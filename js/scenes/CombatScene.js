@@ -102,20 +102,20 @@ export class CombatScene extends Phaser.Scene {
     }
   }
 
-  _showDamageNumber(x, y, amount, color = '#ff4444') {
-    const txt = this.add.text(x, y, `-${amount}`, {
+  _spawnFloatingText(x, y, text, color) {
+    const txt = this.add.text(x, y, text, {
       fontFamily: '"Press Start 2P"', fontSize: '20px', color,
       stroke: '#000000', strokeThickness: 3
     }).setOrigin(0.5).setDepth(40);
-    this.tweens.add({ targets: txt, y: y - 80, alpha: 0, duration: 900, ease: 'Power2', onComplete: () => txt.destroy() });
+    this.tweens.add({ targets: txt, y: y - 60, alpha: 0, duration: 800, ease: 'Power2', onComplete: () => txt.destroy() });
+  }
+
+  _showDamageNumber(x, y, amount, color = '#e94560') {
+    this._spawnFloatingText(x, y, `-${amount}`, color);
   }
 
   _showHealNumber(x, y, amount) {
-    const txt = this.add.text(x, y, `+${amount}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#4caf50',
-      stroke: '#000000', strokeThickness: 3
-    }).setOrigin(0.5).setDepth(40);
-    this.tweens.add({ targets: txt, y: y - 60, alpha: 0, duration: 800, ease: 'Power2', onComplete: () => txt.destroy() });
+    this._spawnFloatingText(x, y, `+${amount}`, '#4caf50');
   }
 
   _showTurnBanner(label, color) {
@@ -131,6 +131,23 @@ export class CombatScene extends Phaser.Scene {
       onComplete: () => { txt.destroy(); bg.destroy(); }
     });
     this.tweens.add({ targets: [txt, bg], alpha: 1, duration: 180 });
+  }
+
+  _showPersonalityToast(label, colorHex) {
+    const W = SCREEN_WIDTH;
+    const colorNum = Phaser.Display.Color.HexStringToColor(colorHex).color;
+    const bg = this.add.rectangle(W/2, 80, 360, 40, 0x000000, 0.8).setDepth(38);
+    const border = this.add.graphics().setDepth(38);
+    border.lineStyle(2, colorNum);
+    border.strokeRect(W/2 - 180, 60, 360, 40);
+    const txt = this.add.text(W/2, 80, label, {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: colorHex,
+      stroke: '#000000', strokeThickness: 2
+    }).setOrigin(0.5).setDepth(39);
+    this.tweens.add({
+      targets: [txt, bg, border], alpha: 0, duration: 600, delay: 2000, ease: 'Power2',
+      onComplete: () => { txt.destroy(); bg.destroy(); border.destroy(); }
+    });
   }
 
   // ── UI Layout ───────────────────────────────────────────────────────────────
@@ -663,9 +680,21 @@ export class CombatScene extends Phaser.Scene {
     this.hand.splice(handIndex, 1);
     this.discardPile.push(cardId);
 
+    const prevPersonality = this.gs.getDominantPersonality();
+    const prevMoodLocked = this.gs.personality.mood;
     this.gs.trackPersonality(card.type);
     this.gs.runStats.cards_played++;
     this.lastPlayedCard = card;
+
+    // NAN-48: show toast when personality changes this turn
+    const newPersonality = this.gs.getDominantPersonality();
+    const newMoodLocked = this.gs.personality.mood;
+    if (newPersonality !== prevPersonality || newMoodLocked !== prevMoodLocked) {
+      const moodInfo = newPersonality ? PersonalitySystem.getMoodDescription(newPersonality) : null;
+      if (moodInfo) {
+        this._showPersonalityToast(`\u2192 ${moodInfo.name}`, moodInfo.color);
+      }
+    }
 
     const prevHp = this.gs.hp;
     const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
@@ -706,6 +735,7 @@ export class CombatScene extends Phaser.Scene {
     if (dmg > 0) {
       this._flashAttack();
       this._showDamageNumber(SCREEN_WIDTH/2, 220, dmg);
+      this.cameras.main.shake(100, 0.005);
     }
     // Show heal if hp increased
     if (this.gs.hp > prevHp) {
@@ -819,7 +849,13 @@ export class CombatScene extends Phaser.Scene {
       if (result.type === 'attack') {
         this.gs.runStats.damage_taken += result.amount;
         const dmgTaken = prevHp - this.gs.hp;
-        if (dmgTaken > 0) this._showDamageNumber(100, SCREEN_HEIGHT - 240, dmgTaken, '#ff8888');
+        if (dmgTaken > 0) {
+          this._showDamageNumber(100, SCREEN_HEIGHT - 240, dmgTaken, '#ff8888');
+          this.cameras.main.shake(150, 0.008);
+          // Hit-flash on player HP bar area
+          const flashRect = this.add.rectangle(170, SCREEN_HEIGHT - 173, 200, 14, 0xffffff, 0.85).setDepth(5);
+          this.tweens.add({ targets: flashRect, alpha: 0, duration: 200, onComplete: () => flashRect.destroy() });
+        }
       }
 
       if (this.enemySprite?.type === 'Image' || this.enemySprite?.type === 'Text') {
@@ -910,6 +946,11 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.enemySprite) {
       this.tweens.add({ targets: this.enemySprite, alpha: 0.2, duration: 75, yoyo: true, repeat: 1 });
+      // Hit-flash tint: white then back to normal over ~200ms
+      if (this.enemySprite.setTint) {
+        this.enemySprite.setTint(0xffffff);
+        this.time.delayedCall(200, () => { if (this.enemySprite?.clearTint) this.enemySprite.clearTint(); });
+      }
     }
   }
 
