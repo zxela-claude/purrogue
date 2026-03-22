@@ -927,7 +927,7 @@ export class CombatScene extends Phaser.Scene {
         if (this.isBoss && this.gs.act >= 3) {
           this.gs.saveScore(true);
           this.gs.endRun();
-          this.scene.start('GameOverScene', { won: true });
+          this.scene.start('RunSummaryScene', { won: true });
         } else if (this.isBoss) {
           this.gs.act++;
           this.gs.map = null;
@@ -955,37 +955,124 @@ export class CombatScene extends Phaser.Scene {
   }
 
   _showCardTooltip(card, cost, x, y) {
-    const W = 200, H = 270;
+    // Determine if this card is already upgraded
+    const isUpgraded = card.id ? /_u(_\w+)?$/.test(card.id) : false;
+
+    // Find upgrade variant: prefer mood-specific, fall back to default
+    const mood = this.gs.getDominantPersonality();
+    let upgradeData = null;
+    let upgradeLabel = null;
+    if (!isUpgraded && card.upgrades) {
+      const moodUpgrade = mood && card.upgrades[mood];
+      const defaultUpgrade = card.upgrades.default;
+      upgradeData = moodUpgrade || defaultUpgrade || null;
+      if (upgradeData) {
+        upgradeLabel = moodUpgrade ? `Upgraded (${mood}):` : 'Upgraded:';
+      }
+    }
+
+    // Build upgrade description by diffing effects
+    let upgradeDesc = null;
+    if (upgradeData && upgradeData.effects) {
+      const baseEffects  = card.effects || [];
+      const upgEffects   = upgradeData.effects;
+      const parts = [];
+
+      upgEffects.forEach((ue, i) => {
+        const be = baseEffects[i];
+        if (!be) { parts.push(`+${ue.type}`); return; }
+        const diff = ue.value - be.value;
+        if (diff === 0) return;
+        const sign = diff > 0 ? '+' : '';
+        const typeName = ue.type === 'damage' ? 'dmg'
+          : ue.type === 'block' ? 'block'
+          : ue.type === 'draw' ? 'draw'
+          : ue.type === 'apply_status' ? ue.status
+          : ue.type === 'apply_self_status' ? ue.status
+          : ue.type === 'gain_energy' ? 'energy'
+          : ue.type === 'heal' ? 'heal'
+          : ue.type;
+        parts.push(`${sign}${diff} ${typeName}`);
+      });
+      if (parts.length > 0) upgradeDesc = parts.join(', ');
+      else upgradeDesc = 'Improved effect';
+    }
+
+    const hasUpgrade = upgradeData && upgradeDesc;
+    const W = 220;
+    const baseH = 290;
+    const H = hasUpgrade ? baseH + 68 : baseH;
+
     const clampedX = Math.max(W / 2 + 10, Math.min(SCREEN_WIDTH - W / 2 - 10, x));
     const clampedY = Math.max(H / 2 + 10, Math.min(SCREEN_HEIGHT - H / 2 - 10, y));
 
     const tip = this.add.container(clampedX, clampedY).setDepth(100);
     const typeColor = CARD_TYPE_COLORS[card.type] || 0x666666;
 
-    const bg = this.add.rectangle(0, 0, W, H, 0x0a0a1e);
+    // Panel background + border
+    const bg = this.add.rectangle(0, 0, W, H, 0x08081a);
     const border = this.add.graphics();
     border.lineStyle(3, typeColor);
     border.strokeRect(-W / 2, -H / 2, W, H);
+
+    // Type banner
     const typeBanner = this.add.rectangle(0, -H / 2 + 18, W, 32, typeColor, 0.3);
     const typeLabel = this.add.text(0, -H / 2 + 18, card.type.toUpperCase(), {
       fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffffff'
     }).setOrigin(0.5);
+
+    // Card name
     const nameText = this.add.text(0, -H / 2 + 50, card.name, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700',
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: isUpgraded ? '#ffd700' : '#f0d080',
       wordWrap: { width: W - 20 }, align: 'center'
     }).setOrigin(0.5);
-    const costLabel = this.add.text(0, -H / 2 + 78, `Cost: ${cost} ⚡`, {
+
+    // Cost
+    const costLabel = this.add.text(0, -H / 2 + 76, `Cost: ${cost} ⚡`, {
       fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffcc44'
     }).setOrigin(0.5);
+
+    // Separator
     const sep = this.add.graphics();
     sep.lineStyle(1, 0x333355);
-    sep.lineBetween(-W / 2 + 12, -H / 2 + 96, W / 2 - 12, -H / 2 + 96);
-    const descText = this.add.text(0, 10, card.description, {
+    sep.lineBetween(-W / 2 + 12, -H / 2 + 94, W / 2 - 12, -H / 2 + 94);
+
+    // Description
+    const descText = this.add.text(0, -H / 2 + 130, card.description, {
       fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#cccccc',
       wordWrap: { width: W - 24 }, align: 'center'
     }).setOrigin(0.5);
 
-    tip.add([bg, border, typeBanner, typeLabel, nameText, costLabel, sep, descText]);
+    // Already-upgraded badge
+    const items = [bg, border, typeBanner, typeLabel, nameText, costLabel, sep, descText];
+
+    if (isUpgraded) {
+      const upgBadge = this.add.text(0, H / 2 - 22, '✦ UPGRADED', {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffd700'
+      }).setOrigin(0.5);
+      items.push(upgBadge);
+    }
+
+    // Upgrade preview section
+    if (hasUpgrade) {
+      const dividerY = H / 2 - 72;
+      const upgSep = this.add.graphics();
+      upgSep.lineStyle(1, 0xffd700, 0.4);
+      upgSep.lineBetween(-W / 2 + 12, dividerY, W / 2 - 12, dividerY);
+
+      const upgBg = this.add.rectangle(0, H / 2 - 38, W, 64, 0x1a1a08, 0.9);
+      const upgHeader = this.add.text(0, dividerY + 12, upgradeLabel, {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#ffd700'
+      }).setOrigin(0.5);
+      const upgDescText = this.add.text(0, dividerY + 34, upgradeDesc, {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffe080',
+        wordWrap: { width: W - 24 }, align: 'center'
+      }).setOrigin(0.5);
+
+      items.push(upgSep, upgBg, upgHeader, upgDescText);
+    }
+
+    tip.add(items);
     tip.setAlpha(0);
     this.tweens.add({ targets: tip, alpha: 1, duration: 120 });
     return tip;
@@ -1008,6 +1095,6 @@ export class CombatScene extends Phaser.Scene {
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'YOU DIED  😿', {
       fontFamily: '"Press Start 2P"', fontSize: '30px', color: '#e94560'
     }).setOrigin(0.5).setDepth(21);
-    this.time.delayedCall(2000, () => this.scene.start('GameOverScene', { won: false }));
+    this.time.delayedCall(2000, () => this.scene.start('RunSummaryScene', { won: false }));
   }
 }
