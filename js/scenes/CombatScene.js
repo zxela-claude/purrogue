@@ -229,12 +229,185 @@ export class CombatScene extends Phaser.Scene {
     this.deckCountText = this.add.text(20, H - 32, '', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888' });
     this.discardCountText = this.add.text(200, H - 32, '', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888' });
 
+    // View Deck button — small, unobtrusive, bottom-center
+    const deckBtnBg = this.add.rectangle(W / 2, H - 20, 140, 28, 0x111122).setDepth(6);
+    this.add.graphics().setDepth(6).lineStyle(1, 0x4fc3f7, 0.6).strokeRect(W / 2 - 70, H - 34, 140, 28);
+    const deckBtnLabel = this.add.text(W / 2, H - 20, 'VIEW DECK [D]', {
+      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#4fc3f7'
+    }).setOrigin(0.5).setDepth(7);
+    const deckBtnZone = this.add.rectangle(W / 2, H - 20, 140, 28, 0xffffff, 0)
+      .setDepth(8).setInteractive({ useHandCursor: true });
+    deckBtnZone.on('pointerover', () => deckBtnBg.setFillStyle(0x1a2244));
+    deckBtnZone.on('pointerout', () => deckBtnBg.setFillStyle(0x111122));
+    deckBtnZone.on('pointerdown', () => this._showDeckOverlay());
+
+    // Keyboard shortcut D to open deck view
+    this.input.keyboard.on('keydown-D', () => this._showDeckOverlay());
+
     // Act indicator top-left
     this.add.text(20, 22, `ACT ${this.gs.act}${this.isBoss ? ' — BOSS' : this.isElite ? ' — ELITE' : ''}`, {
       fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#666666'
     });
 
     this._updateStatsDisplay();
+  }
+
+  _showDeckOverlay() {
+    // Don't open if already open
+    if (this._deckOverlay) return;
+
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    const gs = this.gs;
+
+    // Full deck = draw pile + discard pile + current hand
+    const fullDeck = [...this.drawPile, ...this.discardPile, ...this.hand];
+
+    const overlay = this.add.container(0, 0).setDepth(200);
+    this._deckOverlay = overlay;
+
+    // Dark backdrop — click outside to close
+    const backdrop = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.75)
+      .setInteractive();
+    backdrop.on('pointerdown', () => this._closeDeckOverlay());
+    overlay.add(backdrop);
+
+    // Panel
+    const panelW = Math.min(W - 60, 760);
+    const panelH = H - 80;
+    const panelX = W / 2;
+    const panelY = H / 2;
+    const panel = this.add.rectangle(panelX, panelY, panelW, panelH, 0x0a0a1e);
+    const panelBorder = this.add.graphics();
+    panelBorder.lineStyle(2, 0x4fc3f7);
+    panelBorder.strokeRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH);
+    overlay.add([panel, panelBorder]);
+
+    // Title
+    const title = this.add.text(panelX, panelY - panelH / 2 + 22, `FULL DECK — ${fullDeck.length} cards`, {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#4fc3f7',
+      stroke: '#000000', strokeThickness: 1
+    }).setOrigin(0.5);
+    overlay.add(title);
+
+    const subTitle = this.add.text(panelX, panelY - panelH / 2 + 44, 'Draw + Discard + Hand  |  [ESC] or click outside to close', {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#666666'
+    }).setOrigin(0.5);
+    overlay.add(subTitle);
+
+    // Separator
+    const sep = this.add.graphics();
+    sep.lineStyle(1, 0x222244);
+    sep.lineBetween(panelX - panelW / 2 + 16, panelY - panelH / 2 + 56, panelX + panelW / 2 - 16, panelY - panelH / 2 + 56);
+    overlay.add(sep);
+
+    // Card list — paginated rows
+    const CARD_TYPE_COLORS_LOCAL = { attack: '#e94560', skill: '#4fc3f7', power: '#9b59b6' };
+    const rowH = 34;
+    const cols = 3;
+    const startY = panelY - panelH / 2 + 74;
+    const colW = Math.floor((panelW - 32) / cols);
+    const maxRows = Math.floor((panelH - 120) / rowH);
+    const maxVisible = maxRows * cols;
+    this._deckPage = this._deckPage || 0;
+    const page = this._deckPage;
+    const pageSlice = fullDeck.slice(page * maxVisible, (page + 1) * maxVisible);
+    const totalPages = Math.ceil(fullDeck.length / maxVisible);
+
+    pageSlice.forEach((cardId, i) => {
+      const card = this.cardDb[cardId];
+      if (!card) return;
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cx = panelX - panelW / 2 + 16 + col * colW;
+      const cy = startY + row * rowH;
+
+      const typeCol = CARD_TYPE_COLORS_LOCAL[card.type] || '#888888';
+      const isUpgraded = cardId.includes('_u');
+      const nameColor = isUpgraded ? '#ffd700' : '#f0ead6';
+
+      // Type pip
+      const pip = this.add.rectangle(cx + 6, cy + rowH / 2 - 1, 10, 10, Phaser.Display.Color.HexStringToColor(typeCol).color);
+      overlay.add(pip);
+
+      // Card name
+      const nameText = this.add.text(cx + 18, cy + 4, card.name + (isUpgraded ? '+' : ''), {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: nameColor
+      });
+      overlay.add(nameText);
+
+      // Stats line: cost | type | damage/block value
+      const effects = card.effects || [];
+      const dmgEffect = effects.find(e => e.type === 'damage');
+      const blockEffect = effects.find(e => e.type === 'block');
+      const statParts = [`Cost:${card.cost ?? '?'}`, card.type.toUpperCase()];
+      if (dmgEffect) statParts.push(`DMG:${dmgEffect.value}`);
+      if (blockEffect) statParts.push(`BLK:${blockEffect.value}`);
+
+      const statText = this.add.text(cx + 18, cy + 18, statParts.join('  '), {
+        fontFamily: '"Press Start 2P"', fontSize: '7px', color: typeCol
+      });
+      overlay.add(statText);
+
+      // Row separator
+      if (row > 0) {
+        const rowSep = this.add.graphics();
+        rowSep.lineStyle(1, 0x111133);
+        rowSep.lineBetween(cx, cy, cx + colW - 4, cy);
+        overlay.add(rowSep);
+      }
+    });
+
+    // Pagination controls
+    if (totalPages > 1) {
+      const pageLabel = this.add.text(panelX, panelY + panelH / 2 - 38, `Page ${page + 1} / ${totalPages}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888'
+      }).setOrigin(0.5);
+      overlay.add(pageLabel);
+
+      if (page > 0) {
+        const prevBtn = this.add.text(panelX - 100, panelY + panelH / 2 - 38, '< PREV', {
+          fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4fc3f7'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        prevBtn.on('pointerdown', () => { this._deckPage--; this._closeDeckOverlay(); this._showDeckOverlay(); });
+        overlay.add(prevBtn);
+      }
+      if (page < totalPages - 1) {
+        const nextBtn = this.add.text(panelX + 100, panelY + panelH / 2 - 38, 'NEXT >', {
+          fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4fc3f7'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        nextBtn.on('pointerdown', () => { this._deckPage++; this._closeDeckOverlay(); this._showDeckOverlay(); });
+        overlay.add(nextBtn);
+      }
+    }
+
+    // Close button
+    const closeBtn = this.add.text(panelX, panelY + panelH / 2 - 16, '[ CLOSE ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560'
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => this._closeDeckOverlay());
+    overlay.add(closeBtn);
+
+    // Escape key to close
+    this._deckEscKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this._deckEscKey.once('down', () => this._closeDeckOverlay());
+
+    // Fade-in
+    overlay.setAlpha(0);
+    this.tweens.add({ targets: overlay, alpha: 1, duration: 140 });
+  }
+
+  _closeDeckOverlay() {
+    if (!this._deckOverlay) return;
+    const overlay = this._deckOverlay;
+    this._deckOverlay = null;
+    if (this._deckEscKey) {
+      this._deckEscKey.removeAllListeners();
+      this._deckEscKey = null;
+    }
+    this.tweens.add({
+      targets: overlay, alpha: 0, duration: 120,
+      onComplete: () => overlay.destroy(true)
+    });
   }
 
   _updateStatsDisplay() {
@@ -260,11 +433,14 @@ export class CombatScene extends Phaser.Scene {
       this.enemyStatusContainer.add(badge);
     });
 
-    // Enemy intent
-    const move = this.enemy.movePattern[this.enemy.moveIndex % this.enemy.movePattern.length];
+    // Enemy intent — use threshold pattern when below HP threshold
+    const _tb = this.enemy.thresholdBehavior;
+    const _useThreshold = _tb && (this.enemy.hp / this.enemy.maxHp) < _tb.below;
+    const _intentPattern = _useThreshold ? _tb.pattern : this.enemy.movePattern;
+    const move = _intentPattern[this.enemy.moveIndex % _intentPattern.length];
     const intentIcon = move.type === 'attack' ? '⚔️' : move.type === 'block' ? '🛡' : '✨';
     const intentColor = move.type === 'attack' ? 0xe94560 : move.type === 'block' ? 0x4fc3f7 : 0x9b59b6;
-    const intentLabel = `${intentIcon} ${move.desc}`;
+    const intentLabel = (_useThreshold ? '⚠️ ' : '') + `${intentIcon} ${move.desc}`;
 
     this.enemyIntentContainer.removeAll(true);
     const pillW = Math.min(260, intentLabel.length * 10 + 32);
