@@ -1,6 +1,7 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, HERO_CLASSES } from '../constants.js';
 import { GameState } from '../GameState.js';
 import { DeckCode } from '../DeckCode.js';
+import { MusicManager } from '../MusicManager.js';
 
 const HERO_FLAVOUR = {
   WARRIOR: 'Tank & smash',
@@ -14,6 +15,10 @@ export class MenuScene extends Phaser.Scene {
   create() {
     const gs = this.registry.get('gameState') || new GameState();
     this.registry.set('gameState', gs);
+
+    // Background music (NAN-33): menu ambient pattern
+    const music = MusicManager.getInstance(this);
+    music.play('menu');
 
     const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
 

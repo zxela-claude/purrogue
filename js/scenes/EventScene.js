@@ -41,7 +41,65 @@ const EVENTS = [
   { title: 'Catnip Field', desc: 'A massive field of catnip.', choices: [
     { label: 'Roll in it! (+1 energy next combat)', action: gs => { gs.pendingEnergyBonus = (gs.pendingEnergyBonus || 0) + 1; } },
     { label: 'Resist (+3 max HP)', action: gs => { gs.maxHp += 3; gs.heal(3); } }
-  ]}
+  ]},
+  { title: 'The Yarn Tangle', desc: 'A glorious tangle of yarn sprawls across the path. Something glints inside...', choices: [
+    { label: 'Untangle it (gain relic, lose 1 card)', action: gs => {
+      const relicPool = ['laser_toy','bell_collar','toy_mouse','lucky_paw','claw_sharpener','warm_blanket'];
+      gs.addRelic(relicPool[Math.floor(Math.random() * relicPool.length)]);
+      if (gs.deck.length > 1) {
+        const idx = Math.floor(Math.random() * gs.deck.length);
+        gs.deck.splice(idx, 1);
+        gs.save();
+      }
+    }},
+    { label: 'Grab a strand (+10 gold)', action: gs => { gs.gold += 10; gs.save(); } },
+    { label: 'Walk past (nothing)', action: gs => {} }
+  ]},
+  { title: 'Catnip Stash', desc: 'A hidden cache of premium catnip. The scent is overwhelming.', choices: [
+    { label: 'Sniff it (+1 energy next combat)', action: gs => { gs.pendingEnergyBonus = (gs.pendingEnergyBonus || 0) + 1; } },
+    { label: 'Pocket some (add Catnip Surge card)', action: gs => { gs.addCard('catnip_surge'); } },
+    { label: 'Leave it (nothing)', action: gs => {} }
+  ]},
+  { title: "The Mysterious Box", desc: "A cardboard box sits in the middle of the path. It could contain anything.", choices: [
+    { label: "Open it (random: good or bad)", action: gs => {
+      const outcomes = [
+        gs2 => { gs2.heal(20); },
+        gs2 => { gs2.gold += 30; gs2.save(); },
+        gs2 => { gs2.addRelic('lucky_paw'); },
+        gs2 => { gs2.hp = Math.max(1, gs2.hp - 15); gs2.save(); },
+        gs2 => {
+          if (gs2.deck.length > 1) {
+            gs2.deck.splice(Math.floor(Math.random() * gs2.deck.length), 1);
+            gs2.save();
+          }
+        },
+        gs2 => { gs2.pendingEnergyBonus = (gs2.pendingEnergyBonus || 0) + 2; }
+      ];
+      outcomes[Math.floor(Math.random() * outcomes.length)](gs);
+    }},
+    { label: "Leave it (+15 gold)", action: gs => { gs.gold += 15; gs.save(); } }
+  ]},
+  { title: 'Rival Cat Encounter', desc: 'A battle-scarred stray blocks your path, eyes locked on yours.', choices: [
+    { label: 'Fight! (+25 gold, -8 HP)', action: gs => {
+      gs.gold += 25; gs.save();
+      gs.hp = Math.max(1, gs.hp - 8); gs.save();
+    }},
+    { label: 'Hiss and flee (nothing)', action: gs => {} },
+    { label: 'Trade scraps (+1 card)', action: gs => {
+      const cardPool = ['w_strike','m_zap','r_shiv','w_defend','m_frost','r_dodge'];
+      gs.addCard(cardPool[Math.floor(Math.random() * cardPool.length)]);
+    }}
+  ]},
+  { title: 'The Sunny Spot', desc: 'A perfect patch of warm sunlight filters through a broken window.', choices: [
+    { label: () => {}, label2: 'Rest and heal', action: gs => {
+      const bonus = gs.getDominantPersonality() === 'cozy' ? 5 : 0;
+      gs.heal(10 + bonus);
+    }},
+    { label: 'Skip it (draw 1 extra card next combat)', action: gs => { gs.pendingEnergyBonus = (gs.pendingEnergyBonus || 0) + 0; gs._pendingDrawBonus = (gs._pendingDrawBonus || 0) + 1; gs.save(); } }
+  ].map(c => c.label2 ? { ...c, label: `Rest here (+10 HP${''})`, action: gs => {
+      const bonus = gs.getDominantPersonality() === 'cozy' ? 5 : 0;
+      gs.heal(10 + bonus);
+  }} : c)}
 ];
 
 export class EventScene extends Phaser.Scene {
