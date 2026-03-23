@@ -125,6 +125,15 @@ export class MenuScene extends Phaser.Scene {
       });
     });
 
+    // ── Settings gear ─────────────────────────────────────────────────────────
+    this.add.text(24, H - 24, '⚙', { fontSize: '24px', color: '#444444' })
+      .setOrigin(0, 1).setInteractive({ useHandCursor: true })
+      .on('pointerover', function() { this.setColor('#aaaaaa'); })
+      .on('pointerout',  function() { this.setColor('#444444'); })
+      .on('pointerdown', () => {
+        if (!this.scene.isActive('SettingsScene')) this.scene.launch('SettingsScene');
+      });
+
     // ── Import deck code ──────────────────────────────────────────────────────
     this.add.text(W/2, H - 52, '[ IMPORT DECK CODE ]', {
       fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#444444'
