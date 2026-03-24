@@ -174,7 +174,7 @@ export const ENEMIES = {
     }
   },
   vacuum_boss: {
-    id: 'vacuum_boss', name: 'The Vacuum', hp: 180, maxHp: 180, block: 0, statuses: {},
+    id: 'vacuum_boss', name: 'The Vacuum', hp: 210, maxHp: 210, block: 0, statuses: {},
     act: 2, elite: false, boss: true,
     moveIndex: 0,
     movePattern: [
@@ -196,7 +196,7 @@ export const ENEMIES = {
     }
   },
   the_vet: {
-    id: 'the_vet', name: 'The Vet', hp: 200, maxHp: 200, block: 0, statuses: {},
+    id: 'the_vet', name: 'The Vet', hp: 250, maxHp: 250, block: 0, statuses: {},
     act: 3, elite: false, boss: true,
     moveIndex: 0,
     movePattern: [

@@ -16,6 +16,9 @@ export class CardEngine {
     // Personality modifiers
     if (personality === 'feisty' && effect.type === 'damage') value = Math.ceil(value * 1.15);
     if (personality === 'feral' && effect.type === 'damage') value = value * 2;
+
+    // Cursed Collar: double damage (doesn't stack with Feral — use max multiplier instead of product)
+    if (relics.includes('cursed_collar') && personality !== 'feral' && effect.type === 'damage') value = value * 2;
     if (personality === 'cozy' && effect.type === 'block') {
       player.hp = Math.min(player.hp + 1, player.maxHp);
     }
