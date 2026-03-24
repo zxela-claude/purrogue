@@ -12,6 +12,7 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT } from './constants.js';
 
 const config = {
   type: Phaser.AUTO,
+  parent: 'game-container',
   width: SCREEN_WIDTH,
   height: SCREEN_HEIGHT,
   backgroundColor: '#1a1a2e',
