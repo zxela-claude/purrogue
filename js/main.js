@@ -7,6 +7,7 @@ import { EventScene } from './scenes/EventScene.js';
 import { RewardScene } from './scenes/RewardScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
 import { RunSummaryScene } from './scenes/RunSummaryScene.js';
+import { SettingsScene } from './scenes/SettingsScene.js';
 import { SCREEN_WIDTH, SCREEN_HEIGHT } from './constants.js';
 
 const config = {
@@ -14,7 +15,7 @@ const config = {
   width: SCREEN_WIDTH,
   height: SCREEN_HEIGHT,
   backgroundColor: '#1a1a2e',
-  scene: [BootScene, MenuScene, MapScene, CombatScene, ShopScene, EventScene, RewardScene, GameOverScene, RunSummaryScene],
+  scene: [BootScene, MenuScene, MapScene, CombatScene, ShopScene, EventScene, RewardScene, GameOverScene, RunSummaryScene, SettingsScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

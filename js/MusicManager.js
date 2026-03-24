@@ -34,6 +34,7 @@ export class MusicManager {
     this._scene = scene;
     this.ctx = scene.sound && scene.sound.context ? scene.sound.context : null;
     this._enabled = true;
+    this._volumeScale = 1.0;
     this._currentPattern = null;
     this._nodes = [];          // active oscillator / gain nodes
     this._masterGain = null;
@@ -85,6 +86,21 @@ export class MusicManager {
     this.setEnabled(!this._enabled);
     return this._enabled;
   }
+
+  /** Set music volume multiplier (0–1). Scales on top of per-pattern gains. */
+  setVolume(v) {
+    this._volumeScale = Math.max(0, Math.min(1, v));
+    if (this._masterGain && this._enabled && this._currentPattern) {
+      const def = MusicManager.PATTERNS[this._currentPattern];
+      if (def) {
+        const now = this.ctx.currentTime;
+        this._masterGain.gain.cancelScheduledValues(now);
+        this._masterGain.gain.setValueAtTime(def.gain * this._volumeScale, now);
+      }
+    }
+  }
+
+  get volumeScale() { return this._volumeScale ?? 1.0; }
 
   // ── Pattern definitions ────────────────────────────────────────────────────
 
@@ -145,7 +161,7 @@ export class MusicManager {
       const t = this.ctx.currentTime;
       this._masterGain.gain.cancelScheduledValues(t);
       this._masterGain.gain.setValueAtTime(0, t);
-      this._masterGain.gain.linearRampToValueAtTime(def.gain, t + FADE);
+      this._masterGain.gain.linearRampToValueAtTime(def.gain * this._volumeScale, t + FADE);
     });
   }
 

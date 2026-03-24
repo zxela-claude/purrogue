@@ -43,6 +43,15 @@ export class MapScene extends Phaser.Scene {
     this.add.text(20, 20, `ACT ${gs.act} — FLOOR ${gs.floor + 1}/7`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 });
     this.add.text(SCREEN_WIDTH - 20, 20, `❤️ ${gs.hp}/${gs.maxHp}  💰 ${gs.gold}`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(1, 0);
 
+    // Settings gear (top-left below act label)
+    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
+      .setOrigin(0, 1).setInteractive({ useHandCursor: true })
+      .on('pointerover', function() { this.setColor('#aaaaaa'); })
+      .on('pointerout',  function() { this.setColor('#444444'); })
+      .on('pointerdown', () => {
+        if (!this.scene.isActive('SettingsScene')) this.scene.launch('SettingsScene');
+      });
+
     const available = MapGenerator.getAvailableNodes(gs.map);
     const availableIds = new Set(available.map(n => n.id));
 

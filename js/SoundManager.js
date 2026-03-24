@@ -1,3 +1,5 @@
+import { PurrSettings } from './PurrSettings.js';
+
 /**
  * SoundManager — synthesised sound effects using Web Audio API (NAN-5)
  *
@@ -19,12 +21,28 @@ export class SoundManager {
 
     if (this.ctx) {
       this._masterGain = this.ctx.createGain();
-      this._masterGain.gain.value = 0.25;
+      const s = PurrSettings.load();
+      this._masterGain.gain.value = s.sfxEnabled ? s.sfxVolume : 0;
+      this.enabled = s.sfxEnabled;
       this._masterGain.connect(this.ctx.destination);
     }
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
+
+  /** Set SFX master volume (0–1). */
+  setVolume(v) {
+    if (this._masterGain) this._masterGain.gain.value = this.enabled ? v : 0;
+  }
+
+  /** Enable or disable SFX. */
+  setEnabled(flag) {
+    this.enabled = flag;
+    if (this._masterGain) {
+      const s = PurrSettings.load();
+      this._masterGain.gain.value = flag ? s.sfxVolume : 0;
+    }
+  }
 
   /**
    * Play a named sound effect.
