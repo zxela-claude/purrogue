@@ -22,15 +22,22 @@ export class BootScene extends Phaser.Scene {
     this.load.image('rogue_attack', 'assets/heroes/rogue_attack.png');
     this.load.image('rogue_hurt', 'assets/heroes/rogue_hurt.png');
 
-    // Enemy sprites
+    // Enemy sprites (key must match enemy id in enemies.js)
     this.load.image('yarn_golem', 'assets/enemies/yarn_golem.png');
     this.load.image('laser_sprite', 'assets/enemies/laser_sprite.png');
     this.load.image('moth_swarm', 'assets/enemies/moth_swarm.png');
+    this.load.image('curtain_phantom', 'assets/enemies/curtain_phantom.png');
     this.load.image('guard_dog', 'assets/enemies/guard_dog.png');
-    this.load.image('vacuum_monster', 'assets/enemies/vacuum_monster.png');
+    this.load.image('vacuum_cleaner', 'assets/enemies/vacuum_monster.png');
     this.load.image('squirrel', 'assets/enemies/squirrel.png');
-    this.load.image('boss_dog', 'assets/enemies/boss_dog.png');
-    this.load.image('boss_vacuum', 'assets/enemies/boss_vacuum.png');
+    this.load.image('golden_retriever', 'assets/enemies/golden_retriever.png');
+    this.load.image('alley_cat', 'assets/enemies/alley_cat.png');
+    this.load.image('robot_cat', 'assets/enemies/robot_cat.png');
+    this.load.image('feral_pigeon', 'assets/enemies/feral_pigeon.png');
+    this.load.image('doberman', 'assets/enemies/doberman.png');
+    this.load.image('the_dog', 'assets/enemies/boss_dog.png');
+    this.load.image('vacuum_boss', 'assets/enemies/boss_vacuum.png');
+    this.load.image('the_vet', 'assets/enemies/the_vet.png');
 
     // Map node icons
     this.load.image('node_combat', 'assets/mapnodes/node_combat.png');

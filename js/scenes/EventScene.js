@@ -137,6 +137,54 @@ const EVENTS = [
         if (available.length > 0) gs.addRelic(available[Math.floor(Math.random() * available.length)].id);
       }
     }}
+  ]},
+  { title: 'Turf War', desc: 'A rival gang of cats offers you a temporary alliance before the next fight.', choices: [
+    { label: 'Join the brawl (+3 Strong next combat)', action: gs => {
+      gs.pendingStatusBonus = gs.pendingStatusBonus || {};
+      gs.pendingStatusBonus.strong = (gs.pendingStatusBonus.strong || 0) + 3;
+      gs.save();
+    }},
+    { label: 'Stay out of it (nothing)', action: gs => {} }
+  ]},
+  { title: 'Catnap', desc: 'An irresistibly warm patch of sunlight. You could sleep the whole floor away...', choices: [
+    { label: 'Sleep it off (heal to full HP, skip rewards)', action: gs => {
+      gs.heal(gs.maxHp);
+      gs.skipNextReward = true;
+      gs.save();
+    }},
+    { label: 'Push through (nothing)', action: gs => {} }
+  ]},
+  { title: 'Cursed Fish', desc: 'A glowing fish lies on the ground. It smells wrong — but gold coins are stuffed inside its mouth.', choices: [
+    { label: 'Eat it (+40 gold, +5 Poison next combat)', action: gs => {
+      gs.gainGold(40);
+      gs.pendingStatusBonus = gs.pendingStatusBonus || {};
+      gs.pendingStatusBonus.poison = (gs.pendingStatusBonus.poison || 0) + 5;
+      gs.save();
+    }},
+    { label: 'Take the gold only (+20 gold)', action: gs => { gs.gainGold(20); gs.save(); } },
+    { label: 'Leave it (nothing)', action: gs => {} }
+  ]},
+  { title: 'Rival Cat Duel', desc: 'A scarred tom cat challenges you to a duel. Winner takes all.', choices: [
+    { label: 'Accept (-12 HP, gain random relic)', action: gs => {
+      gs.hp = Math.max(1, gs.hp - 12);
+      const available = RELICS.filter(r => !gs.relics.includes(r.id));
+      if (available.length > 0) gs.addRelic(available[Math.floor(Math.random() * available.length)].id);
+      gs.save();
+    }},
+    { label: 'Back down (nothing)', action: gs => {} }
+  ]},
+  { title: 'The Toymaker', desc: 'A wizened cat merchant displays a single exquisite, upgraded card under glass.', choices: [
+    { label: 'Buy it (-45 gold, upgraded card)', action: gs => {
+      if (gs.gold >= 45) {
+        gs.spendGold(45);
+        const allUpgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
+        if (allUpgradeable.length > 0) {
+          const cardId = allUpgradeable[Math.floor(Math.random() * allUpgradeable.length)];
+          gs.upgradeCard(cardId, gs.getDominantPersonality());
+        }
+      }
+    }},
+    { label: 'Admire it (nothing)', action: gs => {} }
   ]}
 ];
 

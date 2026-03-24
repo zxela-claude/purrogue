@@ -58,6 +58,16 @@ export class CombatScene extends Phaser.Scene {
     if (gs.relics.includes('toy_mouse')) this.playerBlock = 3;
     // Cursed collar: start combat with 2 stacks of vulnerable
     if (gs.relics.includes('cursed_collar')) this.playerStatuses.vulnerable = 2;
+    // Apply pending statuses from events (e.g. Thunderstorm +strong, cursed fish +poison)
+    if (gs.pendingStatusBonus) {
+      for (const [status, amt] of Object.entries(gs.pendingStatusBonus)) {
+        this.playerStatuses[status] = (this.playerStatuses[status] || 0) + amt;
+      }
+      gs.pendingStatusBonus = null;
+    }
+    // Pending draw bonus from events (e.g. The Sunny Spot)
+    this._pendingDrawBonus = gs._pendingDrawBonus || 0;
+    gs._pendingDrawBonus = 0;
     if (this.pendingEnemyDamage > 0) {
       this.enemy.hp = Math.max(0, this.enemy.hp - this.pendingEnemyDamage);
     }
@@ -528,7 +538,8 @@ export class CombatScene extends Phaser.Scene {
     this.playerStatuses = fakePlayer.statuses;
 
     const extraDraw = (this.gs.relics.includes('ancient_tome') && this.turnNumber === 1) ? 2 : 0;
-    this._drawCards(HAND_SIZE + (this.gs.relics.includes('laser_toy') ? 1 : 0) + extraDraw);
+    const drawBonusThisTurn = (this.turnNumber === 1) ? (this._pendingDrawBonus || 0) : 0;
+    this._drawCards(HAND_SIZE + (this.gs.relics.includes('laser_toy') ? 1 : 0) + extraDraw + drawBonusThisTurn);
     this._updateStatsDisplay();
     this._renderHand();
     this._showTurnBanner('YOUR TURN', '#4caf50');

@@ -12,6 +12,14 @@ export class RewardScene extends Phaser.Scene {
     const gs = this.registry.get('gameState');
     const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
 
+    // Catnap event: skip rewards, go straight to map
+    if (gs.skipNextReward) {
+      gs.skipNextReward = false;
+      gs.save();
+      this.scene.start('MapScene');
+      return;
+    }
+
     this.add.rectangle(W/2, H/2, W, H, COLORS.BG);
 
     // Decorative star field (light version)
