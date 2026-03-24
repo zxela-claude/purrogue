@@ -525,8 +525,8 @@ export class CombatScene extends Phaser.Scene {
     this.playerBlock = 0;
     this.coffeeMugUsed = false;
 
-    // Sundial: gain +1 energy on turns after the first
-    if (this.gs.relics.includes('sundial') && this.turnNumber > 1) this.energy += 1;
+    // Sundial: gain 2 energy every 3rd turn (turn 3, 6, 9...)
+    if (this.gs.relics.includes('sundial') && this.turnNumber % 3 === 0) this.energy += 2;
 
     // Thorns: grant block equal to thorns stacks at start of turn
     if (this.playerStatuses?.thorns > 0) this.playerBlock += this.playerStatuses.thorns;
