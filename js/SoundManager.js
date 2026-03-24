@@ -19,7 +19,7 @@ export class SoundManager {
 
     if (this.ctx) {
       this._masterGain = this.ctx.createGain();
-      this._masterGain.gain.value = 0.5;
+      this._masterGain.gain.value = 0.25;
       this._masterGain.connect(this.ctx.destination);
     }
   }
