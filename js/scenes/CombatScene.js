@@ -8,6 +8,7 @@ import { MusicManager } from '../MusicManager.js';
 
 const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
 const STATUS_COLORS = { poison: '#4caf50', burn: '#ff6b35', freeze: '#a0d8ef', vulnerable: '#e67e22', weak: '#95a5a6', strong: '#f1c40f' };
+const STATUS_LABELS = { poison: 'Psn', burn: 'Brn', freeze: 'Frz', bleed: 'Bld', weak: 'Weak', vulnerable: 'Vuln', strong: 'Str', thorns: 'Thorn' };
 
 export class CombatScene extends Phaser.Scene {
   constructor() { super('CombatScene'); }
@@ -188,7 +189,7 @@ export class CombatScene extends Phaser.Scene {
 
     // Enemy HP bar
     this.enemyHpBar = this.add.graphics().setDepth(2);
-    this.enemyHpLabel = this.add.text(W/2, 58, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5).setDepth(3);
+    this.enemyHpLabel = this.add.text(W/2, 64, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5).setDepth(3);
 
     // Enemy sprite
     const enemySpriteKey = this.enemy.id;
@@ -236,7 +237,7 @@ export class CombatScene extends Phaser.Scene {
     this.add.text(20, H - 131, 'ENERGY', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#888888' }).setDepth(3);
 
     // Player status text
-    this.playerStatusText = this.add.text(170, H - 128, '', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa' }).setDepth(3);
+    this.playerStatusText = this.add.text(170, H - 145, '', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa' }).setDepth(3);
 
     // End turn button
     const endTurnHitZone = this.add.rectangle(W - 110, H - 155, 220, 60, 0x000000, 0).setInteractive({ useHandCursor: true });
@@ -469,7 +470,7 @@ export class CombatScene extends Phaser.Scene {
     const statuses = Object.entries(this.enemy.statuses || {}).filter(([,v]) => v > 0);
     statuses.forEach(([k, v], i) => {
       const col = STATUS_COLORS[k] || '#aaaaaa';
-      const badge = this.add.text(i * 72 - statuses.length * 36 + 36, 0, `${k[0].toUpperCase()}:${v}`, {
+      const badge = this.add.text(i * 72 - statuses.length * 36 + 36, 0, `${STATUS_LABELS[k] || k} ×${v}`, {
         fontFamily: '"Press Start 2P"', fontSize: '11px', color: col,
         backgroundColor: '#111111', padding: { x: 5, y: 3 }
       }).setOrigin(0.5);
@@ -508,7 +509,7 @@ export class CombatScene extends Phaser.Scene {
 
     // Player statuses
     const pStatuses = Object.entries(this.playerStatuses || {}).filter(([,v]) => v > 0);
-    this.playerStatusText.setText(pStatuses.map(([k,v]) => `${k[0].toUpperCase()}:${v}`).join(' '));
+    this.playerStatusText.setText(pStatuses.map(([k,v]) => `${STATUS_LABELS[k] || k} ×${v}`).join('  '));
 
     // Deck / discard
     this.deckCountText.setText(`📚 Draw: ${this.drawPile.length}`);
