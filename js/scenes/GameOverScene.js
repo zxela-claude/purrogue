@@ -1,6 +1,31 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { DeckCode } from '../DeckCode.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
+import { RELICS } from '../data/relics.js';
+
+function buildShareText(gs, won) {
+  const relicDb = {};
+  RELICS.forEach(r => { relicDb[r.id] = r; });
+
+  const hero = gs.hero ? gs.hero.charAt(0) + gs.hero.slice(1).toLowerCase() : 'Unknown';
+  const mood = gs.getDominantPersonality();
+  const moodInfo = mood ? PersonalitySystem.getMoodDescription(mood) : null;
+  const moodName = moodInfo ? moodInfo.name : (mood || 'Unknown');
+  const result = won ? 'Victory' : 'Defeat';
+  const enemiesKilled = gs.runStats ? gs.runStats.enemies_killed : 0;
+  const relicNames = gs.relics && gs.relics.length > 0
+    ? gs.relics.map(rid => (relicDb[rid] ? relicDb[rid].name : rid)).join(', ')
+    : 'None';
+  const score = gs.computeScore ? gs.computeScore(won)
+    : (gs.act - 1) * 1000 + gs.floor * 100 + (enemiesKilled || 0) * 25 + (won ? 500 : 0);
+
+  return [
+    `🐱 Purrogue — ${hero} ${moodName} ${result}!`,
+    `Act ${gs.act} · Score: ${score} · ${enemiesKilled || 0} enemies defeated`,
+    `Relics: ${relicNames}`,
+    `Play at: purrogue.cat`,
+  ].join('\n');
+}
 
 const MOOD_BG_COLORS = {
   feisty:  0x3a0a0a,
@@ -120,6 +145,7 @@ export class GameOverScene extends Phaser.Scene {
       });
     }
 
+    if (gs) this._addShareButton(W, H, gs);
     this._addPlayAgain(W, H);
   }
 
@@ -136,5 +162,75 @@ export class GameOverScene extends Phaser.Scene {
       this.registry.set('gameState', null);
       this.scene.start('MenuScene');
     });
+  }
+
+  _addShareButton(W, H, gs) {
+    // Share button sits to the left of the deck code button area, at the same Y
+    const btnX = W/2 - 120;
+    // Check if a deck code button would be rendered; if so shift share button further left
+    const code = DeckCode.encode(gs);
+    const shareX = code ? W/2 - 340 : btnX;
+    const shareY = 538;
+    const btnW = 200, btnH = 36;
+
+    const btn = this.add.rectangle(shareX, shareY, btnW, btnH, 0x1a0a2a)
+      .setInteractive({ useHandCursor: true });
+    this.add.graphics().lineStyle(1, 0xce93d8, 0.8)
+      .strokeRect(shareX - btnW/2, shareY - btnH/2, btnW, btnH);
+    const label = this.add.text(shareX, shareY, 'SHARE RUN', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ce93d8'
+    }).setOrigin(0.5);
+
+    btn.on('pointerover', () => { btn.setFillStyle(0x2a0a3a); label.setColor('#e0b0f0'); });
+    btn.on('pointerout',  () => { btn.setFillStyle(0x1a0a2a); label.setColor('#ce93d8'); });
+    btn.on('pointerdown', () => {
+      const text = buildShareText(gs, this.won);
+      const doShare = () => {
+        const original = 'SHARE RUN';
+        label.setText('Copied! ✓');
+        this.time.delayedCall(2000, () => { label.setText(original); });
+      };
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(doShare).catch(() => {
+          this._showShareFallback(text);
+        });
+      } else {
+        this._showShareFallback(text);
+      }
+    });
+  }
+
+  _showShareFallback(text) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.75)
+      .setInteractive({ useHandCursor: false }).setDepth(100);
+
+    const boxW = 480, boxH = 180;
+    this.add.rectangle(W/2, H/2, boxW, boxH, 0x0d0d1a, 1).setDepth(101);
+    this.add.graphics().setDepth(101).lineStyle(1, 0xce93d8).strokeRect(W/2 - boxW/2, H/2 - boxH/2, boxW, boxH);
+
+    this.add.text(W/2, H/2 - boxH/2 + 18, 'Copy this text:', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ce93d8'
+    }).setOrigin(0.5).setDepth(102);
+
+    const ta = this.add.dom(W/2, H/2 + 16, 'textarea', {
+      width: (boxW - 32) + 'px',
+      height: '80px',
+      background: '#0d1a2a',
+      color: '#f0ead6',
+      border: '1px solid #ce93d8',
+      fontFamily: 'monospace',
+      fontSize: '11px',
+      resize: 'none',
+      padding: '6px',
+    }, text).setDepth(102);
+    if (ta.node) { ta.node.select(); }
+
+    const closeBtn = this.add.text(W/2, H/2 + boxH/2 - 16, '[ CLOSE ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa'
+    }).setOrigin(0.5).setDepth(102).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
+    overlay.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
   }
 }

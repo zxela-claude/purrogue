@@ -206,12 +206,14 @@ export class EventScene extends Phaser.Scene {
     this.add.text(SCREEN_WIDTH/2, 160, event.title, { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#f0ead6' }).setOrigin(0.5);
     this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#aaaaaa', wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
 
-    const choiceSpacing = 72;
-    const choiceBlockH = event.choices.length * choiceSpacing;
-    const choiceTop = Math.max(320, Math.round((SCREEN_HEIGHT - choiceBlockH) / 2 + 60));
+    const totalH = event.choices.length * 80;
+    const choiceStartY = Math.max(300, (300 + 700) / 2 - totalH / 2);
+    const choiceSpacing = Math.min(80, (700 - choiceStartY) / event.choices.length);
+
     event.choices.forEach((choice, i) => {
-      const btn = this.add.text(SCREEN_WIDTH/2, choiceTop + i * choiceSpacing, `► ${choice.label}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6'
+      const btn = this.add.text(SCREEN_WIDTH/2, choiceStartY + i * choiceSpacing, `► ${choice.label}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6',
+        wordWrap: { width: 700 }, align: 'center'
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       btn.on('pointerover', function() { this.setColor('#ffd700'); });

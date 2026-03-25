@@ -3,19 +3,28 @@ export class CardEngine {
   // combatState: { player, enemy, hand, drawPile, discardPile, statusEffects }
   static resolveCard(card, combatState, personality) {
     const results = [];
+    // NAN-125 Glass Cannon: only applies to attack cards
+    const modifiers = {};
+    if (combatState.modifiers?.glass_cannon && card.type === 'attack') {
+      modifiers.glass_cannon = true;
+    }
+    const stateWithMods = { ...combatState, modifiers };
     for (const effect of card.effects) {
-      const result = this.resolveEffect(effect, combatState, personality);
+      const result = this.resolveEffect(effect, stateWithMods, personality);
       results.push(result);
     }
     return results;
   }
 
-  static resolveEffect(effect, { player, enemy, enemies, relics = [] }, personality) {
+  static resolveEffect(effect, { player, enemy, enemies, relics = [], modifiers = {} }, personality) {
     let value = effect.value || 0;
 
     // Personality modifiers
     if (personality === 'feisty' && effect.type === 'damage') value = Math.ceil(value * 1.15);
     if (personality === 'feral' && effect.type === 'damage') value = value * 2;
+
+    // NAN-125 Glass Cannon: attack cards deal +50% damage
+    if (modifiers.glass_cannon && effect.type === 'damage') value = Math.ceil(value * 1.5);
 
     // Cursed Collar: double damage (stacks multiplicatively with Feral for 4× total)
     if (relics.includes('cursed_collar') && effect.type === 'damage') value = value * 2;
@@ -61,6 +70,9 @@ export class CardEngine {
         if (!player.statuses) player.statuses = {};
         player.statuses[effect.status] = (player.statuses[effect.status] || 0) + value;
         return { type: 'apply_self_status', status: effect.status, amount: value };
+
+      case 'scry':
+        return { scry: value };
 
       case 'damage_all': {
         const targets = enemies && enemies.length > 0 ? enemies : (enemy ? [enemy] : []);
@@ -141,11 +153,13 @@ export class CardEngine {
     return move;
   }
 
-  static executeEnemyMove(move, enemy, player) {
+  static executeEnemyMove(move, enemy, player, options = {}) {
     switch (move.type) {
       case 'attack': {
         let dmg = move.value;
         if (enemy.statuses?.weak) dmg = Math.floor(dmg * 0.75);
+        // NAN-125 Relentless: enemy attacks deal +25% damage
+        if (options.relentless) dmg = Math.ceil(dmg * 1.25);
         const blocked = Math.min(player.block || 0, dmg);
         player.block = Math.max(0, (player.block || 0) - dmg);
         player.hp -= Math.max(0, dmg - blocked);

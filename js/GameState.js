@@ -1,10 +1,14 @@
 import { HERO_CLASSES, PERSONALITY, PERSONALITY_THRESHOLD, FERAL_WARNING_THRESHOLD, ENERGY_PER_TURN, HAND_SIZE } from './constants.js';
+import { SeededRandom } from './SeededRandom.js';
 
 const SAVE_KEY = 'purrogue_save';
 const SCORES_KEY = 'purrogue_scores';
 
+const ASCENSION_KEY = 'purrogue_ascension_unlocked';
+
 export class GameState {
   constructor() {
+    this.ascensionUnlocked = GameState.loadAscensionUnlocked();
     this.reset();
   }
 
@@ -39,6 +43,14 @@ export class GameState {
     this.pendingEnergyBonus = 0;
     this.pendingEnemyDamage = 0;
     this.inRun = false;
+    // Daily challenge fields
+    this.isDaily = false;
+    this.dailySeed = null;
+    this.dailyModifier = null;
+    // Ascension fields
+    this.ascension = 0;     // 0 = Normal, 1-5 = tier for this run
+    // Run modifier fields (NAN-125)
+    this.runModifiers = []; // e.g. ['petite','relentless']
   }
 
   startRun(heroClass) {
@@ -51,7 +63,23 @@ export class GameState {
     this.act = 1;
     this.floor = 0;
     this.inRun = true;
+    // Glass Cannon: halve maxHp (runModifiers set before startRun via reset, apply after hero stats)
+    // Note: runModifiers is applied after startRun call in MenuScene via gs.runModifiers assignment
     this.save();
+  }
+
+  // Apply run modifiers that depend on knowing the hero stats.
+  // Called in MenuScene after runModifiers is set.
+  applyRunModifiers() {
+    if (this.runModifiers.includes('glass_cannon')) {
+      this.maxHp = Math.max(1, Math.floor(this.maxHp / 2));
+      this.hp = this.maxHp;
+    }
+    this.save();
+  }
+
+  hasModifier(id) {
+    return Array.isArray(this.runModifiers) && this.runModifiers.includes(id);
   }
 
   heal(amount) {
@@ -120,10 +148,13 @@ export class GameState {
     }
 
     const { feisty, cozy, cunning } = this.personality;
-    const threshold = PERSONALITY_THRESHOLD;
+    const threshold = this.getAscensionModifiers().personalityThreshold || PERSONALITY_THRESHOLD;
 
     // Feral: pending prompt instead of auto-lock
-    if (!this.personality.feralDeclined && feisty >= FERAL_WARNING_THRESHOLD) {
+    const feralThreshold = (this.isDaily && this.dailyModifier && this.dailyModifier.id === 'fast_feral')
+      ? 10
+      : FERAL_WARNING_THRESHOLD;
+    if (!this.personality.feralDeclined && feisty >= feralThreshold) {
       this.personality.feralPending = true;
     } else if (!this.personality.mood) {
       if (feisty >= threshold && feisty >= cozy && feisty >= cunning) {
@@ -162,6 +193,8 @@ export class GameState {
       if (!data.inRun) return null;
       const gs = new GameState();
       Object.assign(gs, data);
+      // Always use the current persisted ascensionUnlocked (may have changed)
+      gs.ascensionUnlocked = GameState.loadAscensionUnlocked();
       return gs;
     } catch(e) { return null; }
   }
@@ -170,7 +203,21 @@ export class GameState {
     const base = (this.act - 1) * 1000 + this.floor * 100;
     const killBonus = (this.runStats.enemies_killed || 0) * 25;
     const winBonus = won ? 500 : 0;
-    return base + killBonus + winBonus;
+    const raw = base + killBonus + winBonus;
+
+    // NAN-125: apply run modifier multipliers
+    const MODIFIER_MULTS = {
+      petite:      0.8,
+      relentless:  1.3,
+      bare_metal:  1.4,
+      no_healing:  1.5,
+      glass_cannon:1.6,
+    };
+    let mult = 1.0;
+    for (const id of (this.runModifiers || [])) {
+      if (MODIFIER_MULTS[id]) mult *= MODIFIER_MULTS[id];
+    }
+    return Math.round(raw * mult);
   }
 
   saveScore(won) {
@@ -184,12 +231,39 @@ export class GameState {
       relics: [...this.relics],
       score: this.computeScore(won),
       stats: this.runStats,
+      ascension: this.ascension,
+      runModifiers: [...(this.runModifiers || [])],
       date: new Date().toISOString()
     });
     scores.sort((a,b) => (b.score ?? 0) - (a.score ?? 0));
     try {
       localStorage.setItem(SCORES_KEY, JSON.stringify(scores.slice(0, 20)));
     } catch(e) {}
+    // Unlock next ascension tier when winning at the highest unlocked tier
+    if (won && this.ascension === this.ascensionUnlocked && this.ascensionUnlocked < 5) {
+      this.ascensionUnlocked++;
+      try {
+        localStorage.setItem(ASCENSION_KEY, String(this.ascensionUnlocked));
+      } catch(e) {}
+    }
+  }
+
+  getAscensionModifiers() {
+    const tier = this.ascension || 0;
+    const mods = {};
+    if (tier >= 1) mods.enemyHpBonus = 0.05;        // A1: enemies +5% max HP
+    if (tier >= 2) mods.relicPriceBonus = 20;        // A2: shop relics cost +20 gold
+    if (tier >= 3) mods.personalityThreshold = 12;   // A3: personality threshold reduced to 12
+    if (tier >= 4) mods.bossThreshold = 0.6;         // A4: boss threshold at 60% HP
+    if (tier >= 5) mods.startVulnerable = 2;         // A5: start each act with 2 Vulnerable
+    return mods;
+  }
+
+  static loadAscensionUnlocked() {
+    try {
+      const val = localStorage.getItem(ASCENSION_KEY);
+      return val !== null ? Math.min(5, Math.max(0, parseInt(val, 10) || 0)) : 0;
+    } catch(e) { return 0; }
   }
 
   static getScores() {
@@ -201,5 +275,55 @@ export class GameState {
   endRun() {
     this.inRun = false;
     try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+  }
+
+  static getDailySeed() {
+    return new Date().toISOString().slice(0, 10); // "2026-03-25"
+  }
+
+  static getDailyModifier(seed) {
+    const MODIFIERS = [
+      { id: 'bonus_energy',  name: 'Energized',     desc: 'Start each combat with +1 energy' },
+      { id: 'double_shop',   name: 'Grand Bazaar',   desc: 'Shop has 5 cards instead of 3' },
+      { id: 'elites_only',   name: 'Elite Gauntlet', desc: 'All combat nodes are replaced with Elites' },
+      { id: 'no_gold',       name: 'Pauper Run',     desc: 'Start with 0 gold — relics and removals are free' },
+      { id: 'fast_feral',    name: 'Hair-Trigger',   desc: 'Feral warning triggers at 10 feisty instead of 20' },
+      { id: 'all_upgraded',  name: 'Head Start',     desc: 'All starting cards are upgraded' },
+      { id: 'cursed',        name: 'Cursed',         desc: 'Start every combat with 2 Vulnerable' },
+      { id: 'lucky',         name: 'Lucky Day',      desc: 'Lucky Paw relic built in — always 4 reward choices' },
+    ];
+    const rng = new SeededRandom(seed);
+    return rng.pick(MODIFIERS);
+  }
+
+  static getDailyStorageKey(seed) {
+    return `purrogue_daily_${seed}`;
+  }
+
+  saveDailyScore(won) {
+    if (!this.isDaily || !this.dailySeed) return;
+    const key = GameState.getDailyStorageKey(this.dailySeed);
+    const existing = (() => {
+      try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) { return null; }
+    })();
+    const score = this.computeScore(won);
+    if (!existing || score > existing.score) {
+      try {
+        localStorage.setItem(key, JSON.stringify({
+          score,
+          hero: this.hero,
+          won,
+          modifier: this.dailyModifier,
+          date: this.dailySeed
+        }));
+      } catch(e) {}
+    }
+  }
+
+  static getDailyBestScore(seed) {
+    try {
+      const raw = localStorage.getItem(GameState.getDailyStorageKey(seed));
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
   }
 }
