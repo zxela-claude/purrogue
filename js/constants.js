@@ -39,3 +39,9 @@ export const HERO_CLASSES = {
   MAGE: { name: 'Mage Cat', hp: 60, color: 0x9b59b6, emoji: '🔮' },
   ROGUE: { name: 'Rogue Cat', hp: 70, color: 0x27ae60, emoji: '🗡️' }
 };
+
+export const FONT_SM = '10px';
+export const FONT_MD = '12px';
+export const FONT_LG = '14px';
+export const FONT_XL = '15px';
+export const FONT_HEADER = '20px';

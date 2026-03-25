@@ -26,7 +26,7 @@ function pickNodeType(floor) {
 }
 
 export class MapGenerator {
-  static generate(act) {
+  static generate(act, options = {}) {
     const floors = [];
     for (let f = 0; f < FLOORS_PER_ACT; f++) {
       const floor = [];
@@ -61,6 +61,17 @@ export class MapGenerator {
     // Post-generation fixup: ensure every path to the boss has at least one
     // shop and one rest site. Walk all paths and force a node type if missing.
     MapGenerator._ensureShopAndRest(floors);
+
+    // NAN-125 Petite modifier: replace ~20% of COMBAT nodes (not floor 0 or boss floor) with EVENT
+    if (options.petite) {
+      for (let f = 1; f < FLOORS_PER_ACT - 1; f++) {
+        for (const node of floors[f]) {
+          if (node.type === NODE_TYPES.COMBAT && Math.random() < 0.2) {
+            node.type = NODE_TYPES.EVENT;
+          }
+        }
+      }
+    }
 
     return { act, floors, currentFloor: 0, currentNode: null };
   }

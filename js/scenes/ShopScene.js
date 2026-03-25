@@ -17,13 +17,16 @@ export class ShopScene extends Phaser.Scene {
     this.add.text(SCREEN_WIDTH/2, 80, `💰 ${gs.gold} gold`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#f0ead6' }).setOrigin(0.5);
 
     const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS].filter(c => c.heroClass === gs.hero);
-    const shopCards = allCards.sort(() => Math.random() - 0.5).slice(0, 3);
+    const shopCardCount = (gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'double_shop') ? 5 : 3;
+    const shopCards = allCards.sort(() => Math.random() - 0.5).slice(0, shopCardCount);
     const shopRelics = RELICS.filter(r => !gs.relics.includes(r.id)).sort(() => Math.random() - 0.5).slice(0, 2);
+
+    const noGold = gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'no_gold';
 
     shopCards.forEach((card, i) => {
       const x = 200 + i * 280;
-      const price = card.cost === 0 ? 50 : card.cost === 1 ? 75 : 100;
-      const canAfford = gs.gold >= price;
+      const price = noGold ? 0 : (card.cost === 0 ? 50 : card.cost === 1 ? 75 : 100);
+      const canAfford = noGold || gs.gold >= price;
       const bg = this.add.rectangle(x, 280, 220, 180, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });
       this.add.text(x, 210, card.name, { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6', wordWrap: { width: 200 }, align: 'center' }).setOrigin(0.5);
       this.add.text(x, 248, card.description, { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa', wordWrap: { width: 200 }, align: 'center' }).setOrigin(0.5);
@@ -41,10 +44,17 @@ export class ShopScene extends Phaser.Scene {
       }
     });
 
-    shopRelics.forEach((relic, i) => {
+    // NAN-125 Bare Metal: no relics in shop
+    const bareMetal = gs.hasModifier && gs.hasModifier('bare_metal');
+    if (bareMetal) {
+      this.add.text(SCREEN_WIDTH / 2, 480, '🪨 Bare Metal — no relics available', {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555555'
+      }).setOrigin(0.5);
+    }
+    if (!bareMetal) shopRelics.forEach((relic, i) => {
       const x = 300 + i * 400;
-      const price = 120;
-      const canAfford = gs.gold >= price;
+      const price = noGold ? 0 : 120 + (gs.getAscensionModifiers().relicPriceBonus || 0);
+      const canAfford = noGold || gs.gold >= price;
       const bg = this.add.rectangle(x, 480, 280, 110, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });
       const iconKey = `relic_${relic.id}`;
       if (this.textures.exists(iconKey)) {
@@ -66,9 +76,15 @@ export class ShopScene extends Phaser.Scene {
       }
     });
 
+    if (!bareMetal && shopRelics.length === 0) {
+      this.add.text(SCREEN_WIDTH / 2, 420, 'All relics collected', {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555555'
+      }).setOrigin(0.5);
+    }
+
     // Card removal section
-    const removalCost = 75;
-    const canRemove = gs.gold >= removalCost && gs.deck.length > 1;
+    const removalCost = noGold ? 0 : 75;
+    const canRemove = (noGold || gs.gold >= removalCost) && gs.deck.length > 1;
     const removalY = 590;
 
     this.add.text(SCREEN_WIDTH/2, removalY, '━━━━━━━━━━━━━━━━━━━━━', {

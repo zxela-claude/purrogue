@@ -1,8 +1,9 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES, PERSONALITY, FERAL_WARNING_THRESHOLD } from '../constants.js';
+import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES, PERSONALITY, PERSONALITY_THRESHOLD, FERAL_WARNING_THRESHOLD } from '../constants.js';
 import { MapGenerator } from '../MapGenerator.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
 import { MusicManager } from '../MusicManager.js';
+import { RELICS } from '../data/relics.js';
 
 const NODE_SPRITE_KEYS = {
   [NODE_TYPES.COMBAT]: 'node_combat',
@@ -28,7 +29,15 @@ export class MapScene extends Phaser.Scene {
     const gs = this.registry.get('gameState');
     const isNewAct = !gs.map;
     if (isNewAct) {
-      gs.map = MapGenerator.generate(gs.act);
+      gs.map = MapGenerator.generate(gs.act, { petite: gs.hasModifier && gs.hasModifier('petite') });
+      // Daily modifier: elites_only — replace all COMBAT nodes with ELITE
+      if (gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'elites_only') {
+        for (const floor of gs.map.floors) {
+          for (const node of floor) {
+            if (node.type === NODE_TYPES.COMBAT) node.type = NODE_TYPES.ELITE;
+          }
+        }
+      }
       // Ancient Tome: upgrade a random non-upgraded card at the start of each act
       if (gs.relics.includes('ancient_tome')) {
         const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
@@ -54,6 +63,15 @@ export class MapScene extends Phaser.Scene {
     this.add.text(20, 20, `ACT ${gs.act} — FLOOR ${gs.floor + 1}/7`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 });
     this.add.text(SCREEN_WIDTH - 20, 20, `❤️ ${gs.hp}/${gs.maxHp}  💰 ${gs.gold}`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(1, 0);
 
+    // NAN-126: Floor pip progress indicator
+    this._addFloorPips(gs);
+
+    // NAN-117: Personality progress bar
+    this._addPersonalityBar(gs);
+
+    // NAN-118: Relic panel
+    this._addRelicPanel(gs);
+
     // Settings gear (top-left below act label)
     this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
       .setOrigin(0, 1).setInteractive({ useHandCursor: true })
@@ -62,6 +80,14 @@ export class MapScene extends Phaser.Scene {
       .on('pointerdown', () => {
         if (!this.scene.isActive('SettingsScene')) this.scene.launch('SettingsScene');
       });
+
+    // Help button (bottom-left, next to gear)
+    const helpBtn = this.add.text(56, SCREEN_HEIGHT - 20, '[?]', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#444466'
+    }).setOrigin(0, 1).setInteractive({ useHandCursor: true });
+    helpBtn.on('pointerover', function() { this.setColor('#aaaacc'); });
+    helpBtn.on('pointerout',  function() { this.setColor('#444466'); });
+    helpBtn.on('pointerdown', () => this._showHelpModal());
 
     const available = MapGenerator.getAvailableNodes(gs.map);
     const availableIds = new Set(available.map(n => n.id));
@@ -129,12 +155,13 @@ export class MapScene extends Phaser.Scene {
   }
 
   _enterNode(node, gs) {
+    const actStart = gs.floor === 0;
     switch(node.type) {
-      case NODE_TYPES.COMBAT: this.scene.start('CombatScene', { elite: false }); break;
-      case NODE_TYPES.ELITE: this.scene.start('CombatScene', { elite: true }); break;
+      case NODE_TYPES.COMBAT: this.scene.start('CombatScene', { elite: false, actStart }); break;
+      case NODE_TYPES.ELITE: this.scene.start('CombatScene', { elite: true, actStart }); break;
       case NODE_TYPES.SHOP: this.scene.start('ShopScene'); break;
       case NODE_TYPES.EVENT: this.scene.start('EventScene'); break;
-      case NODE_TYPES.BOSS: this.scene.start('CombatScene', { boss: true }); break;
+      case NODE_TYPES.BOSS: this.scene.start('CombatScene', { boss: true, actStart }); break;
       case NODE_TYPES.REST: this._showRestMenu(gs); break;
     }
   }
@@ -155,15 +182,25 @@ export class MapScene extends Phaser.Scene {
 
     const healAmt = 8 + (gs.relics.includes('cat_nap') ? 8 : 0);
     const canHeal = PersonalitySystem.canHeal(gs.getDominantPersonality());
+    const noHealing = gs.hasModifier && gs.hasModifier('no_healing');
 
-    // Option 1: Rest
-    this.add.text(W/2, H/2 - 80, `REST — Heal ${healAmt} HP`, {
+    // Option 1: Rest / Block
+    const restLabel = noHealing
+      ? `REST — Gain 8 🛡 Block (No Healing)`
+      : `REST — Heal ${healAmt} HP`;
+    const restColor = noHealing ? '#4fc3f7' : (canHeal ? '#4caf50' : '#555555');
+    this.add.text(W/2, H/2 - 80, restLabel, {
       fontFamily: '"Press Start 2P"', fontSize: '14px',
-      color: canHeal ? '#4caf50' : '#555555'
+      color: restColor
     }).setOrigin(0.5).setDepth(11)
-      .setInteractive({ useHandCursor: canHeal })
+      .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => {
-        if (canHeal) gs.heal(healAmt);
+        if (noHealing) {
+          gs.playerBlock = (gs.playerBlock || 0) + 8;
+          gs.save();
+        } else if (canHeal) {
+          gs.heal(healAmt);
+        }
         this.scene.start('MapScene');
       });
 
@@ -402,6 +439,210 @@ export class MapScene extends Phaser.Scene {
     group.add(cancelBtn);
   }
 
+  _addFloorPips(gs) {
+    // NAN-126: Row of floor progress pips centered at Y=50
+    // 6 small circles for floors 0-5, then a ★ for floor 6 (boss)
+    const TOTAL_FLOORS = 7; // 6 normal + 1 boss
+    const PIP_R = 6;
+    const GAP = 18;
+    const totalWidth = (TOTAL_FLOORS - 1) * GAP;
+    const startX = SCREEN_WIDTH / 2 - totalWidth / 2;
+    const pipY = 50;
+
+    const gfx = this.add.graphics();
+
+    for (let i = 0; i < TOTAL_FLOORS; i++) {
+      const px = startX + i * GAP;
+      const isBossFloor = (i === TOTAL_FLOORS - 1);
+      const isCurrent = (i === gs.floor);
+      const isCompleted = (i < gs.floor);
+
+      if (isBossFloor) {
+        // Star for boss floor
+        const starColor = isCurrent ? '#ffd700' : (isCompleted ? '#666666' : '#444444');
+        this.add.text(px, pipY, '★', {
+          fontSize: '14px', color: starColor
+        }).setOrigin(0.5).setStroke('#000000', 2);
+      } else {
+        // Pip circle
+        if (isCurrent) {
+          gfx.fillStyle(0xffd700, 1.0);
+          gfx.fillCircle(px, pipY, PIP_R);
+          gfx.lineStyle(2, 0xffd700, 1.0);
+          gfx.strokeCircle(px, pipY, PIP_R);
+        } else if (isCompleted) {
+          gfx.fillStyle(0x444444, 1.0);
+          gfx.fillCircle(px, pipY, PIP_R);
+          // Checkmark tint
+          gfx.lineStyle(1, 0x888888, 0.6);
+          gfx.strokeCircle(px, pipY, PIP_R);
+          this.add.text(px, pipY, '✓', {
+            fontSize: '8px', color: '#888888'
+          }).setOrigin(0.5);
+        } else {
+          gfx.fillStyle(0x222233, 1.0);
+          gfx.fillCircle(px, pipY, PIP_R);
+          gfx.lineStyle(1, 0x444466, 0.8);
+          gfx.strokeCircle(px, pipY, PIP_R);
+        }
+      }
+    }
+
+    // NAN-126: Boss warning — pulsing red text when floor === 5 (one before boss)
+    if (gs.floor === 5) {
+      const warning = this.add.text(SCREEN_WIDTH / 2, 68, '⚠ BOSS NEXT', {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#e94560',
+        stroke: '#000000', strokeThickness: 2
+      }).setOrigin(0.5);
+      this.tweens.add({
+        targets: warning,
+        alpha: { from: 1, to: 0.2 },
+        duration: 500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
+  }
+
+  _addPersonalityBar(gs) {
+    const p = gs.personality;
+    const MOOD_COLORS = {
+      [PERSONALITY.FEISTY]: '#e74c3c',
+      [PERSONALITY.COZY]:   '#3498db',
+      [PERSONALITY.CUNNING]:'#9b59b6',
+      [PERSONALITY.FERAL]:  '#e67e22'
+    };
+    const MOOD_LABELS = {
+      [PERSONALITY.FEISTY]: 'Feisty',
+      [PERSONALITY.COZY]:   'Cozy',
+      [PERSONALITY.CUNNING]:'Cunning',
+      [PERSONALITY.FERAL]:  'Feral'
+    };
+
+    if (p.mood !== null) {
+      // Mood locked
+      const col = MOOD_COLORS[p.mood] || '#f0ead6';
+      const label = (MOOD_LABELS[p.mood] || p.mood) + ' ▓▓▓▓▓▓▓▓▓▓ LOCKED';
+      this.add.text(SCREEN_WIDTH / 2, 20, label, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
+        stroke: '#000000', strokeThickness: 1
+      }).setOrigin(0.5, 0);
+    } else {
+      // Find dominant counter
+      const counters = [
+        { key: PERSONALITY.FEISTY, val: p.feisty || 0 },
+        { key: PERSONALITY.COZY,   val: p.cozy   || 0 },
+        { key: PERSONALITY.CUNNING,val: p.cunning || 0 }
+      ];
+      const dominant = counters.reduce((a, b) => b.val > a.val ? b : a, counters[0]);
+      const count = dominant.val;
+      const threshold = PERSONALITY_THRESHOLD;
+      const filled = Math.min(10, Math.round(count / threshold * 10));
+      const bar = '▓'.repeat(filled) + '░'.repeat(10 - filled);
+      const label = `${MOOD_LABELS[dominant.key] || dominant.key} ${bar} ${count}/${threshold}`;
+      const col = MOOD_COLORS[dominant.key] || '#f0ead6';
+      this.add.text(SCREEN_WIDTH / 2, 20, label, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
+        stroke: '#000000', strokeThickness: 1
+      }).setOrigin(0.5, 0);
+    }
+  }
+
+  _addRelicPanel(gs) {
+    const relicDb = {};
+    for (const r of RELICS) relicDb[r.id] = r;
+
+    const btnText = `🎒 Relics (${gs.relics.length})`;
+    const btn = this.add.text(SCREEN_WIDTH - 20, SCREEN_HEIGHT - 20, btnText, {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa',
+      stroke: '#000000', strokeThickness: 1
+    }).setOrigin(1, 1).setDepth(8).setInteractive({ useHandCursor: true });
+
+    btn.on('pointerover', function() { this.setColor('#f0ead6'); });
+    btn.on('pointerout',  function() { this.setColor('#aaaaaa'); });
+
+    const PANEL_X = SCREEN_WIDTH - 220;
+    const PANEL_Y = 80;
+    const PANEL_W = 200;
+    const ROW_H = 36;
+    const panelGroup = this.add.group();
+    let panelOpen = false;
+    let tooltipObj = null;
+
+    const buildPanel = () => {
+      panelGroup.clear(true, true);
+      if (tooltipObj) { tooltipObj.destroy(); tooltipObj = null; }
+      if (!panelOpen) return;
+
+      const rowCount = Math.max(1, gs.relics.length);
+      const panelH = 28 + rowCount * ROW_H + 8;
+
+      const bg = this.add.rectangle(
+        PANEL_X + PANEL_W / 2, PANEL_Y + panelH / 2,
+        PANEL_W, panelH, 0x0a0a1a, 0.9
+      ).setDepth(10);
+      const border = this.add.graphics().setDepth(10);
+      border.lineStyle(1, 0x444466);
+      border.strokeRect(PANEL_X, PANEL_Y, PANEL_W, panelH);
+      panelGroup.add(bg);
+      panelGroup.add(border);
+
+      const title = this.add.text(PANEL_X + PANEL_W / 2, PANEL_Y + 10, 'RELICS', {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700',
+        stroke: '#000000', strokeThickness: 1
+      }).setOrigin(0.5, 0).setDepth(11);
+      panelGroup.add(title);
+
+      if (gs.relics.length === 0) {
+        const none = this.add.text(PANEL_X + 8, PANEL_Y + 30, 'None yet', {
+          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#555555'
+        }).setDepth(11);
+        panelGroup.add(none);
+        return;
+      }
+
+      gs.relics.forEach((id, i) => {
+        const relic = relicDb[id];
+        const name = relic ? relic.name : id;
+        const desc = relic ? relic.desc : '';
+        const rowY = PANEL_Y + 28 + i * ROW_H;
+
+        const rowZone = this.add.rectangle(
+          PANEL_X + PANEL_W / 2, rowY + ROW_H / 2,
+          PANEL_W - 4, ROW_H - 4, 0xffffff, 0
+        ).setDepth(11).setInteractive();
+        panelGroup.add(rowZone);
+
+        const nameLabel = this.add.text(PANEL_X + 8, rowY + 4, name, {
+          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6',
+          stroke: '#000000', strokeThickness: 1
+        }).setDepth(12);
+        panelGroup.add(nameLabel);
+
+        rowZone.on('pointerover', () => {
+          nameLabel.setColor('#ffd700');
+          if (tooltipObj) { tooltipObj.destroy(); tooltipObj = null; }
+          if (desc) {
+            tooltipObj = this.add.text(PANEL_X + 8, rowY + ROW_H - 2, desc, {
+              fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#aaaaaa',
+              wordWrap: { width: PANEL_W - 16 }, lineSpacing: 2
+            }).setDepth(13);
+          }
+        });
+        rowZone.on('pointerout', () => {
+          nameLabel.setColor('#f0ead6');
+          if (tooltipObj) { tooltipObj.destroy(); tooltipObj = null; }
+        });
+      });
+    };
+
+    btn.on('pointerdown', () => {
+      panelOpen = !panelOpen;
+      buildPanel();
+    });
+  }
+
   _showFeralWarning(gs) {
     const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
     const overlay = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.7).setDepth(30);
@@ -450,5 +691,111 @@ export class MapScene extends Phaser.Scene {
       gs.save();
       overlay.destroy(); panel.destroy(); border.destroy();
     });
+  }
+
+  _showHelpModal() {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+
+    const group = this.add.group();
+
+    // Backdrop — click to close
+    const backdrop = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72)
+      .setDepth(40).setInteractive();
+    backdrop.on('pointerdown', () => { group.destroy(true); escKey.removeAllListeners(); });
+    group.add(backdrop);
+
+    const panelW = 640;
+    const panelH = 500;
+    const panelX = W / 2;
+    const panelY = H / 2;
+
+    const panelBg = this.add.rectangle(panelX, panelY, panelW, panelH, COLORS.PANEL, 0.97).setDepth(41);
+    group.add(panelBg);
+
+    const border = this.add.graphics().setDepth(41);
+    border.lineStyle(2, 0x4fc3f7, 0.8);
+    border.strokeRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH);
+    group.add(border);
+
+    const titleText = this.add.text(panelX, panelY - panelH / 2 + 26, 'QUICK REFERENCE', {
+      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#4fc3f7',
+    }).setOrigin(0.5).setDepth(42);
+    group.add(titleText);
+
+    const divGfx = this.add.graphics().setDepth(42);
+    divGfx.lineStyle(1, 0x4fc3f7, 0.3);
+    divGfx.lineBetween(panelX - panelW / 2 + 30, panelY - panelH / 2 + 46, panelX + panelW / 2 - 30, panelY - panelH / 2 + 46);
+    group.add(divGfx);
+
+    const sections = [
+      {
+        heading: 'NODE TYPES',
+        color: '#ffd700',
+        lines: [
+          '⚔️  COMBAT  — standard enemy fight',
+          '💀  ELITE   — tough foe, better loot',
+          '🛒  SHOP    — buy cards & relics',
+          '❓  EVENT   — random encounter',
+          '🛏  REST    — heal or upgrade a card',
+          '👑  BOSS    — act boss at floor 7',
+        ],
+      },
+      {
+        heading: 'PERSONALITY',
+        color: '#ffd700',
+        lines: [
+          'Attacks → FEISTY  (red)   DMG bonus',
+          'Skills  → COZY    (green) DEF bonus',
+          'Powers  → CUNNING (blue)  energy bonus',
+          'FERAL   — double DMG, no healing',
+          `Mood locks at ${15} plays of one type`,
+        ],
+      },
+      {
+        heading: 'COMBAT',
+        color: '#ffd700',
+        lines: [
+          'Draw 5 cards · 3 energy per turn',
+          'Attack = damage  Skill = block/effect',
+          'Power = lasting bonus',
+          'Click END TURN when done',
+        ],
+      },
+    ];
+
+    let curY = panelY - panelH / 2 + 68;
+    const lineH = 18;
+    const headingH = 26;
+    const leftX = panelX - panelW / 2 + 32;
+
+    sections.forEach(sec => {
+      const heading = this.add.text(leftX, curY, sec.heading, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: sec.color,
+      }).setDepth(42);
+      group.add(heading);
+      curY += headingH;
+
+      sec.lines.forEach(line => {
+        const t = this.add.text(leftX + 8, curY, line, {
+          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#c0b8a8',
+        }).setDepth(42);
+        group.add(t);
+        curY += lineH;
+      });
+
+      curY += 10;
+    });
+
+    // Close button
+    const closeBtn = this.add.text(panelX, panelY + panelH / 2 - 22, '[ CLOSE ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560',
+    }).setOrigin(0.5).setDepth(42).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerover', function() { this.setColor('#ff7799'); });
+    closeBtn.on('pointerout',  function() { this.setColor('#e94560'); });
+    closeBtn.on('pointerdown', () => { group.destroy(true); escKey.removeAllListeners(); });
+    group.add(closeBtn);
+
+    const escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    escKey.once('down', () => { group.destroy(true); });
   }
 }

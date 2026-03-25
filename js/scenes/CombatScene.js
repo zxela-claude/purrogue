@@ -5,10 +5,32 @@ import { getRandomEnemy, getBoss } from '../data/enemies.js';
 import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
 import { SoundManager } from '../SoundManager.js';
 import { MusicManager } from '../MusicManager.js';
+import { PurrSettings } from '../PurrSettings.js';
+import { COLORBLIND_MAPS } from './SettingsScene.js';
 
 const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
-const STATUS_COLORS = { poison: '#4caf50', burn: '#ff6b35', freeze: '#a0d8ef', vulnerable: '#e67e22', weak: '#95a5a6', strong: '#f1c40f' };
-const STATUS_LABELS = { poison: 'Psn', burn: 'Brn', freeze: 'Frz', bleed: 'Bld', weak: 'Weak', vulnerable: 'Vuln', strong: 'Str', thorns: 'Thorn' };
+const STATUS_COLORS_BASE = { poison: '#4caf50', burn: '#ff6b35', freeze: '#a0d8ef', vulnerable: '#e67e22', weak: '#95a5a6', strong: '#f1c40f' };
+
+// Full status names for accessibility 'full' label mode (NAN-123)
+const STATUS_NAMES_FULL = { poison: 'Poison', burn: 'Burn', freeze: 'Freeze', vulnerable: 'Vulnerable', weak: 'Weak', bleed: 'Bleed', strong: 'Strong', thorns: 'Thorns' };
+const STATUS_NAMES_SHORT = { poison: 'Psn', burn: 'Brn', freeze: 'Frz', vulnerable: 'Vul', weak: 'Wk', bleed: 'Bld', strong: 'Str', thorns: 'Thn' };
+
+function getStatusColors() {
+  const settings = PurrSettings.load();
+  const mode = settings.colorblind || 'off';
+  if (mode === 'off') return STATUS_COLORS_BASE;
+  const remap = COLORBLIND_MAPS[mode] || {};
+  const result = {};
+  for (const [k, v] of Object.entries(STATUS_COLORS_BASE)) {
+    result[k] = remap[v] || v;
+  }
+  return result;
+}
+
+function getStatusNames() {
+  const settings = PurrSettings.load();
+  return settings.statusLabels === 'full' ? STATUS_NAMES_FULL : STATUS_NAMES_SHORT;
+}
 
 export class CombatScene extends Phaser.Scene {
   constructor() { super('CombatScene'); }
@@ -16,6 +38,7 @@ export class CombatScene extends Phaser.Scene {
   init(data) {
     this.isElite = data.elite || false;
     this.isBoss = data.boss || false;
+    this.isActStart = data.actStart || false;
   }
 
   create() {
@@ -42,6 +65,17 @@ export class CombatScene extends Phaser.Scene {
     const enemy = this.isBoss ? getBoss(gs.act) : getRandomEnemy(gs.act, this.isElite);
     this.enemy = enemy;
 
+    // Ascension modifiers
+    const ascMods = gs.getAscensionModifiers();
+    if (ascMods.enemyHpBonus) {
+      const bonus = Math.round(enemy.maxHp * ascMods.enemyHpBonus);
+      enemy.maxHp += bonus;
+      enemy.hp += bonus;
+    }
+    if (ascMods.bossThreshold && enemy.thresholdBehavior) {
+      enemy.thresholdBehavior = Object.assign({}, enemy.thresholdBehavior, { below: ascMods.bossThreshold });
+    }
+
     // Setup combat state
     this.drawPile = [...gs.deck].sort(() => Math.random() - 0.5);
     this.discardPile = [];
@@ -62,6 +96,21 @@ export class CombatScene extends Phaser.Scene {
     if (gs.relics.includes('toy_mouse')) this.playerBlock = 3;
     // Cursed collar: start combat with 2 stacks of vulnerable
     if (gs.relics.includes('cursed_collar')) this.playerStatuses.vulnerable = 2;
+    // A5: start each act with 2 Vulnerable on the player
+    if (ascMods.startVulnerable > 0 && this.isActStart) {
+      this.playerStatuses.vulnerable = (this.playerStatuses.vulnerable || 0) + ascMods.startVulnerable;
+    }
+    // Daily modifier effects
+    if (gs.isDaily && gs.dailyModifier) {
+      const mod = gs.dailyModifier.id;
+      if (mod === 'bonus_energy') {
+        this.energy += 1;
+        this.maxEnergy += 1;
+      }
+      if (mod === 'cursed') {
+        this.playerStatuses.vulnerable = (this.playerStatuses.vulnerable || 0) + 2;
+      }
+    }
     // Apply pending statuses from events (e.g. Thunderstorm +strong, cursed fish +poison)
     if (gs.pendingStatusBonus) {
       for (const [status, amt] of Object.entries(gs.pendingStatusBonus)) {
@@ -192,7 +241,7 @@ export class CombatScene extends Phaser.Scene {
 
     // Enemy HP bar
     this.enemyHpBar = this.add.graphics().setDepth(2);
-    this.enemyHpLabel = this.add.text(W/2, 64, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5).setDepth(3);
+    this.enemyHpLabel = this.add.text(W/2, 70, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5).setDepth(3);
 
     // Enemy sprite
     const enemySpriteKey = this.enemy.id;
@@ -237,10 +286,10 @@ export class CombatScene extends Phaser.Scene {
 
     // Energy orbs
     this.energyOrbGfx = this.add.graphics().setDepth(2);
-    this.add.text(20, H - 131, 'ENERGY', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#888888' }).setDepth(3);
+    this.add.text(20, H - 122, 'ENERGY', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#888888' }).setDepth(3);
 
     // Player status text
-    this.playerStatusText = this.add.text(170, H - 145, '', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa' }).setDepth(3);
+    this.playerStatusText = this.add.text(170, H - 70, '', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa' }).setDepth(3);
 
     // End turn button
     const endTurnHitZone = this.add.rectangle(W - 110, H - 155, 220, 60, 0x000000, 0).setInteractive({ useHandCursor: true });
@@ -470,9 +519,12 @@ export class CombatScene extends Phaser.Scene {
     // Enemy status badges
     this.enemyStatusContainer.removeAll(true);
     const statuses = Object.entries(this.enemy.statuses || {}).filter(([,v]) => v > 0);
+    const _statusColors = getStatusColors();
+    const _statusNames  = getStatusNames();
     statuses.forEach(([k, v], i) => {
-      const col = STATUS_COLORS[k] || '#aaaaaa';
-      const badge = this.add.text(i * 72 - statuses.length * 36 + 36, 0, `${STATUS_LABELS[k] || k} ×${v}`, {
+      const col = _statusColors[k] || '#aaaaaa';
+      const displayName = _statusNames[k] || k;
+      const badge = this.add.text(i * 72 - statuses.length * 36 + 36, 0, `${displayName}\u00d7${v}`, {
         fontFamily: '"Press Start 2P"', fontSize: '11px', color: col,
         backgroundColor: '#111111', padding: { x: 5, y: 3 }
       }).setOrigin(0.5);
@@ -510,8 +562,9 @@ export class CombatScene extends Phaser.Scene {
     this._drawEnergyOrbs(this.energyOrbGfx);
 
     // Player statuses
+    const _pStatusNames = getStatusNames();
     const pStatuses = Object.entries(this.playerStatuses || {}).filter(([,v]) => v > 0);
-    this.playerStatusText.setText(pStatuses.map(([k,v]) => `${STATUS_LABELS[k] || k} ×${v}`).join('  '));
+    this.playerStatusText.setText(pStatuses.map(([k,v]) => `${_pStatusNames[k] || k}\u00d7${v}`).join(' '));
 
     // Deck / discard
     this.deckCountText.setText(`📚 Draw: ${this.drawPile.length}`);
@@ -557,6 +610,7 @@ export class CombatScene extends Phaser.Scene {
         this.drawPile = [...this.discardPile].sort(() => Math.random() - 0.5);
         this.discardPile = [];
         if (this.gs.relics.includes('hairball')) this.enemy.hp -= 3;
+        this._showTurnBanner('Deck shuffled', '#888888');
       }
       if (this.drawPile.length > 0) { this.hand.push(this.drawPile.pop()); drew++; }
     }
@@ -571,8 +625,14 @@ export class CombatScene extends Phaser.Scene {
   _renderHand() {
     if (this.handObjects) this.handObjects.forEach(c => c.destroy(true));
     this.handObjects = [];
+    if (this._emptyHandText) { this._emptyHandText.destroy(); this._emptyHandText = null; }
 
-    if (this.hand.length === 0) return;
+    if (this.hand.length === 0) {
+      this._emptyHandText = this.add.text(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 120, 'No cards in hand', {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555555'
+      }).setOrigin(0.5);
+      return;
+    }
 
     const cardW = 118, cardH = 158;
     const n = this.hand.length;
@@ -694,6 +754,13 @@ export class CombatScene extends Phaser.Scene {
           container.disableInteractive();
           this.time.delayedCall(80, () => this._playCard(cardId, i));
         });
+      } else {
+        container.on('pointerover', () => {
+          container.setTint(0xff6666);
+        });
+        container.on('pointerout', () => {
+          container.clearTint();
+        });
       }
 
       this.handObjects.push(container);
@@ -741,8 +808,9 @@ export class CombatScene extends Phaser.Scene {
     }
 
     const prevHp = this.gs.hp;
+    const prevBlock = this.playerBlock;
     const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
-    const results = CardEngine.resolveCard(card, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile, relics: this.gs.relics }, mood);
+    const results = CardEngine.resolveCard(card, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile, relics: this.gs.relics, modifiers: { glass_cannon: this.gs.hasModifier && this.gs.hasModifier('glass_cannon') } }, mood);
 
     this.gs.hp = player.hp;
     this.playerBlock = player.block;
@@ -792,6 +860,11 @@ export class CombatScene extends Phaser.Scene {
 
     this._updateStatsDisplay();
 
+    // Flash block display when block increases (NAN-124)
+    if (this.playerBlock > prevBlock && this.playerBlockLabel) {
+      this.tweens.add({ targets: this.playerBlockLabel, alpha: { from: 1, to: 0.3 }, duration: 120, yoyo: true });
+    }
+
     // Card play animation: spawn ghost at container's position
     const playedContainer = this.handObjects[handIndex];
     if (playedContainer) {
@@ -810,10 +883,194 @@ export class CombatScene extends Phaser.Scene {
       });
     }
 
+    // Check for scry result — show overlay before re-rendering hand
+    const scryResult = results.find(r => r.scry > 0);
+    if (scryResult) {
+      // Read the keep limit from the card's effect definition
+      const scryEffect = card.effects.find(e => e.type === 'scry');
+      this._scryKeepLimit = scryEffect ? (scryEffect.keep || scryResult.scry) : scryResult.scry;
+      this._showScryOverlay(scryResult.scry, () => {
+        this._renderHand();
+        if (this.enemy.hp <= 0) this._enemyDefeated();
+        if (this.gs.hp <= 0) this._playerDied();
+      });
+      return;
+    }
+
     this._renderHand();
 
     if (this.enemy.hp <= 0) this._enemyDefeated();
     if (this.gs.hp <= 0) this._playerDied();
+  }
+
+  _showScryOverlay(count, onDone) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+
+    // Cunning personality bonus: scry 1 extra card
+    const mood = this.gs.personality.mood;
+    const actualCount = (mood === 'CUNNING') ? count + 1 : count;
+
+    // Take cards from top of draw pile (pop = top)
+    const available = Math.min(actualCount, this.drawPile.length);
+    const scryCards = [];
+    for (let i = 0; i < available; i++) {
+      scryCards.push(this.drawPile.pop());
+    }
+
+    if (scryCards.length === 0) {
+      onDone();
+      return;
+    }
+
+    // Determine keep limit from the card effect
+    // We pass the raw count from the effect — the keep value is stored on the effect itself.
+    // Since we can't access the card here, we default to keeping up to all scried cards.
+    // The caller passes the effect's value; keep limit must be derived from the played card.
+    // We'll expose keepLimit via a property set just before this call, or fall back to all.
+    const keepLimit = this._scryKeepLimit !== undefined ? this._scryKeepLimit : scryCards.length;
+    this._scryKeepLimit = undefined;
+
+    // Track which cards are marked "keep" (toggled by clicking)
+    const keptSet = new Set();
+
+    const overlay = this.add.container(0, 0).setDepth(20);
+
+    // Dark backdrop (non-interactive — only the confirm button closes this)
+    const backdrop = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72).setDepth(20);
+    overlay.add(backdrop);
+
+    // Title
+    const title = this.add.text(W / 2, 60, `SCRY — choose up to ${keepLimit} card${keepLimit !== 1 ? 's' : ''} to keep`, {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700',
+      stroke: '#000000', strokeThickness: 2
+    }).setOrigin(0.5).setDepth(21);
+    overlay.add(title);
+
+    const subtitle = this.add.text(W / 2, 84, 'Click a card to keep it (gold). Others go to bottom of draw pile.', {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#aaaaaa'
+    }).setOrigin(0.5).setDepth(21);
+    overlay.add(subtitle);
+
+    // Lay out cards in a row centred on screen, above the hand area
+    const cardW = 118, cardH = 158;
+    const gap = 14;
+    const totalWidth = scryCards.length * cardW + (scryCards.length - 1) * gap;
+    const startX = W / 2 - totalWidth / 2 + cardW / 2;
+    const cardY = H / 2 - 20;
+
+    const cardContainers = [];
+
+    const refreshCardVisuals = () => {
+      cardContainers.forEach(({ container, cardId, bg, border, nameText, costText, descText }) => {
+        const isKept = keptSet.has(cardId + '_' + container.getData('idx'));
+        bg.setFillStyle(isKept ? 0x1a3a1a : 0x111622);
+        const card = this.cardDb[cardId];
+        const typeColor = CARD_TYPE_COLORS[card ? card.type : 'skill'] || 0x4fc3f7;
+        border.clear();
+        if (isKept) {
+          border.lineStyle(3, 0xffd700);
+        } else {
+          border.lineStyle(2, 0x444444);
+        }
+        border.strokeRect(-cardW / 2, -cardH / 2, cardW, cardH);
+        container.setAlpha(isKept ? 1 : 0.55);
+      });
+    };
+
+    scryCards.forEach((cardId, i) => {
+      const card = this.cardDb[cardId];
+      const cx = startX + i * (cardW + gap);
+      const container = this.add.container(cx, cardY).setDepth(22);
+      container.setData('idx', i);
+
+      const shadow = this.add.rectangle(3, 4, cardW, cardH, 0x000000, 0.4).setDepth(0);
+      const bg = this.add.rectangle(0, 0, cardW, cardH, 0x111622).setDepth(1);
+      const border = this.add.graphics().setDepth(2);
+      border.lineStyle(2, 0x444444);
+      border.strokeRect(-cardW / 2, -cardH / 2, cardW, cardH);
+
+      const typeColor = card ? (CARD_TYPE_COLORS[card.type] || 0x666666) : 0x666666;
+      const pip = this.add.rectangle(cardW / 2 - 10, -cardH / 2 + 10, 18, 18, typeColor).setDepth(3);
+
+      const nameText = this.add.text(0, -61, card ? card.name : '?', {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#f0ead6',
+        wordWrap: { width: 104 }, align: 'center'
+      }).setOrigin(0.5).setDepth(3);
+
+      const cost = card ? card.cost : '?';
+      const costText = this.add.text(-cardW / 2 + 8, -cardH / 2 + 8, `${cost}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
+      }).setDepth(3);
+
+      const descText = this.add.text(0, 36, card ? card.description : '', {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#aaaaaa',
+        wordWrap: { width: 104 }, align: 'center'
+      }).setOrigin(0.5).setDepth(3);
+
+      container.add([shadow, bg, border, pip, nameText, costText, descText]);
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-cardW / 2, -cardH / 2, cardW, cardH),
+        Phaser.Geom.Rectangle.Contains
+      );
+
+      const slotKey = cardId + '_' + i;
+      container.on('pointerdown', () => {
+        if (keptSet.has(slotKey)) {
+          keptSet.delete(slotKey);
+        } else if (keptSet.size < keepLimit) {
+          keptSet.add(slotKey);
+        }
+        refreshCardVisuals();
+      });
+      container.on('pointerover', () => {
+        if (!keptSet.has(slotKey)) container.setAlpha(0.75);
+      });
+      container.on('pointerout', () => {
+        refreshCardVisuals();
+      });
+
+      cardContainers.push({ container, cardId, bg, border, nameText, costText, descText });
+      overlay.add(container);
+    });
+
+    refreshCardVisuals();
+
+    // Confirm button
+    const btnY = H - 80;
+    const btnBg = this.add.rectangle(W / 2, btnY, 200, 44, 0x1a2a0a).setDepth(22);
+    const btnBorder = this.add.graphics().setDepth(22);
+    btnBorder.lineStyle(2, 0xffd700);
+    btnBorder.strokeRect(W / 2 - 100, btnY - 22, 200, 44);
+    const btnText = this.add.text(W / 2, btnY, 'CONFIRM', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700'
+    }).setOrigin(0.5).setDepth(23);
+    const btnZone = this.add.rectangle(W / 2, btnY, 200, 44, 0xffffff, 0)
+      .setDepth(24).setInteractive({ useHandCursor: true });
+    btnZone.on('pointerover', () => btnBg.setFillStyle(0x2a4a10));
+    btnZone.on('pointerout', () => btnBg.setFillStyle(0x1a2a0a));
+    btnZone.on('pointerdown', () => {
+      // Kept cards go to hand; the rest go to the bottom of the draw pile
+      const keptIndices = new Set([...keptSet].map(k => parseInt(k.split('_').pop(), 10)));
+      const toBottom = [];
+      scryCards.forEach((cid, i) => {
+        if (keptIndices.has(i)) {
+          this.hand.push(cid);
+        } else {
+          toBottom.push(cid);
+        }
+      });
+      // Insert at front of drawPile (bottom of deck — pop() draws from the end/top)
+      this.drawPile.unshift(...toBottom);
+
+      overlay.destroy(true);
+      this._updateStatsDisplay();
+      onDone();
+    });
+    overlay.add([btnBg, btnBorder, btnText, btnZone]);
+
+    // Fade in
+    overlay.setAlpha(0);
+    this.tweens.add({ targets: overlay, alpha: 1, duration: 160 });
   }
 
   _endPlayerTurn() {
@@ -829,7 +1086,7 @@ export class CombatScene extends Phaser.Scene {
       const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
       // Pass relics without 'mirror' to prevent the replay from triggering mirror again
       const relicsWithoutMirror = this.gs.relics.filter(r => r !== 'mirror');
-      const results = CardEngine.resolveCard(cardToReplay, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile, relics: relicsWithoutMirror }, mood);
+      const results = CardEngine.resolveCard(cardToReplay, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile, relics: relicsWithoutMirror, modifiers: { glass_cannon: this.gs.hasModifier && this.gs.hasModifier('glass_cannon') } }, mood);
       this.gs.hp = player.hp;
       this.playerBlock = player.block;
       this.playerStatuses = player.statuses;
@@ -897,7 +1154,9 @@ export class CombatScene extends Phaser.Scene {
       const move = CardEngine.resolveEnemyIntent(this.enemy, null);
       const prevHp = this.gs.hp;
       const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
-      const result = CardEngine.executeEnemyMove(move, this.enemy, player);
+      const result = CardEngine.executeEnemyMove(move, this.enemy, player, {
+        relentless: this.gs.hasModifier && this.gs.hasModifier('relentless')
+      });
 
       this.gs.hp = player.hp;
       this.playerBlock = player.block;
@@ -908,6 +1167,7 @@ export class CombatScene extends Phaser.Scene {
         if (dmgTaken > 0) {
           this._showDamageNumber(100, SCREEN_HEIGHT - 240, dmgTaken, '#ff8888');
           this.cameras.main.shake(150, 0.008);
+          if (dmgTaken >= 10) this.cameras.main.shake(150, 0.02);
           // Hit-flash on player HP bar area
           const flashRect = this.add.rectangle(170, SCREEN_HEIGHT - 173, 200, 14, 0xffffff, 0.85).setDepth(5);
           this.tweens.add({ targets: flashRect, alpha: 0, duration: 200, onComplete: () => flashRect.destroy() });
@@ -1006,6 +1266,8 @@ export class CombatScene extends Phaser.Scene {
     }
     if (this.enemySprite) {
       this.tweens.add({ targets: this.enemySprite, alpha: 0.2, duration: 75, yoyo: true, repeat: 1 });
+      // Enemy flinch: slide left -8px then back over 100ms
+      this.tweens.add({ targets: this.enemySprite, x: this.enemySprite.x - 8, duration: 50, yoyo: true, ease: 'Power1' });
       // Hit-flash tint: white then back to normal over ~200ms
       if (this.enemySprite.setTint) {
         this.enemySprite.setTint(0xffffff);
@@ -1100,7 +1362,7 @@ export class CombatScene extends Phaser.Scene {
     // Description
     const descText = this.add.text(0, -H / 2 + 130, card.description, {
       fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#cccccc',
-      wordWrap: { width: W - 24 }, align: 'center'
+      wordWrap: { width: 260 }, align: 'center'
     }).setOrigin(0.5);
 
     // Already-upgraded badge

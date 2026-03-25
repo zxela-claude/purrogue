@@ -1,5 +1,6 @@
 import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
+import { TutorialScene } from './scenes/TutorialScene.js';
 import { MapScene } from './scenes/MapScene.js';
 import { CombatScene } from './scenes/CombatScene.js';
 import { ShopScene } from './scenes/ShopScene.js';
@@ -16,7 +17,7 @@ const config = {
   width: SCREEN_WIDTH,
   height: SCREEN_HEIGHT,
   backgroundColor: '#1a1a2e',
-  scene: [BootScene, MenuScene, MapScene, CombatScene, ShopScene, EventScene, RewardScene, GameOverScene, RunSummaryScene, SettingsScene],
+  scene: [BootScene, MenuScene, TutorialScene, MapScene, CombatScene, ShopScene, EventScene, RewardScene, GameOverScene, RunSummaryScene, SettingsScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

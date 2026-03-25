@@ -2,6 +2,28 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { RELICS } from '../data/relics.js';
 
+function buildShareText(snap, won) {
+  const relicDb = {};
+  RELICS.forEach(r => { relicDb[r.id] = r; });
+
+  const hero = snap.hero ? snap.hero.charAt(0) + snap.hero.slice(1).toLowerCase() : 'Unknown';
+  const moodInfo = snap.mood ? PersonalitySystem.getMoodDescription(snap.mood) : null;
+  const moodName = moodInfo ? moodInfo.name : (snap.mood || 'Unknown');
+  const result = won ? 'Victory' : 'Defeat';
+  const relicNames = snap.relics && snap.relics.length > 0
+    ? snap.relics.map(rid => (relicDb[rid] ? relicDb[rid].name : rid)).join(', ')
+    : 'None';
+  const score = snap.score != null ? snap.score
+    : (snap.act - 1) * 1000 + snap.floor * 100 + (snap.enemiesKilled || 0) * 25 + (won ? 500 : 0);
+
+  return [
+    `🐱 Purrogue — ${hero} ${moodName} ${result}!`,
+    `Act ${snap.act} · Score: ${score} · ${snap.enemiesKilled || 0} enemies defeated`,
+    `Relics: ${relicNames}`,
+    `Play at: purrogue.cat`,
+  ].join('\n');
+}
+
 const MOOD_BG_COLORS = {
   feisty:  0x3a0a0a,
   cozy:    0x0a1a0a,
@@ -29,7 +51,15 @@ export class RunSummaryScene extends Phaser.Scene {
         cardsPlayed:   gs.runStats.cards_played,
         enemiesKilled: gs.runStats.enemies_killed,
         turns:         gs.runStats.turns,
+        isDaily:       gs.isDaily || false,
+        dailySeed:     gs.dailySeed || null,
+        dailyModifier: gs.dailyModifier || null,
+        ascension:     gs.ascension || 0,
       };
+      // Save daily score before run is ended
+      if (gs.isDaily) {
+        gs.saveDailyScore(this.won);
+      }
     } else {
       this.snapshot = null;
     }
@@ -65,8 +95,13 @@ export class RunSummaryScene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0);
     this.tweens.add({ targets: title, alpha: 1, y: 38, duration: 500, ease: 'Back.easeOut' });
 
-    const subTitle = this.add.text(W/2, 78, 'RUN SUMMARY', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#555577'
+    const ascLabel = (snap && snap.ascension > 0) ? `A${snap.ascension}` : 'Normal';
+    const subTitleText = (snap && snap.isDaily && snap.dailySeed)
+      ? `DAILY RUN — ${snap.dailySeed}`
+      : `RUN SUMMARY — ${ascLabel}`;
+    const subTitleColor = (snap && snap.isDaily) ? '#00e5ff' : (snap && snap.ascension > 0) ? '#ffd700' : '#555577';
+    const subTitle = this.add.text(W/2, 78, subTitleText, {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: subTitleColor
     }).setOrigin(0.5).setAlpha(0);
     this.tweens.add({ targets: subTitle, alpha: 1, duration: 400, delay: 200 });
 
@@ -75,6 +110,9 @@ export class RunSummaryScene extends Phaser.Scene {
       return;
     }
 
+    // ── NAN-126: Act completion badges ────────────────────────────────────────
+    this._addActBadges(W, snap, this.won);
+
     // ── Two-column layout ─────────────────────────────────────────────────────
     const colGap    = 16;
     const leftW     = 390;
@@ -82,7 +120,7 @@ export class RunSummaryScene extends Phaser.Scene {
     const totalW    = leftW + colGap + rightW;
     const leftX     = W/2 - totalW/2;
     const rightX    = leftX + leftW + colGap;
-    const panelTop  = 100;
+    const panelTop  = 112;
 
     // ── Left panel: run stats ─────────────────────────────────────────────────
     const leftPanelH = 370;
@@ -98,8 +136,10 @@ export class RunSummaryScene extends Phaser.Scene {
     const statRows = [
       { label: 'Result',         value: this.won ? 'VICTORY' : 'DEFEAT', color: this.won ? '#ffd700' : '#e94560' },
       { label: 'Hero',           value: snap.hero },
+      { label: 'Ascension',      value: snap.ascension > 0 ? `A${snap.ascension}` : 'Normal', color: snap.ascension > 0 ? '#ffd700' : '#888888' },
       { label: 'Floor Reached',  value: `Act ${snap.act}  –  Floor ${snap.floor}` },
       { label: 'Personality',    value: moodInfo ? moodInfo.name : '—', color: moodInfo ? moodInfo.color : '#888888' },
+      ...(snap.isDaily && snap.dailyModifier ? [{ label: 'Daily Modifier', value: snap.dailyModifier.name, color: '#00e5ff' }] : []),
       { label: 'Deck Size',      value: snap.deckSize },
       { label: 'Damage Dealt',   value: snap.damageDealt },
       { label: 'Damage Taken',   value: snap.damageTaken },
@@ -171,6 +211,42 @@ export class RunSummaryScene extends Phaser.Scene {
 
     // ── Buttons ───────────────────────────────────────────────────────────────
     this._addReturnButton(W, H);
+    if (snap) this._addShareButton(W, H, snap);
+  }
+
+  _addActBadges(W, snap, won) {
+    // Show Act 1 ✓   Act 2 ✓   Act 3 ◐ based on snap.act and won
+    // Acts 1..(snap.act-1) are completed; snap.act is current (partial or won); rest not reached
+    const TOTAL_ACTS = 3;
+    const badges = [];
+    for (let a = 1; a <= TOTAL_ACTS; a++) {
+      if (a < snap.act) {
+        badges.push({ act: a, symbol: '✓', color: '#4caf50' });
+      } else if (a === snap.act) {
+        if (won) {
+          badges.push({ act: a, symbol: '✓', color: '#ffd700' });
+        } else {
+          badges.push({ act: a, symbol: '✗', color: '#e94560' });
+        }
+      } else {
+        badges.push({ act: a, symbol: '◐', color: '#444466' });
+      }
+    }
+
+    const badgeStr = badges.map(b => `Act ${b.act} ${b.symbol}`).join('   ');
+    // Render each segment with its own color
+    const segW = 120;
+    const totalW = TOTAL_ACTS * segW;
+    const startX = W / 2 - totalW / 2 + segW / 2;
+    const badgeY = 92;
+
+    badges.forEach((b, i) => {
+      const bx = startX + i * segW;
+      this.add.text(bx, badgeY, `Act ${b.act} ${b.symbol}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: b.color,
+        stroke: '#000000', strokeThickness: 1
+      }).setOrigin(0.5);
+    });
   }
 
   _addReturnButton(W, H) {
@@ -202,5 +278,76 @@ export class RunSummaryScene extends Phaser.Scene {
       this.registry.set('gameState', null);
       this.scene.start('MenuScene');
     });
+  }
+
+  _addShareButton(W, H, snap) {
+    const btnY  = H - 44;
+    const btnW  = 200;
+    const btnH  = 40;
+    // Position to the left of the Return button (Return is centred at W/2)
+    const btnX  = W/2 - 160 - btnW/2;
+
+    const btn = this.add.rectangle(btnX, btnY, btnW, btnH, 0x0a1a2a)
+      .setInteractive({ useHandCursor: true });
+    const border = this.add.graphics();
+    border.lineStyle(2, 0x4fc3f7, 0.8);
+    border.strokeRect(btnX - btnW/2, btnY - btnH/2, btnW, btnH);
+    const label = this.add.text(btnX, btnY, 'SHARE RUN', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4fc3f7'
+    }).setOrigin(0.5);
+
+    btn.on('pointerover', () => { btn.setFillStyle(0x0a2a3a); label.setColor('#7fd8f8'); });
+    btn.on('pointerout',  () => { btn.setFillStyle(0x0a1a2a); label.setColor('#4fc3f7'); });
+    btn.on('pointerdown', () => {
+      const text = buildShareText(snap, this.won);
+      const doShare = () => {
+        const original = 'SHARE RUN';
+        label.setText('Copied! ✓');
+        this.time.delayedCall(2000, () => { label.setText(original); });
+      };
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(doShare).catch(() => {
+          this._showShareFallback(text);
+        });
+      } else {
+        this._showShareFallback(text);
+      }
+    });
+  }
+
+  _showShareFallback(text) {
+    // Overlay with a textarea so the player can manually copy
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.75)
+      .setInteractive({ useHandCursor: false }).setDepth(100);
+
+    const boxW = 480, boxH = 180;
+    this.add.rectangle(W/2, H/2, boxW, boxH, 0x0d0d1a, 1).setDepth(101);
+    this.add.graphics().setDepth(101).lineStyle(1, 0x4fc3f7).strokeRect(W/2 - boxW/2, H/2 - boxH/2, boxW, boxH);
+
+    this.add.text(W/2, H/2 - boxH/2 + 18, 'Copy this text:', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4fc3f7'
+    }).setOrigin(0.5).setDepth(102);
+
+    // Use a DOM textarea for the actual text selection
+    const ta = this.add.dom(W/2, H/2 + 16, 'textarea', {
+      width: (boxW - 32) + 'px',
+      height: '80px',
+      background: '#0d1a2a',
+      color: '#f0ead6',
+      border: '1px solid #4fc3f7',
+      fontFamily: 'monospace',
+      fontSize: '11px',
+      resize: 'none',
+      padding: '6px',
+    }, text).setDepth(102);
+    if (ta.node) { ta.node.select(); }
+
+    const closeBtn = this.add.text(W/2, H/2 + boxH/2 - 16, '[ CLOSE ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa'
+    }).setOrigin(0.5).setDepth(102).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
+    overlay.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
   }
 }

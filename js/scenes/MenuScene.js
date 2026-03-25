@@ -72,6 +72,33 @@ export class MenuScene extends Phaser.Scene {
     const heroes = Object.entries(HERO_CLASSES);
     const heroSpriteKeys = { WARRIOR: 'warrior_idle', MAGE: 'mage_idle', ROGUE: 'rogue_idle' };
 
+    // ── Daily Challenge button ─────────────────────────────────────────────────
+    const dailySeed = GameState.getDailySeed();
+    const dailyModifier = GameState.getDailyModifier(dailySeed);
+    const dailyBest = GameState.getDailyBestScore(dailySeed);
+
+    const dailyBtnY = 560;
+    const dailyBtnW = 360;
+    const dailyBtnH = 40;
+    const dailyBg = this.add.rectangle(W/2, dailyBtnY, dailyBtnW, dailyBtnH, 0x001a1a)
+      .setInteractive({ useHandCursor: true });
+    const dailyBorder = this.add.graphics();
+    dailyBorder.lineStyle(2, 0x00e5ff, 0.85);
+    dailyBorder.strokeRect(W/2 - dailyBtnW/2, dailyBtnY - dailyBtnH/2, dailyBtnW, dailyBtnH);
+    this.add.text(W/2, dailyBtnY, '📅 DAILY CHALLENGE', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#00e5ff'
+    }).setOrigin(0.5).setDepth(1);
+
+    if (dailyBest) {
+      this.add.text(W/2, dailyBtnY + dailyBtnH/2 + 10, `Best: ${dailyBest.score}pts  (${dailyBest.won ? 'WIN' : 'defeat'})`, {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#00897b'
+      }).setOrigin(0.5);
+    }
+
+    dailyBg.on('pointerover', () => dailyBg.setFillStyle(0x003333));
+    dailyBg.on('pointerout',  () => dailyBg.setFillStyle(0x001a1a));
+    dailyBg.on('pointerdown', () => this._showDailyModal(dailySeed, dailyModifier));
+
     heroes.forEach(([key, hero], i) => {
       const x = W/2 + (i - 1) * 296;
       const cardY = 435;
@@ -121,7 +148,11 @@ export class MenuScene extends Phaser.Scene {
         newGs.deck = this._getStartingDeck(key);
         newGs.save();
         this.registry.set('gameState', newGs);
-        this.scene.start('MapScene');
+        if (newGs.ascensionUnlocked > 0) {
+          this._showAscensionModal(newGs);
+        } else {
+          this._afterAscension(newGs);
+        }
       });
     });
 
@@ -151,43 +182,137 @@ export class MenuScene extends Phaser.Scene {
 
     // ── High scores ───────────────────────────────────────────────────────────
     const scores = GameState.getScores();
-    if (scores.length > 0) {
-      const ROW_H = 52;
-      const panelW = 310;
-      const panelRows = Math.min(scores.length, 5);
-      const panelH = 36 + panelRows * ROW_H + 8;
-      const panelX = W - panelW / 2 - 8;
-      const panelTop = 20;
+    this._buildLeaderboard(scores, W);
+  }
 
-      this.add.rectangle(panelX, panelTop + panelH / 2, panelW, panelH, 0x0d0d1a, 0.92);
-      this.add.graphics().lineStyle(1, 0xffd700, 0.3).strokeRect(panelX - panelW / 2, panelTop, panelW, panelH);
-      this.add.text(panelX, panelTop + 16, 'BEST RUNS', {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
-      }).setOrigin(0.5);
+  _buildLeaderboard(allScores, W) {
+    const MOOD_HEX   = { feisty: 0xe94560, cozy: 0x4caf50, cunning: 0x4fc3f7, feral: 0xce93d8 };
+    const HERO_EMOJI = { WARRIOR: '⚔️', MAGE: '🔮', ROGUE: '🗡️' };
 
-      const MOOD_COLORS = { feisty: '#e94560', cozy: '#4caf50', cunning: '#4fc3f7', feral: '#ce93d8' };
+    const ROW_H    = 34;
+    const MAX_ROWS = 10;
+    const panelW   = 330;
+    const panelX   = W - panelW / 2 - 8;
+    const panelTop = 20;
 
-      scores.slice(0, 5).forEach((s, i) => {
-        const rowY = panelTop + 36 + i * ROW_H;
-        const resultCol = s.won ? '#4caf50' : '#e94560';
-        const moodCol = MOOD_COLORS[s.personality] || '#aaaaaa';
-        const scoreVal = s.score != null ? s.score : (s.act - 1) * 1000 + s.floor * 100;
-        const relicStr = s.relics && s.relics.length > 0
-          ? s.relics.slice(0, 3).join(' ').replace(/_/g, ' ')
-          : '—';
+    const TABS  = ['All', 'Warrior', 'Mage', 'Rogue'];
+    const TAB_W = panelW / TABS.length;
+    const TAB_H = 24;
 
-        // Row 1: result + hero + act/floor + score
-        this.add.text(panelX - panelW / 2 + 8, rowY,
-          `${s.won ? '✓' : '✗'} ${s.hero.slice(0, 6).padEnd(6)} A${s.act}F${String(s.floor).padEnd(2)} ${String(scoreVal).padStart(5)}pts`,
-          { fontFamily: '"Press Start 2P"', fontSize: '9px', color: resultCol }
-        );
-        // Row 2: personality + relics
-        this.add.text(panelX - panelW / 2 + 8, rowY + 18,
-          `${(s.personality || '—').padEnd(8)} ${relicStr}`,
-          { fontFamily: '"Press Start 2P"', fontSize: '8px', color: moodCol }
-        );
+    // "BEST RUNS" header
+    this.add.text(panelX, panelTop + 10, 'BEST RUNS', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700'
+    }).setOrigin(0.5);
+
+    const tabsTop    = panelTop + 24;
+    const contentTop = tabsTop + TAB_H;
+
+    let rowContainer = [];
+    let activeTab    = 'All';
+
+    const tabGfx    = this.add.graphics();
+    const tabLabels = {};
+
+    const drawTabs = (active) => {
+      tabGfx.clear();
+      TABS.forEach((t, ti) => {
+        const tx       = panelX - panelW / 2 + ti * TAB_W;
+        const isActive = t === active;
+        tabGfx.fillStyle(isActive ? 0x2a2000 : 0x0d0d1a, 0.97);
+        tabGfx.fillRect(tx, tabsTop, TAB_W, TAB_H);
+        tabGfx.lineStyle(1, isActive ? 0xffd700 : 0x334466, isActive ? 0.9 : 0.4);
+        tabGfx.strokeRect(tx, tabsTop, TAB_W, TAB_H);
+        if (tabLabels[t]) tabLabels[t].setColor(isActive ? '#ffd700' : '#777799');
       });
-    }
+    };
+
+    TABS.forEach((t, ti) => {
+      const tx  = panelX - panelW / 2 + ti * TAB_W + TAB_W / 2;
+      const lbl = this.add.text(tx, tabsTop + TAB_H / 2, t, {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#777799'
+      }).setOrigin(0.5);
+      tabLabels[t] = lbl;
+
+      const hitBox = this.add.rectangle(tx, tabsTop + TAB_H / 2, TAB_W - 2, TAB_H - 2, 0x000000, 0)
+        .setInteractive({ useHandCursor: true });
+      hitBox.on('pointerover', () => { if (t !== activeTab) lbl.setColor('#aaaaaa'); });
+      hitBox.on('pointerout',  () => { if (t !== activeTab) lbl.setColor('#777799'); });
+      hitBox.on('pointerdown', () => {
+        activeTab = t;
+        drawTabs(activeTab);
+        renderRows(activeTab);
+      });
+    });
+
+    drawTabs(activeTab);
+
+    const renderRows = (filter) => {
+      rowContainer.forEach(obj => obj.destroy());
+      rowContainer = [];
+
+      const filtered = filter === 'All'
+        ? allScores
+        : allScores.filter(s => s.hero && s.hero.toUpperCase() === filter.toUpperCase());
+
+      const visible  = filtered.slice(0, MAX_ROWS);
+      const panelH   = Math.max(visible.length, 1) * ROW_H + 8;
+
+      const bg = this.add.rectangle(panelX, contentTop + panelH / 2, panelW, panelH, 0x0d0d1a, 0.92);
+      const border = this.add.graphics();
+      border.lineStyle(1, 0xffd700, 0.3).strokeRect(panelX - panelW / 2, contentTop, panelW, panelH);
+      rowContainer.push(bg, border);
+
+      if (visible.length === 0) {
+        const empty = this.add.text(panelX, contentTop + ROW_H / 2 + 4, 'No runs yet', {
+          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#555577'
+        }).setOrigin(0.5);
+        rowContainer.push(empty);
+        return;
+      }
+
+      visible.forEach((s, i) => {
+        const rowY = contentTop + 4 + i * ROW_H + ROW_H / 2;
+
+        if (i % 2 === 0) {
+          const shade = this.add.rectangle(panelX, rowY, panelW - 2, ROW_H - 2, 0xffffff, 0.02);
+          rowContainer.push(shade);
+        }
+
+        const scoreVal  = s.score != null ? s.score : (s.act - 1) * 1000 + s.floor * 100;
+        const heroEmoji = HERO_EMOJI[s.hero] || '?';
+        const moodHex   = MOOD_HEX[s.personality] || 0x888888;
+        const resultCol = s.won ? '#4caf50' : '#e94560';
+
+        const rank = this.add.text(panelX - panelW / 2 + 8, rowY, `${i + 1}.`, {
+          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#555577'
+        }).setOrigin(0, 0.5);
+
+        const heroTxt = this.add.text(panelX - panelW / 2 + 30, rowY, heroEmoji, {
+          fontSize: '13px'
+        }).setOrigin(0, 0.5);
+
+        const dotGfx = this.add.graphics();
+        dotGfx.fillStyle(moodHex, 0.9);
+        dotGfx.fillCircle(panelX - panelW / 2 + 56, rowY, 5);
+
+        const heroLabel = this.add.text(panelX - panelW / 2 + 66, rowY,
+          s.hero ? s.hero.slice(0, 3) : '???',
+          { fontFamily: '"Press Start 2P"', fontSize: '8px', color: resultCol }
+        ).setOrigin(0, 0.5);
+
+        const actLabel = this.add.text(panelX - panelW / 2 + 118, rowY, `Act${s.act}`, {
+          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#aaaaaa'
+        }).setOrigin(0, 0.5);
+
+        const scoreTxt = this.add.text(panelX + panelW / 2 - 8, rowY, `${scoreVal}pts`, {
+          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#ffd700'
+        }).setOrigin(1, 0.5);
+
+        rowContainer.push(rank, heroTxt, dotGfx, heroLabel, actLabel, scoreTxt);
+      });
+    };
+
+    renderRows(activeTab);
   }
 
   _createStars() {
@@ -225,5 +350,361 @@ export class MenuScene extends Phaser.Scene {
       ROGUE:   ['r_shiv','r_shiv','r_shiv','r_dodge','r_dodge','r_sprint']
     };
     return starts[heroClass] || [];
+  }
+
+  _showDailyModal(dailySeed, dailyModifier) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+
+    // Overlay
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.75)
+      .setDepth(10).setInteractive();
+
+    // Modal panel
+    const mW = 520, mH = 340;
+    const mX = W/2, mY = H/2;
+    this.add.rectangle(mX, mY, mW, mH, 0x04151f, 0.98).setDepth(11);
+    const modalBorder = this.add.graphics().setDepth(11);
+    modalBorder.lineStyle(2, 0x00e5ff, 0.9);
+    modalBorder.strokeRect(mX - mW/2, mY - mH/2, mW, mH);
+
+    // Header
+    this.add.text(mX, mY - mH/2 + 28, '📅 DAILY CHALLENGE', {
+      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#00e5ff'
+    }).setOrigin(0.5).setDepth(12);
+
+    this.add.text(mX, mY - mH/2 + 60, dailySeed, {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#444466'
+    }).setOrigin(0.5).setDepth(12);
+
+    // Modifier name
+    this.add.text(mX, mY - 40, `Today's Modifier:`, {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888'
+    }).setOrigin(0.5).setDepth(12);
+
+    this.add.text(mX, mY - 12, dailyModifier.name, {
+      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#ffd700'
+    }).setOrigin(0.5).setDepth(12);
+
+    this.add.text(mX, mY + 24, dailyModifier.desc, {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa',
+      wordWrap: { width: mW - 60 }, align: 'center'
+    }).setOrigin(0.5).setDepth(12);
+
+    // Best score for today
+    const best = GameState.getDailyBestScore(dailySeed);
+    if (best) {
+      this.add.text(mX, mY + 62,
+        `Best today: ${best.score}pts  ${best.won ? '(WIN)' : '(defeat)'}  as ${best.hero}`,
+        { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#00897b' }
+      ).setOrigin(0.5).setDepth(12);
+    }
+
+    // Hero select label
+    this.add.text(mX, mY + 90, 'Choose your hero to start:', {
+      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#555577'
+    }).setOrigin(0.5).setDepth(12);
+
+    // Hero play buttons
+    const heroes = Object.entries(HERO_CLASSES);
+    heroes.forEach(([key, hero], i) => {
+      const bx = mX + (i - 1) * 148;
+      const by = mY + mH/2 - 44;
+      const btn = this.add.rectangle(bx, by, 128, 36, 0x0a0a1a)
+        .setDepth(12).setInteractive({ useHandCursor: true });
+      const btnBorder = this.add.graphics().setDepth(12);
+      btnBorder.lineStyle(2, hero.color, 0.8);
+      btnBorder.strokeRect(bx - 64, by - 18, 128, 36);
+      this.add.text(bx, by, `${hero.emoji} ${hero.name}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6'
+      }).setOrigin(0.5).setDepth(13);
+
+      btn.on('pointerover', () => btn.setFillStyle(0x1a1a3e));
+      btn.on('pointerout',  () => btn.setFillStyle(0x0a0a1a));
+      btn.on('pointerdown', () => {
+        const newGs = new GameState();
+        newGs.startRun(key);
+        // Set daily fields after startRun (startRun calls reset which clears them)
+        newGs.isDaily = true;
+        newGs.dailySeed = dailySeed;
+        newGs.dailyModifier = dailyModifier;
+        newGs.deck = this._getStartingDeck(key);
+
+        // Apply all_upgraded immediately
+        if (dailyModifier.id === 'all_upgraded') {
+          newGs.deck = newGs.deck.map(id => `${id}_u`);
+        }
+        // Apply no_gold
+        if (dailyModifier.id === 'no_gold') {
+          newGs.gold = 0;
+        }
+        // Apply lucky relic
+        if (dailyModifier.id === 'lucky') {
+          newGs.relics.push('lucky_paw');
+        }
+
+        newGs.save();
+        this.registry.set('gameState', newGs);
+        const tutorialDone = localStorage.getItem('purrogue_tutorial_done');
+        if (!tutorialDone) {
+          this.scene.start('TutorialScene');
+        } else {
+          this.scene.start('MapScene');
+        }
+      });
+    });
+
+    // Close button
+    const closeBtn = this.add.text(mX + mW/2 - 12, mY - mH/2 + 12, '✕', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#555577'
+    }).setOrigin(1, 0).setDepth(13).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerover', () => closeBtn.setColor('#e94560'));
+    closeBtn.on('pointerout',  () => closeBtn.setColor('#555577'));
+    closeBtn.on('pointerdown', () => {
+      overlay.destroy();
+      this.children.list
+        .filter(c => c.depth >= 11)
+        .forEach(c => c.destroy());
+    });
+  }
+
+  _showAscensionModal(newGs) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    const unlocked = newGs.ascensionUnlocked;
+    let selectedTier = 0;
+
+    // Overlay
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.78).setDepth(20).setInteractive();
+
+    const mW = 580, mH = 280;
+    const mX = W/2, mY = H/2;
+    this.add.rectangle(mX, mY, mW, mH, 0x04151f, 0.98).setDepth(21);
+    const border = this.add.graphics().setDepth(21);
+    border.lineStyle(2, 0xffd700, 0.6);
+    border.strokeRect(mX - mW/2, mY - mH/2, mW, mH);
+
+    this.add.text(mX, mY - mH/2 + 28, 'DIFFICULTY', {
+      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#ffd700',
+      stroke: '#000000', strokeThickness: 2
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(mX, mY - mH/2 + 54, 'Choose your ascension tier', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888'
+    }).setOrigin(0.5).setDepth(22);
+
+    // Tier buttons: Normal + A1..A(unlocked) + locked remaining
+    const tiers = [{ label: 'Normal', tier: 0 }];
+    for (let t = 1; t <= 5; t++) {
+      if (t <= unlocked) tiers.push({ label: `A${t}`, tier: t });
+      else tiers.push({ label: '🔒', tier: t, locked: true });
+    }
+
+    const btnW = 72, btnH = 44, gap = 10;
+    const totalW = tiers.length * (btnW + gap) - gap;
+    const startX = mX - totalW / 2 + btnW / 2;
+    const btnY = mY - 10;
+
+    const btnBgs = [];
+    const btnLabels = [];
+
+    const updateSelection = () => {
+      tiers.forEach((t, i) => {
+        const isSelected = t.tier === selectedTier;
+        const isLocked = t.locked;
+        const bg = btnBgs[i];
+        const lbl = btnLabels[i];
+        if (isSelected) {
+          bg.setFillStyle(0x3a2a00);
+          lbl.setColor('#ffd700');
+        } else if (isLocked) {
+          bg.setFillStyle(0x111111);
+          lbl.setColor('#444444');
+        } else {
+          bg.setFillStyle(0x1a1a2e);
+          lbl.setColor('#aaaaaa');
+        }
+      });
+    };
+
+    tiers.forEach((t, i) => {
+      const bx = startX + i * (btnW + gap);
+      const bg = this.add.rectangle(bx, btnY, btnW, btnH, 0x1a1a2e).setDepth(22);
+      const lbl = this.add.text(bx, btnY, t.label, {
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa'
+      }).setOrigin(0.5).setDepth(23);
+      const btnBorder = this.add.graphics().setDepth(22);
+      btnBorder.lineStyle(1, 0x334466);
+      btnBorder.strokeRect(bx - btnW/2, btnY - btnH/2, btnW, btnH);
+      btnBgs.push(bg);
+      btnLabels.push(lbl);
+      if (!t.locked) {
+        bg.setInteractive({ useHandCursor: true });
+        bg.on('pointerdown', () => { selectedTier = t.tier; updateSelection(); });
+        bg.on('pointerover', () => { if (t.tier !== selectedTier) bg.setFillStyle(0x2a2a4e); });
+        bg.on('pointerout',  () => { if (t.tier !== selectedTier) bg.setFillStyle(0x1a1a2e); });
+      }
+    });
+
+    updateSelection();
+
+    // BEGIN RUN button
+    const beginY = mY + mH/2 - 36;
+    const beginBg = this.add.rectangle(mX, beginY, 200, 38, 0x0a2a0a).setDepth(22).setInteractive({ useHandCursor: true });
+    const beginBorder = this.add.graphics().setDepth(22);
+    beginBorder.lineStyle(2, 0x4caf50, 0.9);
+    beginBorder.strokeRect(mX - 100, beginY - 19, 200, 38);
+    const beginLabel = this.add.text(mX, beginY, 'BEGIN RUN', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50'
+    }).setOrigin(0.5).setDepth(23);
+    beginBg.on('pointerover', () => { beginBg.setFillStyle(0x0a3a0a); beginLabel.setColor('#6cd66c'); });
+    beginBg.on('pointerout',  () => { beginBg.setFillStyle(0x0a2a0a); beginLabel.setColor('#4caf50'); });
+    beginBg.on('pointerdown', () => {
+      newGs.ascension = selectedTier;
+      newGs.save();
+      this.registry.set('gameState', newGs);
+      // Destroy ascension modal elements (depth >= 20)
+      this.children.list
+        .filter(c => c.depth >= 20)
+        .forEach(c => c.destroy());
+      this._afterAscension(newGs);
+    });
+  }
+
+  _afterAscension(newGs) {
+    const scores = GameState.getScores();
+    if (scores.length > 0) {
+      this._showModifierModal(newGs);
+    } else {
+      this._startRunOrTutorial(newGs);
+    }
+  }
+
+  _startRunOrTutorial(newGs) {
+    const tutorialDone = localStorage.getItem('purrogue_tutorial_done');
+    if (!tutorialDone) {
+      this.scene.start('TutorialScene');
+    } else {
+      this.scene.start('MapScene');
+    }
+  }
+
+  _showModifierModal(newGs) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+
+    const MODIFIERS = [
+      { id: 'petite',      emoji: '🐱', label: 'Petite',      desc: '20% fewer combat nodes',             mult: 0.8  },
+      { id: 'relentless',  emoji: '⚡', label: 'Relentless',  desc: 'Enemies deal +25% damage',           mult: 1.3  },
+      { id: 'bare_metal',  emoji: '🪨', label: 'Bare Metal',  desc: 'Start with no relics; shop has none',mult: 1.4  },
+      { id: 'no_healing',  emoji: '🩹', label: 'No Healing',  desc: 'Rest sites give block instead of HP',mult: 1.5  },
+      { id: 'glass_cannon',emoji: '💥', label: 'Glass Cannon','desc': 'Max HP halved; attacks deal +50% dmg',mult: 1.6  },
+    ];
+
+    const active = new Set();
+
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.78).setDepth(30).setInteractive();
+
+    const mW = 560, mH = 420;
+    const mX = W/2, mY = H/2;
+    const panel = this.add.rectangle(mX, mY, mW, mH, 0x04151f, 0.98).setDepth(31);
+    const border = this.add.graphics().setDepth(31);
+    border.lineStyle(2, 0xffd700, 0.6);
+    border.strokeRect(mX - mW/2, mY - mH/2, mW, mH);
+
+    this.add.text(mX, mY - mH/2 + 26, 'MODIFIERS (optional)', {
+      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#ffd700',
+      stroke: '#000000', strokeThickness: 2
+    }).setOrigin(0.5).setDepth(32);
+
+    this.add.text(mX, mY - mH/2 + 50, 'Toggle to increase difficulty and score', {
+      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#666688'
+    }).setOrigin(0.5).setDepth(32);
+
+    // Multiplier preview text
+    const multText = this.add.text(mX, mY + 108, 'Score multiplier: ×1.0', {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
+    }).setOrigin(0.5).setDepth(32);
+
+    const updateMult = () => {
+      let mult = 1.0;
+      for (const mod of MODIFIERS) {
+        if (active.has(mod.id)) mult *= mod.mult;
+      }
+      multText.setText(`Score multiplier: ×${mult.toFixed(2)}`);
+    };
+
+    // Toggle buttons
+    const btnW = mW - 40, btnH = 38;
+    const startY = mY - mH/2 + 74;
+    const btnBgs = {};
+    const btnLabels = {};
+
+    MODIFIERS.forEach((mod, i) => {
+      const bx = mX;
+      const by = startY + i * (btnH + 6) + btnH / 2;
+
+      const bg = this.add.rectangle(bx, by, btnW, btnH, 0x0a0a1a).setDepth(32).setInteractive({ useHandCursor: true });
+      const bgBorder = this.add.graphics().setDepth(32);
+      bgBorder.lineStyle(1, 0x334466);
+      bgBorder.strokeRect(bx - btnW/2, by - btnH/2, btnW, btnH);
+      btnBgs[mod.id] = bg;
+
+      const label = this.add.text(bx - btnW/2 + 12, by, `${mod.emoji} ${mod.label}  —  ${mod.desc}  (×${mod.mult})`, {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#aaaaaa'
+      }).setOrigin(0, 0.5).setDepth(33);
+      btnLabels[mod.id] = label;
+
+      const redraw = () => {
+        if (active.has(mod.id)) {
+          bg.setFillStyle(0x2a1a00);
+          label.setColor('#ffd700');
+        } else {
+          bg.setFillStyle(0x0a0a1a);
+          label.setColor('#aaaaaa');
+        }
+      };
+
+      bg.on('pointerover', () => { if (!active.has(mod.id)) bg.setFillStyle(0x1a1a2e); });
+      bg.on('pointerout',  () => redraw());
+      bg.on('pointerdown', () => {
+        if (active.has(mod.id)) active.delete(mod.id);
+        else active.add(mod.id);
+        redraw();
+        updateMult();
+      });
+    });
+
+    // BEGIN RUN button
+    const beginY = mY + mH/2 - 44;
+    const beginBg = this.add.rectangle(mX - 80, beginY, 200, 38, 0x0a2a0a).setDepth(32).setInteractive({ useHandCursor: true });
+    const beginBorder = this.add.graphics().setDepth(32);
+    beginBorder.lineStyle(2, 0x4caf50, 0.9);
+    beginBorder.strokeRect(mX - 80 - 100, beginY - 19, 200, 38);
+    const beginLabel = this.add.text(mX - 80, beginY, 'BEGIN RUN', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4caf50'
+    }).setOrigin(0.5).setDepth(33);
+    beginBg.on('pointerover', () => { beginBg.setFillStyle(0x0a3a0a); beginLabel.setColor('#6cd66c'); });
+    beginBg.on('pointerout',  () => { beginBg.setFillStyle(0x0a2a0a); beginLabel.setColor('#4caf50'); });
+    beginBg.on('pointerdown', () => {
+      newGs.runModifiers = [...active];
+      newGs.applyRunModifiers();
+      this.registry.set('gameState', newGs);
+      this._startRunOrTutorial(newGs);
+    });
+
+    // SKIP button
+    const skipBg = this.add.rectangle(mX + 80, beginY, 160, 38, 0x0d0d1a).setDepth(32).setInteractive({ useHandCursor: true });
+    const skipBorder = this.add.graphics().setDepth(32);
+    skipBorder.lineStyle(2, 0x444466, 0.7);
+    skipBorder.strokeRect(mX + 80 - 80, beginY - 19, 160, 38);
+    const skipLabel = this.add.text(mX + 80, beginY, 'SKIP', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#666688'
+    }).setOrigin(0.5).setDepth(33);
+    skipBg.on('pointerover', () => { skipBg.setFillStyle(0x1a1a2e); skipLabel.setColor('#aaaaaa'); });
+    skipBg.on('pointerout',  () => { skipBg.setFillStyle(0x0d0d1a); skipLabel.setColor('#666688'); });
+    skipBg.on('pointerdown', () => {
+      newGs.runModifiers = [];
+      newGs.applyRunModifiers();
+      this.registry.set('gameState', newGs);
+      this._startRunOrTutorial(newGs);
+    });
   }
 }
