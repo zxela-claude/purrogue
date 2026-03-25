@@ -190,8 +190,8 @@ describe('GameState', () => {
       expect(gs.personality.cozy).toBe(0);
     });
 
-    it('sets feralPending at FERAL_WARNING_THRESHOLD (15 attack plays) instead of locking', () => {
-      for (let i = 0; i < 15; i++) gs.trackPersonality('attack');
+    it('sets feralPending at FERAL_WARNING_THRESHOLD (20 attack plays) instead of locking', () => {
+      for (let i = 0; i < 20; i++) gs.trackPersonality('attack');
       expect(gs.personality.feralPending).toBe(true);
       expect(gs.personality.feral).toBe(false);
       expect(gs.personality.mood).not.toBe('feral');

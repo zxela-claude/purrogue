@@ -94,6 +94,12 @@ export class GameState {
     this.save();
   }
 
+  gainGold(amount) {
+    const multiplier = this.relics.includes('golden_ball') ? 1.25 : 1;
+    this.gold += Math.floor(amount * multiplier);
+    this.save();
+  }
+
   spendGold(amount) {
     this.gold = Math.max(0, this.gold - amount);
     this.save();

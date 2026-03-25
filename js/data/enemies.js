@@ -166,10 +166,10 @@ export const ENEMIES = {
       below: 0.5,
       pattern: [
         {type:'buff',status:'strong',value:4,desc:'Rabid fury (+4 str)'},
-        {type:'attack',value:28,desc:'Rabid bite for 28'},
-        {type:'attack',value:28,desc:'Rabid bite for 28'},
+        {type:'attack',value:21,desc:'Rabid bite for 21'},
+        {type:'attack',value:21,desc:'Rabid bite for 21'},
         {type:'buff',status:'vulnerable',value:2,desc:'Pins you down'},
-        {type:'attack',value:35,desc:'Death shake for 35'}
+        {type:'attack',value:26,desc:'Death shake for 26'}
       ]
     }
   },
@@ -188,15 +188,15 @@ export const ENEMIES = {
       below: 0.5,
       pattern: [
         {type:'buff',status:'strong',value:6,desc:'Critical overheat (+6 str)'},
-        {type:'attack',value:32,desc:'Vortex for 32'},
-        {type:'attack',value:32,desc:'Vortex for 32'},
+        {type:'attack',value:24,desc:'Vortex for 24'},
+        {type:'attack',value:24,desc:'Vortex for 24'},
         {type:'block',value:25,desc:'Emergency shield (block 25)'},
-        {type:'attack',value:40,desc:'Supernova suction for 40'}
+        {type:'attack',value:30,desc:'Supernova suction for 30'}
       ]
     }
   },
   the_vet: {
-    id: 'the_vet', name: 'The Vet', hp: 250, maxHp: 250, block: 0, statuses: {},
+    id: 'the_vet', name: 'The Vet', hp: 280, maxHp: 280, block: 0, statuses: {},
     act: 3, elite: false, boss: true,
     moveIndex: 0,
     movePattern: [
@@ -210,9 +210,9 @@ export const ENEMIES = {
       below: 0.5,
       pattern: [
         {type:'buff',status:'vulnerable',value:4,desc:'Injects sedative (4 vuln)'},
-        {type:'attack',value:40,desc:'Emergency surgery for 40'},
+        {type:'attack',value:30,desc:'Emergency surgery for 30'},
         {type:'buff',status:'strong',value:5,desc:'Adrenaline surge (+5 str)'},
-        {type:'attack',value:45,desc:'Final procedure for 45'}
+        {type:'attack',value:34,desc:'Final procedure for 34'}
       ]
     }
   }

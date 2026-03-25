@@ -12,7 +12,7 @@ export const PERSONALITY = {
 };
 
 export const PERSONALITY_THRESHOLD = 15;
-export const FERAL_WARNING_THRESHOLD = 15;
+export const FERAL_WARNING_THRESHOLD = 20;
 
 export const NODE_TYPES = {
   COMBAT: 'combat',

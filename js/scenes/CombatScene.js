@@ -34,6 +34,9 @@ export class CombatScene extends Phaser.Scene {
       }
     }
 
+    // Deck overlay page — persists for the lifetime of this combat scene
+    this._deckPage = 0;
+
     // Setup enemy
     const enemy = this.isBoss ? getBoss(gs.act) : getRandomEnemy(gs.act, this.isElite);
     this.enemy = enemy;
@@ -351,7 +354,6 @@ export class CombatScene extends Phaser.Scene {
     const colW = Math.floor((panelW - 32) / cols);
     const maxRows = Math.floor((panelH - 120) / rowH);
     const maxVisible = maxRows * cols;
-    this._deckPage = this._deckPage || 0;
     const page = this._deckPage;
     const pageSlice = fullDeck.slice(page * maxVisible, (page + 1) * maxVisible);
     const totalPages = Math.ceil(fullDeck.length / maxVisible);
@@ -537,9 +539,9 @@ export class CombatScene extends Phaser.Scene {
     this.playerBlock = fakePlayer.block;
     this.playerStatuses = fakePlayer.statuses;
 
-    const extraDraw = (this.gs.relics.includes('ancient_tome') && this.turnNumber === 1) ? 2 : 0;
     const drawBonusThisTurn = (this.turnNumber === 1) ? (this._pendingDrawBonus || 0) : 0;
-    this._drawCards(HAND_SIZE + (this.gs.relics.includes('laser_toy') ? 1 : 0) + extraDraw + drawBonusThisTurn);
+    this._pendingDrawBonus = 0;
+    this._drawCards(HAND_SIZE + (this.gs.relics.includes('laser_toy') ? 1 : 0) + drawBonusThisTurn);
     this._updateStatsDisplay();
     this._renderHand();
     this._showTurnBanner('YOUR TURN', '#4caf50');
@@ -577,17 +579,21 @@ export class CombatScene extends Phaser.Scene {
     const arcCenterX = SCREEN_WIDTH / 2;
     const arcCenterY = SCREEN_HEIGHT - 102 + arcRadius;
 
-    // Spread angle compression by hand size
-    const totalDeg = n <= 4 ? 36 : n <= 7 ? 30 : n <= 9 ? 24 : 20;
+    // Spread angle compression by hand size; cap so cards stay on screen.
+    // 5 or fewer cards: 60 degrees total. Each extra card beyond 5 trims 5 degrees,
+    // with a hard floor of 10 degrees so cards never fully stack.
+    const maxTotalDeg = n <= 5 ? 60 : Math.max(10, 60 - (n - 5) * 5);
     const mood = this.gs.getDominantPersonality();
 
     this.hand.forEach((cardId, i) => {
       const card = this.cardDb[cardId];
       if (!card) return;
 
-      const angle = n === 1 ? 0 : -totalDeg / 2 + totalDeg * i / (n - 1);
+      const angle = n === 1 ? 0 : -maxTotalDeg / 2 + maxTotalDeg * i / (n - 1);
       const rad = angle * Math.PI / 180;
-      const baseX = arcCenterX + arcRadius * Math.sin(rad);
+      // Clamp x so no card centre escapes the screen (half-card margin on each side).
+      const rawX = arcCenterX + arcRadius * Math.sin(rad);
+      const baseX = Math.max(cardW / 2, Math.min(SCREEN_WIDTH - cardW / 2, rawX));
       const baseY = arcCenterY - arcRadius * Math.cos(rad);
 
       const cost = PersonalitySystem.getCardCost(card, mood);
@@ -812,9 +818,17 @@ export class CombatScene extends Phaser.Scene {
   _endPlayerTurn() {
     // Mirror relic: replay the last card played this turn at end of turn
     if (this.gs.relics.includes('mirror') && this.lastPlayedCard) {
+      const cardToReplay = this.lastPlayedCard;
+      // Reset before replaying so the replay itself cannot re-trigger mirror (infinite loop guard)
+      this.lastPlayedCard = null;
+      // Ensure mirror replay never benefits from coffee_mug's free-first-card effect;
+      // that bonus applies only to cards the player explicitly plays, not mirror replays.
+      this.coffeeMugUsed = true;
       const mood = this.gs.getDominantPersonality();
       const player = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
-      const results = CardEngine.resolveCard(this.lastPlayedCard, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile, relics: this.gs.relics }, mood);
+      // Pass relics without 'mirror' to prevent the replay from triggering mirror again
+      const relicsWithoutMirror = this.gs.relics.filter(r => r !== 'mirror');
+      const results = CardEngine.resolveCard(cardToReplay, { player, enemy: this.enemy, hand: this.hand, drawPile: this.drawPile, discardPile: this.discardPile, relics: relicsWithoutMirror }, mood);
       this.gs.hp = player.hp;
       this.playerBlock = player.block;
       this.playerStatuses = player.statuses;

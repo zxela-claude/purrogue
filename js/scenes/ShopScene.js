@@ -43,7 +43,7 @@ export class ShopScene extends Phaser.Scene {
 
     shopRelics.forEach((relic, i) => {
       const x = 300 + i * 400;
-      const price = 150;
+      const price = 120;
       const canAfford = gs.gold >= price;
       const bg = this.add.rectangle(x, 480, 280, 110, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });
       const iconKey = `relic_${relic.id}`;
