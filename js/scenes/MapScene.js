@@ -26,7 +26,18 @@ export class MapScene extends Phaser.Scene {
 
   create() {
     const gs = this.registry.get('gameState');
-    if (!gs.map) gs.map = MapGenerator.generate(gs.act);
+    const isNewAct = !gs.map;
+    if (isNewAct) {
+      gs.map = MapGenerator.generate(gs.act);
+      // Ancient Tome: upgrade a random non-upgraded card at the start of each act
+      if (gs.relics.includes('ancient_tome')) {
+        const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
+        if (upgradeable.length > 0) {
+          const pick = upgradeable[Math.floor(Math.random() * upgradeable.length)];
+          gs.upgradeCard(pick, gs.personality.mood);
+        }
+      }
+    }
 
     // Background music: return to ambient menu/map track between battles
     MusicManager.getInstance(this).play('menu');

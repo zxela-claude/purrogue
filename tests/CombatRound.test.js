@@ -95,14 +95,14 @@ describe('Combat round integration', () => {
   });
 
   it('player blocks then enemy attacks — block absorbs damage', () => {
-    // Gain 5 block with Defend
+    // Gain 7 block with Defend (buffed from 5)
     const defend = getCard('w_defend');
     playCard(defend, player, enemy);
-    expect(player.block).toBe(5);
+    expect(player.block).toBe(7);
 
-    // Enemy attacks for 10 — 5 blocked, 5 through
+    // Enemy attacks for 10 — 7 blocked, 3 through
     enemyAct(enemy, player);
-    expect(player.hp).toBe(75); // 80 - 5
+    expect(player.hp).toBe(77); // 80 - 3
     expect(player.block).toBe(0);
   });
 
@@ -142,9 +142,9 @@ describe('Combat round integration', () => {
 
   it('two-round sequence: block clears, status ticks, enemy cycles moves', () => {
     // Round 1: player blocks, enemy attacks (move 0: 10 dmg)
-    playCard(getCard('w_defend'), player, enemy); // +5 block
+    playCard(getCard('w_defend'), player, enemy); // +7 block (buffed)
     enemyAct(enemy, player);
-    expect(player.hp).toBe(75);  // 5 blocked, 5 through
+    expect(player.hp).toBe(77);  // 7 blocked, 3 through
     tickStatuses(player);
     tickStatuses(enemy);
     // block cleared for round 2
