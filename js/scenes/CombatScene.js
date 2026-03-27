@@ -2,7 +2,7 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, ENERGY_PER_TURN, HAND_SIZE } from 
 import { CardEngine } from '../CardEngine.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { getRandomEnemy, getBoss } from '../data/enemies.js';
-import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
+import { ALL_CARDS } from '../data/cards.js';
 import { SoundManager } from '../SoundManager.js';
 import { MusicManager } from '../MusicManager.js';
 import { PurrSettings } from '../PurrSettings.js';
@@ -46,7 +46,7 @@ export class CombatScene extends Phaser.Scene {
     this.gs = gs;
 
     // Load all cards (base + upgraded variants)
-    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const allCards = ALL_CARDS;
     this.cardDb = {};
     for (const card of allCards) {
       this.cardDb[card.id] = card;
@@ -295,8 +295,11 @@ export class CombatScene extends Phaser.Scene {
     const endTurnHitZone = this.add.rectangle(W - 110, H - 155, 220, 60, 0x000000, 0).setInteractive({ useHandCursor: true });
     const endTurnBg = this.add.rectangle(W - 110, H - 155, 210, 50, 0x2a0a12).setDepth(4);
     this.add.graphics().setDepth(4).lineStyle(2, 0xe94560).strokeRect(W - 215, H - 180, 210, 50);
-    this.endTurnBtn = this.add.text(W - 110, H - 155, 'END TURN', {
+    this.endTurnBtn = this.add.text(W - 110, H - 162, 'END TURN', {
       fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#e94560'
+    }).setOrigin(0.5).setDepth(5);
+    this.add.text(W - 110, H - 144, '[E / ENTER]', {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#884040'
     }).setOrigin(0.5).setDepth(5);
     endTurnHitZone.on('pointerdown', () => { if (!endTurnHitZone.input?.enabled) return; this._endPlayerTurn(); });
     endTurnHitZone.on('pointerover', () => endTurnBg.setFillStyle(0x500a20));
@@ -338,6 +341,28 @@ export class CombatScene extends Phaser.Scene {
       const nowEnabled = this.soundManager.toggle();
       this._spawnFloatingText(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 80,
         nowEnabled ? 'SFX ON' : 'SFX OFF', nowEnabled ? '#4caf50' : '#e94560');
+    });
+
+    // E / Enter / Space → End Turn
+    ['E', 'ENTER', 'SPACE'].forEach(key => {
+      this.input.keyboard.on(`keydown-${key}`, () => {
+        if (!this._deckOverlay && this._endTurnHitZone?.input?.enabled) this._endPlayerTurn();
+      });
+    });
+
+    // 1–6 → play card at that hand position
+    ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX'].forEach((name, idx) => {
+      this.input.keyboard.on(`keydown-${name}`, () => {
+        if (this._deckOverlay) return;
+        const obj = this.handObjects?.[idx];
+        if (!obj) return;
+        const cardId = obj.getData('cardId');
+        const canPlay = obj.getData('canPlay');
+        if (cardId && canPlay) {
+          obj.disableInteractive();
+          this._playCard(cardId, idx);
+        }
+      });
     });
 
     // Act indicator top-left
@@ -709,7 +734,13 @@ export class CombatScene extends Phaser.Scene {
         wordWrap: { width: 104 }, align: 'center'
       }).setOrigin(0.5).setDepth(3);
 
-      container.add([shadow, bg, border, pip, ...artItems, nameText, costText, descText]);
+      // Keyboard shortcut hint — only show for first 6 cards
+      const keyLabels = ['1','2','3','4','5','6'];
+      const keyHint = i < 6 ? this.add.text(cardW / 2 - 8, cardH / 2 - 10, keyLabels[i], {
+        fontFamily: '"Press Start 2P"', fontSize: '7px', color: canPlay ? '#ffd70099' : '#33333399'
+      }).setOrigin(1, 1).setDepth(4).setAlpha(0.6) : null;
+
+      container.add([shadow, bg, border, pip, ...artItems, nameText, costText, descText, ...(keyHint ? [keyHint] : [])]);
 
       // Make container interactive using card bounds
       container.setInteractive(

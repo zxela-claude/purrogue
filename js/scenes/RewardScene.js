@@ -1,6 +1,6 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
-import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
+import { ALL_CARDS } from '../data/cards.js';
 
 const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
 const CARD_TYPE_LABEL_COLORS = { attack: '#e94560', skill: '#4fc3f7', power: '#bb86fc' };
@@ -35,7 +35,7 @@ export class RewardScene extends Phaser.Scene {
       stroke: '#7a6000', strokeThickness: 3
     }).setOrigin(0.5);
 
-    const heroCards = gs.hero === 'WARRIOR' ? WARRIOR_CARDS : gs.hero === 'MAGE' ? MAGE_CARDS : ROGUE_CARDS;
+    const heroCards = ALL_CARDS.filter(c => c.heroClass === gs.hero);
     const count = gs.relics.includes('lucky_paw') ? 4 : 3;
     const mood = gs.getDominantPersonality();
     const choices = this._weightedCardDraft(heroCards, gs.act, mood, count);

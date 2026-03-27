@@ -1,6 +1,6 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { RELICS } from '../data/relics.js';
-import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
+import { ALL_CARDS } from '../data/cards.js';
 
 export class ShopScene extends Phaser.Scene {
   constructor() { super('ShopScene'); }
@@ -16,7 +16,7 @@ export class ShopScene extends Phaser.Scene {
     this.add.text(SCREEN_WIDTH/2, 40, '🛒 SHOP', { fontFamily: '"Press Start 2P"', fontSize: '24px', color: '#ffd700' }).setOrigin(0.5);
     this.add.text(SCREEN_WIDTH/2, 80, `💰 ${gs.gold} gold`, { fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#f0ead6' }).setOrigin(0.5);
 
-    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS].filter(c => c.heroClass === gs.hero);
+    const allCards = ALL_CARDS.filter(c => c.heroClass === gs.hero);
     const shopCardCount = (gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'double_shop') ? 5 : 3;
     const shopCards = allCards.sort(() => Math.random() - 0.5).slice(0, shopCardCount);
     const shopRelics = RELICS.filter(r => !gs.relics.includes(r.id)).sort(() => Math.random() - 0.5).slice(0, 2);
@@ -109,7 +109,7 @@ export class ShopScene extends Phaser.Scene {
   }
 
   _showRemoveMenu(gs, cost) {
-    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const allCards = ALL_CARDS;
     const cardDb = {};
     for (const c of allCards) {
       cardDb[c.id] = c;

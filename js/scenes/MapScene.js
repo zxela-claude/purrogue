@@ -1,7 +1,7 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES, PERSONALITY, PERSONALITY_THRESHOLD, FERAL_WARNING_THRESHOLD } from '../constants.js';
 import { MapGenerator } from '../MapGenerator.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
-import { WARRIOR_CARDS, MAGE_CARDS, ROGUE_CARDS } from '../data/cards.js';
+import { ALL_CARDS } from '../data/cards.js';
 import { MusicManager } from '../MusicManager.js';
 import { RELICS } from '../data/relics.js';
 
@@ -240,7 +240,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   _showRemoveMenu(gs, returnScene) {
-    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const allCards = ALL_CARDS;
     const cardDb = {};
     for (const c of allCards) {
       cardDb[c.id] = c;
@@ -289,7 +289,7 @@ export class MapScene extends Phaser.Scene {
 
   _showDeck(gs) {
     const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
-    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const allCards = ALL_CARDS;
     const cardDb = {};
     for (const c of allCards) {
       cardDb[c.id] = c;
@@ -394,7 +394,7 @@ export class MapScene extends Phaser.Scene {
 
   _showSmithMenu(gs) {
     const mood = gs.getDominantPersonality();
-    const allCards = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+    const allCards = ALL_CARDS;
     const cardDb = {};
     for (const c of allCards) {
       cardDb[c.id] = c;
