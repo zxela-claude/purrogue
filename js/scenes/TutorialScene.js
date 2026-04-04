@@ -155,7 +155,7 @@ export class TutorialScene extends Phaser.Scene {
 
     // Extra content: node type grid
     if (step.extra === 'nodes') {
-      this._renderNodeGrid(g, panelX, panelY + 120, panelW);
+      this._renderNodeGrid(g, panelX, panelY + 80, panelW);
     }
 
     // Next / finish button

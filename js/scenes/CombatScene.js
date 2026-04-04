@@ -711,8 +711,8 @@ export class CombatScene extends Phaser.Scene {
       const artKey = `card_art_${baseCardId}`;
       const artItems = [];
       if (this.textures.exists(artKey)) {
-        const artBg = this.add.rectangle(0, -8, cardW - 8, 56, 0x000000, 0.3).setDepth(2);
-        const art = this.add.image(0, -8, artKey).setDisplaySize(cardW - 8, 56).setDepth(2);
+        const artBg = this.add.rectangle(0, -10, 72, 72, 0x000000, 0.3).setDepth(2);
+        const art = this.add.image(0, -10, artKey).setDisplaySize(70, 70).setDepth(2);
         if (!canPlay) art.setTint(0x444466);
         artItems.push(artBg, art);
       }

@@ -77,7 +77,7 @@ export class MenuScene extends Phaser.Scene {
     const dailyModifier = GameState.getDailyModifier(dailySeed);
     const dailyBest = GameState.getDailyBestScore(dailySeed);
 
-    const dailyBtnY = 560;
+    const dailyBtnY = 580;
     const dailyBtnW = 360;
     const dailyBtnH = 40;
     const dailyBg = this.add.rectangle(W/2, dailyBtnY, dailyBtnW, dailyBtnH, 0x001a1a)
