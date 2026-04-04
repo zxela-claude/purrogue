@@ -901,7 +901,7 @@ export class CombatScene extends Phaser.Scene {
     if (dmg > 0) {
       this._flashAttack();
       this._showDamageNumber(SCREEN_WIDTH/2, 220, dmg);
-      this.cameras.main.shake(100, 0.005);
+      this.cameras.main.shake(dmg >= 10 ? 200 : 100, dmg >= 10 ? 0.014 : 0.005);
       // SFX: damage dealt
       this.soundManager.play('damage_dealt');
     }

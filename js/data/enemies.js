@@ -99,6 +99,27 @@ export const ENEMIES = {
       ]
     }
   },
+  raccoon: {
+    id: 'raccoon', name: 'Raccoon', hp: 100, maxHp: 100, block: 0, statuses: {},
+    act: 2, elite: true,
+    emoji: '🦝',
+    moveIndex: 0,
+    movePattern: [
+      {type:'attack',value:14,desc:'Scratches for 14'},
+      {type:'buff',status:'vulnerable',value:2,desc:'Rummages through trash (2 vuln)'},
+      {type:'block',value:16,desc:'Hides in bin (block 16)'},
+      {type:'attack',value:20,desc:'Ambush bite for 20'}
+    ],
+    thresholdBehavior: {
+      below: 0.5,
+      pattern: [
+        {type:'buff',status:'vulnerable',value:3,desc:'Panicked thrashing (3 vuln)'},
+        {type:'attack',value:18,desc:'Desperation claw for 18'},
+        {type:'attack',value:18,desc:'Desperation claw for 18'},
+        {type:'buff',status:'strong',value:3,desc:'Cornered fury (+3 str)'}
+      ]
+    }
+  },
   // ACT 3
   alley_cat: {
     id: 'alley_cat', name: 'Alley Cat', hp: 80, maxHp: 80, block: 0, statuses: {},
@@ -195,6 +216,29 @@ export const ENEMIES = {
       ]
     }
   },
+  the_washing_machine: {
+    id: 'the_washing_machine', name: 'The Washing Machine', hp: 230, maxHp: 230, block: 0, statuses: {},
+    act: 2, elite: false, boss: true,
+    emoji: '🫧',
+    moveIndex: 0,
+    movePattern: [
+      {type:'attack',value:16,desc:'Spin cycle for 16'},
+      {type:'buff',status:'vulnerable',value:2,desc:'Tumble dry (2 vuln)'},
+      {type:'attack',value:22,desc:'Rinse cycle for 22'},
+      {type:'block',value:22,desc:'Soaks (block 22)'},
+      {type:'attack',value:28,desc:'Full spin for 28'}
+    ],
+    thresholdBehavior: {
+      below: 0.5,
+      pattern: [
+        {type:'buff',status:'vulnerable',value:3,desc:'Overloaded drum (3 vuln)'},
+        {type:'attack',value:26,desc:'Violent spin for 26'},
+        {type:'attack',value:26,desc:'Violent spin for 26'},
+        {type:'buff',status:'strong',value:4,desc:'Motor overload (+4 str)'},
+        {type:'attack',value:34,desc:'Catastrophic spin-out for 34'}
+      ]
+    }
+  },
   the_vet: {
     id: 'the_vet', name: 'The Vet', hp: 280, maxHp: 280, block: 0, statuses: {},
     act: 3, elite: false, boss: true,
@@ -229,5 +273,5 @@ export function getRandomEnemy(act, isElite = false) {
 
 export function getBoss(act) {
   const bosses = Object.values(ENEMIES).filter(e => e.boss && e.act === act);
-  return JSON.parse(JSON.stringify(bosses[0]));
+  return JSON.parse(JSON.stringify(bosses[Math.floor(Math.random() * bosses.length)]));
 }
