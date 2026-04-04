@@ -55,8 +55,12 @@ export class ShopScene extends Phaser.Scene {
         fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555555'
       }).setOrigin(0.5);
     }
+    const relicCount = shopRelics.length;
+    const relicSpacing = Math.min(300, Math.floor((SCREEN_WIDTH - 200) / relicCount));
+    const relicsTotalW = relicSpacing * (relicCount - 1);
+    const relicsStartX = SCREEN_WIDTH / 2 - relicsTotalW / 2;
     if (!bareMetal) shopRelics.forEach((relic, i) => {
-      const x = 300 + i * 400;
+      const x = relicsStartX + i * relicSpacing;
       const price = noGold ? 0 : 120 + (gs.getAscensionModifiers().relicPriceBonus || 0);
       const canAfford = noGold || gs.gold >= price;
       const bg = this.add.rectangle(x, 480, 280, 110, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });

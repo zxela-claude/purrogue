@@ -603,11 +603,17 @@ export class CombatScene extends Phaser.Scene {
     this.gs.runStats.turns++;
     const carried = this.gs.relics.includes('power_cell') ? Math.min(this.energy, 1) : 0;
     this.energy = this.maxEnergy + carried;
+    if (carried > 0) {
+      this.time.delayedCall(350, () => this._showTurnBanner(`+${carried} Energy (Power Cell)`, '#ffd700'));
+    }
     this.playerBlock = 0;
     this.coffeeMugUsed = false;
 
     // Sundial: gain 2 energy every 3rd turn (turn 3, 6, 9...)
-    if (this.gs.relics.includes('sundial') && this.turnNumber % 3 === 0) this.energy += 2;
+    if (this.gs.relics.includes('sundial') && this.turnNumber % 3 === 0) {
+      this.energy += 2;
+      this.time.delayedCall(350, () => this._showTurnBanner('+2 Energy (Sundial)', '#ffd700'));
+    }
 
     // Thorns: grant block equal to thorns stacks at start of turn
     if (this.playerStatuses?.thorns > 0) this.playerBlock += this.playerStatuses.thorns;
@@ -807,7 +813,7 @@ export class CombatScene extends Phaser.Scene {
   // ── Card Play / Enemy Turn ──────────────────────────────────────────────────
 
   _playCard(cardId, handIndex) {
-    const card = this.cardDb[cardId];
+    let card = this.cardDb[cardId];
     const mood = this.gs.getDominantPersonality();
     const cost = PersonalitySystem.getCardCost(card, mood);
     // Coffee mug: first card each turn costs 0
@@ -815,7 +821,24 @@ export class CombatScene extends Phaser.Scene {
     if (actualCost === 0 && this.gs.relics.includes('coffee_mug')) this.coffeeMugUsed = true;
     if (this.energy < actualCost) return;
 
+    // Whirlwind: spend ALL remaining energy; damage = base value × energy spent
+    let whirlwindEnergy = 0;
+    if (card.id === 'w_whirlwind') {
+      whirlwindEnergy = this.energy;
+    }
+
     this.energy -= actualCost;
+
+    // Whirlwind: drain remaining energy after cost and scale card damage accordingly
+    if (card.id === 'w_whirlwind' && whirlwindEnergy > 0) {
+      // energy after paying cost 3 — but whirlwind should spend ALL energy including the cost
+      // whirlwindEnergy captured pre-deduction is total energy available = energy spent
+      const baseValue = (card.effects.find(e => e.type === 'damage') || { value: 8 }).value;
+      const scaledDamage = baseValue * whirlwindEnergy;
+      // Replace card reference with a modified copy for this play only
+      card = { ...card, effects: card.effects.map(e => e.type === 'damage' ? { ...e, value: scaledDamage } : e) };
+      this.energy = 0; // consume all remaining energy
+    }
     this.hand.splice(handIndex, 1);
     this.discardPile.push(cardId);
 

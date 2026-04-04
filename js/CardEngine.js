@@ -53,8 +53,25 @@ export class CardEngine {
         return { type: 'draw', amount: value };
 
       case 'heal':
+        // skipIfFeral: heal is replaced by feral_override damage when personality is feral
+        if (effect.skipIfFeral && personality === 'feral') return { type: 'noop' };
         player.hp = Math.min(player.hp + value, player.maxHp);
         return { type: 'heal', amount: value };
+
+      case 'feral_override': {
+        // Only activates when personality is feral — deals damage instead of the paired heal
+        if (personality !== 'feral') return { type: 'noop' };
+        const ferDmg = effect.damage || 0;
+        let fdo = ferDmg;
+        if (player.statuses?.strong) fdo += 2 * player.statuses.strong;
+        if (enemy.statuses?.vulnerable) fdo = Math.floor(fdo * 1.5);
+        if (player.statuses?.weak) fdo = Math.floor(fdo * 0.75);
+        if (relics.includes('cursed_collar')) fdo = fdo * 2;
+        const fdBlocked = Math.min(enemy.block || 0, fdo);
+        enemy.block = Math.max(0, (enemy.block || 0) - fdo);
+        enemy.hp -= Math.max(0, fdo - fdBlocked);
+        return { type: 'feral_override', amount: fdo, blocked: fdBlocked };
+      }
 
       case 'gain_energy':
         return { type: 'gain_energy', amount: value };
@@ -72,7 +89,7 @@ export class CardEngine {
         return { type: 'apply_self_status', status: effect.status, amount: value };
 
       case 'scry':
-        return { scry: value };
+        return { type: 'scry', scry: value };
 
       case 'damage_all': {
         const targets = enemies && enemies.length > 0 ? enemies : (enemy ? [enemy] : []);

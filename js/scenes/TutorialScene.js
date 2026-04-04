@@ -18,7 +18,7 @@ const STEPS = [
   },
   {
     title: 'THE PERSONALITY SYSTEM',
-    body: 'Every card you play moves you toward a personality: Attacks → Feisty, Skills → Cozy, Powers → Cunning. After enough plays your mood locks in — changing how your cards work and how you upgrade them. Feral is a special high-risk personality that doubles your damage but blocks all healing.',
+    body: 'Every card you play moves you toward a personality: Attacks → Feisty, Skills → Cozy, Powers → Cunning. After 15 plays of a type, your mood locks in — changing how your cards work and how you upgrade them. Feral is a special high-risk personality that doubles your damage but blocks all healing.',
     extra: null,
   },
   {

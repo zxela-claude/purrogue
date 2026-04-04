@@ -241,6 +241,11 @@ export class MapScene extends Phaser.Scene {
         }
         this.scene.start('MapScene');
       });
+    if (noHealing) {
+      this.add.text(W/2, H/2 - 58, '✕ HEAL BLOCKED by daily modifier', {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#e94560'
+      }).setOrigin(0.5).setDepth(11);
+    }
 
     // Option 2: Smith
     const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
