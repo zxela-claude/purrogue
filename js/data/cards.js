@@ -35,7 +35,7 @@ export const WARRIOR_CARDS = [
   { id: 'w_primal_fury', name: 'Primal Fury', cost: 2, type: 'attack', heroClass: 'WARRIOR', rarity: 'uncommon', description: 'Deal 6 damage three times.', effects: [{type:'damage',value:6},{type:'damage',value:6},{type:'damage',value:6}], upgrades: { default: {effects:[{type:'damage',value:7},{type:'damage',value:7},{type:'damage',value:7}]}, feisty: {effects:[{type:'damage',value:8},{type:'damage',value:8},{type:'damage',value:8}]} } },
 
   // Rare (3)
-  { id: 'w_lions_heart', name: "Lion's Heart", cost: 1, type: 'skill', heroClass: 'WARRIOR', rarity: 'rare', description: 'Heal 8 HP. If Feral, deal 16 damage instead.', effects: [{type:'heal',value:8}], upgrades: { default: {effects:[{type:'heal',value:12}]} } },
+  { id: 'w_lions_heart', name: "Lion's Heart", cost: 1, type: 'skill', heroClass: 'WARRIOR', rarity: 'rare', description: 'Heal 8 HP. If Feral, deal 16 damage instead.', effects: [{type:'heal',value:8,skipIfFeral:true},{type:'feral_override',damage:16}], upgrades: { default: {effects:[{type:'heal',value:12,skipIfFeral:true},{type:'feral_override',damage:20}]} } },
   { id: 'w_unstoppable', name: 'Unstoppable', cost: 2, type: 'power', heroClass: 'WARRIOR', rarity: 'rare', description: 'Gain 2 Strong and 2 Thorns.', effects: [{type:'apply_self_status',status:'strong',value:2},{type:'apply_self_status',status:'thorns',value:2}], upgrades: { default: {effects:[{type:'apply_self_status',status:'strong',value:3},{type:'apply_self_status',status:'thorns',value:3}]}, cunning: {effects:[{type:'apply_self_status',status:'strong',value:3},{type:'apply_self_status',status:'thorns',value:3}]} } },
   // Whirlwind: special logic (spend all energy) wired up separately; value here represents dmg-per-energy
   { id: 'w_whirlwind', name: 'Whirlwind', cost: 3, type: 'attack', heroClass: 'WARRIOR', rarity: 'rare', description: 'Spend all energy. Deal 8 damage for each energy spent.', effects: [{type:'damage',value:8}], upgrades: { default: {effects:[{type:'damage',value:10}]}, feisty: {effects:[{type:'damage',value:12}]} } },
@@ -132,4 +132,10 @@ export const ROGUE_CARDS = [
   { id: 'r_case_the_joint', name: 'Case the Joint', cost: 0, type: 'skill', heroClass: 'ROGUE', rarity: 'uncommon', description: 'Scry 3 — look at top 3 cards, keep 2 in hand. (Free)', effects: [{type:'scry',value:3}], upgrades: { default: {effects:[{type:'scry',value:4}]}, cunning: {effects:[{type:'scry',value:4}]} } }
 ];
 
-export const ALL_CARDS = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS];
+// --- NEUTRAL / EVENT CARDS ---
+// catnip_surge: added by the "Catnip Stash" event — any class can receive it
+export const NEUTRAL_CARDS = [
+  { id: 'catnip_surge', name: 'Catnip Surge', cost: 0, type: 'attack', heroClass: null, rarity: 'common', description: 'Deal 5 damage. Draw 1 card.', effects: [{type:'damage',value:5},{type:'draw',value:1}], upgrades: { default: {effects:[{type:'damage',value:8},{type:'draw',value:1}]}, feisty: {effects:[{type:'damage',value:9},{type:'draw',value:1}]} } }
+];
+
+export const ALL_CARDS = [...WARRIOR_CARDS, ...MAGE_CARDS, ...ROGUE_CARDS, ...NEUTRAL_CARDS];
