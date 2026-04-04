@@ -96,8 +96,17 @@ export class RewardScene extends Phaser.Scene {
       sep.lineBetween(-cardW/2 + 16, -cardH/2 + 100, cardW/2 - 16, -cardH/2 + 100);
       cardGroup.add(sep);
 
+      // Card art
+      const rewardArtKey = `card_art_${card.id}`;
+      if (this.textures.exists(rewardArtKey)) {
+        const artBg = this.add.rectangle(0, -cardH/2 + 135, 72, 72, 0x000000, 0.3);
+        const artImg = this.add.image(0, -cardH/2 + 135, rewardArtKey).setDisplaySize(70, 70);
+        cardGroup.add(artBg);
+        cardGroup.add(artImg);
+      }
+
       // Description
-      const descText = this.add.text(0, -cardH/2 + 150, card.description, {
+      const descText = this.add.text(0, -cardH/2 + 185, card.description, {
         fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa',
         wordWrap: { width: cardW - 24 }, align: 'center'
       }).setOrigin(0.5);

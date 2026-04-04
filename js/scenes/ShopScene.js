@@ -23,8 +23,12 @@ export class ShopScene extends Phaser.Scene {
 
     const noGold = gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'no_gold';
 
+    const cardSpacing = Math.min(280, Math.floor((SCREEN_WIDTH - 100) / shopCardCount));
+    const cardsTotalW = cardSpacing * (shopCardCount - 1);
+    const cardsStartX = SCREEN_WIDTH / 2 - cardsTotalW / 2;
+
     shopCards.forEach((card, i) => {
-      const x = 200 + i * 280;
+      const x = cardsStartX + i * cardSpacing;
       const price = noGold ? 0 : (card.cost === 0 ? 50 : card.cost === 1 ? 75 : 100);
       const canAfford = noGold || gs.gold >= price;
       const bg = this.add.rectangle(x, 280, 220, 180, COLORS.PANEL).setInteractive({ useHandCursor: canAfford });
