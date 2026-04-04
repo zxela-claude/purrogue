@@ -99,6 +99,46 @@ export class MenuScene extends Phaser.Scene {
     dailyBg.on('pointerout',  () => dailyBg.setFillStyle(0x001a1a));
     dailyBg.on('pointerdown', () => this._showDailyModal(dailySeed, dailyModifier));
 
+    // START RUN button (hidden until a hero is selected)
+    const startBtnY = 570;
+    const startBtnBg = this.add.rectangle(W/2, startBtnY, 280, 40, 0x1a3300, 0)
+      .setDepth(2);
+    const startBtnBorder = this.add.graphics().setDepth(2);
+    const startBtnText = this.add.text(W/2, startBtnY, '', {
+      fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#4caf50'
+    }).setOrigin(0.5).setDepth(3).setAlpha(0);
+    let selectedHeroKey = null;
+    let selectedHeroData = null;
+
+    const showStartBtn = (heroKey, heroData) => {
+      selectedHeroKey = heroKey;
+      selectedHeroData = heroData;
+      startBtnText.setText(`► START AS ${heroData.name.toUpperCase()}`).setAlpha(1);
+      startBtnBg.setFillStyle(0x1a3300, 1).setInteractive({ useHandCursor: true });
+      startBtnBorder.clear();
+      startBtnBorder.lineStyle(2, heroData.color, 0.9);
+      startBtnBorder.strokeRect(W/2 - 140, startBtnY - 20, 280, 40);
+    };
+
+    startBtnBg.on('pointerover', () => { if (selectedHeroKey) startBtnBg.setFillStyle(0x2a5500, 1); });
+    startBtnBg.on('pointerout',  () => { if (selectedHeroKey) startBtnBg.setFillStyle(0x1a3300, 1); });
+    startBtnBg.on('pointerdown', () => {
+      if (!selectedHeroKey) return;
+      const newGs = new GameState();
+      newGs.startRun(selectedHeroKey);
+      newGs.deck = this._getStartingDeck(selectedHeroKey);
+      newGs.save();
+      this.registry.set('gameState', newGs);
+      if (newGs.ascensionUnlocked > 0) {
+        this._showAscensionModal(newGs);
+      } else {
+        this._afterAscension(newGs);
+      }
+    });
+
+    const borderGfxMap = {};
+    const cardMap = {};
+
     heroes.forEach(([key, hero], i) => {
       const x = W/2 + (i - 1) * 296;
       const cardY = 435;
@@ -109,12 +149,14 @@ export class MenuScene extends Phaser.Scene {
       // Body
       const card = this.add.rectangle(x, cardY, 250, 220, COLORS.PANEL)
         .setInteractive({ useHandCursor: true });
+      cardMap[key] = card;
 
       // Colored border
       const borderGfx = this.add.graphics();
-      const drawBorder = (alpha = 0.7) => {
+      borderGfxMap[key] = { gfx: borderGfx, x, cardY, hero };
+      const drawBorder = (alpha = 0.7, width = 3) => {
         borderGfx.clear();
-        borderGfx.lineStyle(3, hero.color, alpha);
+        borderGfx.lineStyle(width, hero.color, alpha);
         borderGfx.strokeRect(x - 125, cardY - 110, 250, 220);
       };
       drawBorder();
@@ -140,19 +182,22 @@ export class MenuScene extends Phaser.Scene {
         fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50'
       }).setOrigin(0.5);
 
-      card.on('pointerover', () => { card.setFillStyle(0x2a2a5e); drawBorder(1); });
-      card.on('pointerout',  () => { card.setFillStyle(COLORS.PANEL); drawBorder(0.7); });
+      card.on('pointerover', () => {
+        if (selectedHeroKey !== key) { card.setFillStyle(0x2a2a5e); drawBorder(1); }
+      });
+      card.on('pointerout', () => {
+        if (selectedHeroKey !== key) { card.setFillStyle(COLORS.PANEL); drawBorder(0.7); }
+      });
       card.on('pointerdown', () => {
-        const newGs = new GameState();
-        newGs.startRun(key);
-        newGs.deck = this._getStartingDeck(key);
-        newGs.save();
-        this.registry.set('gameState', newGs);
-        if (newGs.ascensionUnlocked > 0) {
-          this._showAscensionModal(newGs);
-        } else {
-          this._afterAscension(newGs);
-        }
+        // Reset all cards to unselected state
+        Object.entries(borderGfxMap).forEach(([k, { gfx, x: bx, cardY: by, hero: bh }]) => {
+          cardMap[k].setFillStyle(COLORS.PANEL);
+          gfx.clear();
+          gfx.lineStyle(k === key ? 4 : 3, bh.color, k === key ? 1 : 0.7);
+          gfx.strokeRect(bx - 125, by - 110, 250, 220);
+        });
+        card.setFillStyle(0x1e1e3e);
+        showStartBtn(key, hero);
       });
     });
 

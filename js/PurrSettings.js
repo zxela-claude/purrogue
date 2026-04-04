@@ -15,7 +15,7 @@ const DEFAULTS = {
   colorblind:    'off',
   fontScale:     1.0,
   highContrast:  false,
-  statusLabels:  'short',
+  statusLabels:  'full',
 };
 
 export class PurrSettings {

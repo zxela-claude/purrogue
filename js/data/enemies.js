@@ -1,7 +1,7 @@
 export const ENEMIES = {
   // ACT 1
   yarn_golem: {
-    id: 'yarn_golem', name: 'Yarn Golem', hp: 45, maxHp: 45, block: 0, statuses: {},
+    id: 'yarn_golem', name: 'Yarn Golem', hp: 38, maxHp: 38, block: 0, statuses: {},
     act: 1, elite: false,
     moveIndex: 0,
     movePattern: [
@@ -11,7 +11,7 @@ export const ENEMIES = {
     ]
   },
   laser_sprite: {
-    id: 'laser_sprite', name: 'Laser Sprite', hp: 35, maxHp: 35, block: 0, statuses: {},
+    id: 'laser_sprite', name: 'Laser Sprite', hp: 28, maxHp: 28, block: 0, statuses: {},
     act: 1, elite: false,
     moveIndex: 0,
     movePattern: [
@@ -21,7 +21,7 @@ export const ENEMIES = {
     ]
   },
   moth_swarm: {
-    id: 'moth_swarm', name: 'Moth Swarm', hp: 30, maxHp: 30, block: 0, statuses: {},
+    id: 'moth_swarm', name: 'Moth Swarm', hp: 24, maxHp: 24, block: 0, statuses: {},
     act: 1, elite: false,
     moveIndex: 0,
     movePattern: [

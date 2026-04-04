@@ -13,6 +13,15 @@ const NODE_SPRITE_KEYS = {
   [NODE_TYPES.REST]: 'node_rest',
   [NODE_TYPES.BOSS]: 'node_boss'
 };
+const NODE_LABELS = {
+  [NODE_TYPES.COMBAT]: 'Combat',
+  [NODE_TYPES.ELITE]:  'Elite',
+  [NODE_TYPES.SHOP]:   'Shop',
+  [NODE_TYPES.EVENT]:  'Event',
+  [NODE_TYPES.REST]:   'Rest',
+  [NODE_TYPES.BOSS]:   'BOSS'
+};
+
 const NODE_COLORS = {
   [NODE_TYPES.COMBAT]: 0xe94560,
   [NODE_TYPES.ELITE]: 0x9b59b6,
@@ -96,6 +105,24 @@ export class MapScene extends Phaser.Scene {
     const { floors } = gs.map;
     const floorH = (SCREEN_HEIGHT - 120) / floors.length;
 
+    // Shared tooltip objects (reused across all node hovers)
+    const tipBg   = this.add.rectangle(0, 0, 120, 28, 0x111122, 0.9).setDepth(20).setVisible(false);
+    const tipText = this.add.text(0, 0, '', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6'
+    }).setOrigin(0.5).setDepth(21).setVisible(false);
+
+    const showTip = (x, y, label) => {
+      tipText.setText(label);
+      const tw = tipText.width + 16;
+      tipBg.setSize(tw, 28);
+      // Position above node, clamp to screen edges
+      const tx = Phaser.Math.Clamp(x, tw / 2 + 4, SCREEN_WIDTH - tw / 2 - 4);
+      const ty = Math.max(y - 46, 20);
+      tipBg.setPosition(tx, ty).setVisible(true);
+      tipText.setPosition(tx, ty).setVisible(true);
+    };
+    const hideTip = () => { tipBg.setVisible(false); tipText.setVisible(false); };
+
     floors.forEach((floor, fi) => {
       const y = SCREEN_HEIGHT - 60 - fi * floorH;
       floor.forEach((node, ni) => {
@@ -121,6 +148,8 @@ export class MapScene extends Phaser.Scene {
         const nodeSprite = this.add.image(x, y, NODE_SPRITE_KEYS[node.type]).setDisplaySize(40, 40);
         if (node.completed) nodeSprite.setAlpha(0.35);
 
+        const label = (node.completed ? '✓ ' : '') + (NODE_LABELS[node.type] || node.type);
+
         if (isAvail && !node.completed) {
           // Pulsing outline
           const outline = this.add.circle(x, y, 28, 0xffd700, 0).setStrokeStyle(2, 0xffd700);
@@ -129,7 +158,10 @@ export class MapScene extends Phaser.Scene {
           // Invisible 48px hit zone for easy mobile tapping
           const hitZone = this.add.circle(x, y, 48, 0xffffff, 0)
             .setInteractive({ useHandCursor: true });
+          hitZone.on('pointerover', () => showTip(x, y, label));
+          hitZone.on('pointerout',  hideTip);
           hitZone.on('pointerdown', () => {
+            hideTip();
             node.completed = true;
             gs.map.currentNode = node.id;
             gs.map.currentFloor = fi;
@@ -137,6 +169,12 @@ export class MapScene extends Phaser.Scene {
             gs.save();
             this._enterNode(node, gs);
           });
+        } else {
+          // Non-interactive nodes still get a hover tooltip
+          const hoverZone = this.add.circle(x, y, 32, 0xffffff, 0)
+            .setInteractive();
+          hoverZone.on('pointerover', () => showTip(x, y, label));
+          hoverZone.on('pointerout',  hideTip);
         }
       });
     });
