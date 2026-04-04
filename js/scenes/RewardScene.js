@@ -150,12 +150,13 @@ export class RewardScene extends Phaser.Scene {
       });
     });
 
-    // Skip
-    this.add.text(W/2, H - 40, '[ SKIP ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#888888'
+    // Skip — higher contrast so it's clearly interactive
+    this.add.text(W/2, H - 40, '[ SKIP REWARD ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#aaaaaa',
+      backgroundColor: '#222222', padding: { x: 8, y: 4 }
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-      .on('pointerover', function() { this.setColor('#cccccc'); })
-      .on('pointerout',  function() { this.setColor('#888888'); })
+      .on('pointerover', function() { this.setColor('#ffffff'); })
+      .on('pointerout',  function() { this.setColor('#aaaaaa'); })
       .on('pointerdown', () => this.scene.start('MapScene'));
   }
 

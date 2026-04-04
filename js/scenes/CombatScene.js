@@ -642,6 +642,7 @@ export class CombatScene extends Phaser.Scene {
         this.discardPile = [];
         if (this.gs.relics.includes('hairball')) this.enemy.hp -= 3;
         this._showTurnBanner('Deck shuffled', '#888888');
+        if (this.soundManager) this.soundManager.play('shuffle');
       }
       if (this.drawPile.length > 0) { this.hand.push(this.drawPile.pop()); drew++; }
     }

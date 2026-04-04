@@ -62,6 +62,7 @@ export class SoundManager {
       case 'player_hit':  this._playPlayerHit();   break;
       case 'heal':        this._playHeal();         break;
       case 'card_draw':   this._playCardDraw();     break;
+      case 'shuffle':     this._playShuffle();      break;
       case 'victory':     this._playVictory();      break;
       case 'death':       this._playDeath();        break;
       default:            break;
@@ -132,6 +133,25 @@ export class SoundManager {
   _playCardDraw() {
     const { gain, endTime } = this._makeGain(0.18, 0.005, 0.095);
     this._makeOscillator('triangle', 520, gain, endTime);
+  }
+
+  // ── shuffle — rapid descending ticks: 3 triangle pulses 400→320→260 hz ──────
+  _playShuffle() {
+    const freqs = [400, 320, 260];
+    freqs.forEach((freq, i) => {
+      const start = this.ctx.currentTime + i * 0.045;
+      const gain = this.ctx.createGain();
+      gain.connect(this._masterGain);
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.15, start + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.04);
+      const osc = this.ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      osc.start(start);
+      osc.stop(start + 0.06);
+    });
   }
 
   // ── victory — ascending trio: 440 → 550 → 660 hz, 150 ms each ─────────────
