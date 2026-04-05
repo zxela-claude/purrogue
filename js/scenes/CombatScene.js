@@ -62,7 +62,7 @@ export class CombatScene extends Phaser.Scene {
     this._deckPage = 0;
 
     // Setup enemy
-    const enemy = this.isBoss ? getBoss(gs.act) : getRandomEnemy(gs.act, this.isElite);
+    const enemy = this.isBoss ? getBoss(gs.act) : getRandomEnemy(gs.act, this.isElite, gs.floor);
     this.enemy = enemy;
 
     // Ascension modifiers

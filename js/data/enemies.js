@@ -1,8 +1,9 @@
+// floorTier: 'early' (floors 0-1), 'mid' (floors 2-3), 'late' (floors 4-5), 'any' (all floors equally)
 export const ENEMIES = {
   // ACT 1
   yarn_golem: {
     id: 'yarn_golem', name: 'Yarn Golem', hp: 38, maxHp: 38, block: 0, statuses: {},
-    act: 1, elite: false,
+    act: 1, elite: false, floorTier: 'late',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:8,desc:'Tangles you for 8'},
@@ -12,7 +13,7 @@ export const ENEMIES = {
   },
   laser_sprite: {
     id: 'laser_sprite', name: 'Laser Sprite', hp: 28, maxHp: 28, block: 0, statuses: {},
-    act: 1, elite: false,
+    act: 1, elite: false, floorTier: 'mid',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:6,desc:'Zips for 6'},
@@ -22,7 +23,7 @@ export const ENEMIES = {
   },
   moth_swarm: {
     id: 'moth_swarm', name: 'Moth Swarm', hp: 24, maxHp: 24, block: 0, statuses: {},
-    act: 1, elite: false,
+    act: 1, elite: false, floorTier: 'early',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:5,desc:'Flutters for 5'},
@@ -52,7 +53,7 @@ export const ENEMIES = {
   // ACT 2
   guard_dog: {
     id: 'guard_dog', name: 'Guard Dog', hp: 70, maxHp: 70, block: 0, statuses: {},
-    act: 2, elite: false,
+    act: 2, elite: false, floorTier: 'late',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:12,desc:'Barks for 12'},
@@ -62,7 +63,7 @@ export const ENEMIES = {
   },
   vacuum_cleaner: {
     id: 'vacuum_cleaner', name: 'Vacuum Cleaner', hp: 65, maxHp: 65, block: 0, statuses: {},
-    act: 2, elite: false,
+    act: 2, elite: false, floorTier: 'mid',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:10,desc:'Sucks for 10'},
@@ -72,7 +73,7 @@ export const ENEMIES = {
   },
   squirrel: {
     id: 'squirrel', name: 'Squirrel', hp: 55, maxHp: 55, block: 0, statuses: {},
-    act: 2, elite: false,
+    act: 2, elite: false, floorTier: 'early',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:8,desc:'Scratches for 8'},
@@ -102,7 +103,7 @@ export const ENEMIES = {
   // ACT 3
   alley_cat: {
     id: 'alley_cat', name: 'Alley Cat', hp: 80, maxHp: 80, block: 0, statuses: {},
-    act: 3, elite: false,
+    act: 3, elite: false, floorTier: 'mid',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:14,desc:'Street swipes for 14'},
@@ -112,7 +113,7 @@ export const ENEMIES = {
   },
   robot_cat: {
     id: 'robot_cat', name: 'Robot Cat', hp: 85, maxHp: 85, block: 0, statuses: {},
-    act: 3, elite: false,
+    act: 3, elite: false, floorTier: 'late',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:16,desc:'Laser eyes for 16'},
@@ -122,7 +123,7 @@ export const ENEMIES = {
   },
   feral_pigeon: {
     id: 'feral_pigeon', name: 'Feral Pigeon', hp: 75, maxHp: 75, block: 0, statuses: {},
-    act: 3, elite: false,
+    act: 3, elite: false, floorTier: 'early',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:12,desc:'Pecks for 12'},
@@ -222,9 +223,29 @@ export function getEnemiesForAct(act, isElite = false, isBoss = false) {
   return Object.values(ENEMIES).filter(e => e.act === act && !!e.elite === isElite && !!e.boss === isBoss);
 }
 
-export function getRandomEnemy(act, isElite = false) {
+// Floor-tier weights: how likely each tier is to appear on a given floor (0-5).
+// Early floors bias toward 'early' enemies; late floors bias toward 'late'.
+function _tierWeight(tier, floor) {
+  // floor 0-1 = early, floor 2-3 = mid, floor 4-5 = late
+  if (tier === 'any') return 3;
+  if (tier === 'early') return floor <= 1 ? 5 : floor <= 3 ? 2 : 1;
+  if (tier === 'mid')   return floor <= 1 ? 1 : floor <= 3 ? 5 : 2;
+  if (tier === 'late')  return floor <= 1 ? 1 : floor <= 3 ? 2 : 5;
+  return 1;
+}
+
+export function getRandomEnemy(act, isElite = false, floor = 0) {
   const pool = getEnemiesForAct(act, isElite, false);
-  return JSON.parse(JSON.stringify(pool[Math.floor(Math.random() * pool.length)]));
+  if (pool.length === 0) return null;
+  // Weighted selection by floor tier
+  const weights = pool.map(e => _tierWeight(e.floorTier || 'any', floor));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let roll = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) {
+    roll -= weights[i];
+    if (roll <= 0) return JSON.parse(JSON.stringify(pool[i]));
+  }
+  return JSON.parse(JSON.stringify(pool[pool.length - 1]));
 }
 
 export function getBoss(act) {
