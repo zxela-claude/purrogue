@@ -17,6 +17,7 @@ const config = {
   width: SCREEN_WIDTH,
   height: SCREEN_HEIGHT,
   backgroundColor: '#1a1a2e',
+  pixelArt: true,
   scene: [BootScene, MenuScene, TutorialScene, MapScene, CombatScene, ShopScene, EventScene, RewardScene, GameOverScene, RunSummaryScene, SettingsScene],
   scale: {
     mode: Phaser.Scale.FIT,
