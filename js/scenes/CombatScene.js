@@ -415,17 +415,28 @@ export class CombatScene extends Phaser.Scene {
     }).setOrigin(0.5);
     overlay.add(subTitle);
 
+    // Deck composition summary: X ATK / Y SKL / Z PWR
+    const attackCount = fullDeck.filter(id => this.cardDb[id]?.type === 'attack').length;
+    const skillCount = fullDeck.filter(id => this.cardDb[id]?.type === 'skill').length;
+    const powerCount = fullDeck.filter(id => this.cardDb[id]?.type === 'power').length;
+    const compText = this.add.text(panelX, panelY - panelH / 2 + 60,
+      `${attackCount} ATK  ${skillCount} SKL  ${powerCount} PWR`, {
+        fontFamily: '"Press Start 2P"', fontSize: '8px',
+        color: '#888888'
+      }).setOrigin(0.5);
+    overlay.add(compText);
+
     // Separator
     const sep = this.add.graphics();
     sep.lineStyle(1, 0x222244);
-    sep.lineBetween(panelX - panelW / 2 + 16, panelY - panelH / 2 + 56, panelX + panelW / 2 - 16, panelY - panelH / 2 + 56);
+    sep.lineBetween(panelX - panelW / 2 + 16, panelY - panelH / 2 + 72, panelX + panelW / 2 - 16, panelY - panelH / 2 + 72);
     overlay.add(sep);
 
     // Card list — paginated rows
     const CARD_TYPE_COLORS_LOCAL = { attack: '#e94560', skill: '#4fc3f7', power: '#9b59b6' };
     const rowH = 34;
     const cols = 3;
-    const startY = panelY - panelH / 2 + 74;
+    const startY = panelY - panelH / 2 + 90;
     const colW = Math.floor((panelW - 32) / cols);
     const maxRows = Math.floor((panelH - 120) / rowH);
     const maxVisible = maxRows * cols;
