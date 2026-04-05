@@ -92,6 +92,7 @@ export class CombatScene extends Phaser.Scene {
     this.coffeeMugUsed = false;
     this.bellCollarUsed = false;
     this.lastPlayedCard = null;
+    this.perAttackBonusDmg = 0; // Thousand Cuts passive
 
     if (gs.relics.includes('toy_mouse')) this.playerBlock = 3;
     // Cursed collar: start combat with 2 stacks of vulnerable
@@ -869,6 +870,20 @@ export class CombatScene extends Phaser.Scene {
     this.gs.hp = player.hp;
     this.playerBlock = player.block;
     this.playerStatuses = player.statuses;
+
+    // Thousand Cuts: register per-attack bonus when power is played
+    if (card.id === 'r_thousand_cuts') {
+      const bonus = (card.effects.find(e => e.type === 'per_attack_bonus') || {}).value || 3;
+      this.perAttackBonusDmg += bonus;
+    }
+
+    // Thousand Cuts: apply per-attack bonus to attack cards
+    if (this.perAttackBonusDmg > 0 && card.type === 'attack') {
+      const bonusDmg = this.perAttackBonusDmg;
+      const bonusBlocked = Math.min(this.enemy.block || 0, bonusDmg);
+      this.enemy.block = Math.max(0, (this.enemy.block || 0) - bonusDmg);
+      this.enemy.hp -= (bonusDmg - bonusBlocked);
+    }
 
     // Claw sharpener: attack cards deal 2 extra damage
     if (this.gs.relics.includes('claw_sharpener') && card.type === 'attack') {

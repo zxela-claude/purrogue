@@ -119,8 +119,8 @@ export const ROGUE_CARDS = [
   { id: 'r_evasion', name: 'Evasion', cost: 1, type: 'skill', heroClass: 'ROGUE', rarity: 'uncommon', description: 'Gain 12 block.', effects: [{type:'block',value:12}], upgrades: { default: {effects:[{type:'block',value:15}]}, cozy: {effects:[{type:'block',value:15},{type:'heal',value:3}]} } },
   { id: 'r_cheap_shot', name: 'Cheap Shot', cost: 0, type: 'attack', heroClass: 'ROGUE', rarity: 'uncommon', description: 'Deal 5 damage. Apply 1 Weak.', effects: [{type:'damage',value:5},{type:'apply_status',status:'weak',value:1}], upgrades: { default: {effects:[{type:'damage',value:7},{type:'apply_status',status:'weak',value:1}]} } },
   { id: 'r_preparation', name: 'Preparation', cost: 1, type: 'skill', heroClass: 'ROGUE', rarity: 'uncommon', description: 'Draw 2 cards. Gain 1 energy.', effects: [{type:'draw',value:2},{type:'gain_energy',value:1}], upgrades: { default: {effects:[{type:'draw',value:3},{type:'gain_energy',value:1}]} } },
-  // Thousand Cuts: per-attack bonus damage wired separately; value represents bonus dmg per attack
-  { id: 'r_thousand_cuts', name: 'Thousand Cuts', cost: 2, type: 'power', heroClass: 'ROGUE', rarity: 'uncommon', description: 'Whenever you play an attack, deal 3 extra damage.', effects: [{type:'damage',value:3}], upgrades: { default: {effects:[{type:'damage',value:4}]}, feisty: {effects:[{type:'damage',value:5}]} } },
+  // Thousand Cuts: per-attack bonus damage — registered as passive in CombatScene; per_attack_bonus effect type is a noop in CardEngine
+  { id: 'r_thousand_cuts', name: 'Thousand Cuts', cost: 2, type: 'power', heroClass: 'ROGUE', rarity: 'uncommon', description: 'Passive: each attack you play deals 3 extra damage this combat.', effects: [{type:'per_attack_bonus',value:3}], upgrades: { default: {effects:[{type:'per_attack_bonus',value:4}]}, feisty: {effects:[{type:'per_attack_bonus',value:5}]} } },
 
   // Rare (3)
   // Shadow Clone: "copy last played card" effect wired separately; draw value represents copies added
