@@ -5,6 +5,7 @@ const SAVE_KEY = 'purrogue_save';
 const SCORES_KEY = 'purrogue_scores';
 
 const ASCENSION_KEY = 'purrogue_ascension_unlocked';
+const META_KEY      = 'purrogue_meta';
 
 export class GameState {
   constructor() {
@@ -246,6 +247,34 @@ export class GameState {
         localStorage.setItem(ASCENSION_KEY, String(this.ascensionUnlocked));
       } catch(e) {}
     }
+    // Update meta-progression
+    GameState.saveMetaProgress(this, won);
+  }
+
+  static loadMeta() {
+    try {
+      const raw = localStorage.getItem(META_KEY);
+      if (!raw) return { heroWins: {}, a3Wins: {}, achievements: [] };
+      return JSON.parse(raw);
+    } catch(e) { return { heroWins: {}, a3Wins: {}, achievements: [] }; }
+  }
+
+  static saveMetaProgress(gs, won) {
+    const meta = GameState.loadMeta();
+    if (won) {
+      const hero = gs.hero;
+      meta.heroWins[hero] = (meta.heroWins[hero] || 0) + 1;
+      if ((gs.ascension || 0) >= 3) {
+        meta.a3Wins[hero] = (meta.a3Wins[hero] || 0) + 1;
+      }
+      const add = (id) => { if (!meta.achievements.includes(id)) meta.achievements.push(id); };
+      add('first_win');
+      if (['WARRIOR','MAGE','ROGUE'].every(h => (meta.heroWins[h] || 0) > 0)) add('all_heroes');
+      if (gs.personality && gs.personality.feral) add('win_feral');
+      if ((gs.ascension || 0) >= 5) add('a5_win');
+      if ((gs.runModifiers || []).includes('no_healing')) add('no_heal_win');
+    }
+    try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch(e) {}
   }
 
   getAscensionModifiers() {
