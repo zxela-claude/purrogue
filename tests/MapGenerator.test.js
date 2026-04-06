@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { MapGenerator } from '../js/MapGenerator.js';
 import { NODE_TYPES } from '../js/constants.js';
+import { TEMPLATES, FLOOR_SCHEDULE } from '../js/RoomTemplates.js';
 
 describe('MapGenerator', () => {
   describe('generate', () => {
@@ -143,11 +144,13 @@ describe('MapGenerator', () => {
         }
       });
 
-      it('wide floors only appear at floors 2, 3, or 4 in act 2', () => {
+      it('wide floors only appear at STANDARD-scheduled floors in act 2 (floors 2 and 4)', () => {
+        // NAN-202: MERCHANT/RESPITE floors are excluded from widening so
+        // DungeonRules guaranteed-type slots are never clobbered.
         for (let i = 0; i < 20; i++) {
           const map = MapGenerator.generate(2);
           for (const f of map.wideFloors) {
-            expect([2, 3, 4]).toContain(f);
+            expect([2, 4]).toContain(f);
           }
         }
       });
@@ -218,6 +221,130 @@ describe('MapGenerator', () => {
 
       const available = MapGenerator.getAvailableNodes(map);
       expect(available).toHaveLength(0);
+    });
+  });
+
+  describe('DungeonRules floor templates (NAN-202)', () => {
+    it('map exposes floorTemplates array with one entry per floor', () => {
+      for (const act of [1, 2, 3]) {
+        const map = MapGenerator.generate(act, {}, 42);
+        expect(map.floorTemplates).toHaveLength(7);
+      }
+    });
+
+    it('first floor template is combat_start for all acts', () => {
+      for (const act of [1, 2, 3]) {
+        const map = MapGenerator.generate(act, {}, 42);
+        expect(map.floorTemplates[0]).toBe('combat_start');
+      }
+    });
+
+    it('last floor template is boss_room for all acts', () => {
+      for (const act of [1, 2, 3]) {
+        const map = MapGenerator.generate(act, {}, 42);
+        expect(map.floorTemplates[6]).toBe('boss_room');
+      }
+    });
+
+    it('every generated node carries a template id', () => {
+      const map = MapGenerator.generate(1, {}, 42);
+      const validTemplateIds = Object.values(TEMPLATES).map(t => t.id);
+      for (const node of map.floors.flat()) {
+        expect(validTemplateIds).toContain(node.template);
+      }
+    });
+
+    it('Act 1 floor 2 (MERCHANT) guarantees a shop at node index 1', () => {
+      for (let seed = 1; seed <= 20; seed++) {
+        const map = MapGenerator.generate(1, {}, seed);
+        const floor2 = map.floors[2];
+        expect(floor2[1].type).toBe(NODE_TYPES.SHOP);
+      }
+    });
+
+    it('Act 1 floor 3 (RESPITE) guarantees a rest at node index 1', () => {
+      for (let seed = 1; seed <= 20; seed++) {
+        const map = MapGenerator.generate(1, {}, seed);
+        const floor3 = map.floors[3];
+        expect(floor3[1].type).toBe(NODE_TYPES.REST);
+      }
+    });
+
+    it('Act 1 floor 4 (MERCHANT) guarantees a shop at node index 1', () => {
+      for (let seed = 1; seed <= 20; seed++) {
+        const map = MapGenerator.generate(1, {}, seed);
+        const floor4 = map.floors[4];
+        expect(floor4[1].type).toBe(NODE_TYPES.SHOP);
+      }
+    });
+
+    it('Act 2 floor 1 (RESPITE) guarantees a rest at node index 1', () => {
+      for (let seed = 1; seed <= 20; seed++) {
+        const map = MapGenerator.generate(2, {}, seed);
+        const floor1 = map.floors[1];
+        expect(floor1[1].type).toBe(NODE_TYPES.REST);
+      }
+    });
+
+    it('Act 2 floor 3 (MERCHANT) guarantees a shop at node index 1', () => {
+      for (let seed = 1; seed <= 20; seed++) {
+        const map = MapGenerator.generate(2, {}, seed);
+        // floor 3 is always MERCHANT in Act 2 (not eligible for wide-floor override)
+        const floor3 = map.floors[3];
+        expect(floor3[1].type).toBe(NODE_TYPES.SHOP);
+      }
+    });
+
+    it('Act 3 floor 2 (RESPITE) guarantees a rest at node index 1', () => {
+      for (let seed = 1; seed <= 20; seed++) {
+        const map = MapGenerator.generate(3, {}, seed);
+        expect(map.floors[2][1].type).toBe(NODE_TYPES.REST);
+      }
+    });
+
+    it('Act 3 floor 3 (MERCHANT) guarantees a shop at node index 1', () => {
+      for (let seed = 1; seed <= 20; seed++) {
+        const map = MapGenerator.generate(3, {}, seed);
+        expect(map.floors[3][1].type).toBe(NODE_TYPES.SHOP);
+      }
+    });
+
+    it('floorTemplates is deterministic given the same seed', () => {
+      for (const act of [1, 2, 3]) {
+        const a = MapGenerator.generate(act, {}, 555);
+        const b = MapGenerator.generate(act, {}, 555);
+        expect(a.floorTemplates).toEqual(b.floorTemplates);
+      }
+    });
+
+    it('Act 2 wide floors use the wide template in floorTemplates (only STANDARD slots)', () => {
+      for (let seed = 1; seed <= 30; seed++) {
+        const map = MapGenerator.generate(2, {}, seed);
+        for (const f of map.wideFloors) {
+          expect(map.floorTemplates[f]).toBe('wide');
+          // Wide floors only come from STANDARD-scheduled slots (floors 2 and 4)
+          expect([2, 4]).toContain(f);
+        }
+      }
+    });
+
+    it('MERCHANT/RESPITE template nodes survive _ensureShopAndRest unchanged', () => {
+      // Verify the safety-net pass does not clobber guaranteed slots
+      for (let seed = 1; seed <= 20; seed++) {
+        const map = MapGenerator.generate(1, {}, seed);
+        // Act 1 floor 2 node 1 must remain SHOP
+        expect(map.floors[2][1].type).toBe(NODE_TYPES.SHOP);
+        // Act 1 floor 3 node 1 must remain REST
+        expect(map.floors[3][1].type).toBe(NODE_TYPES.REST);
+      }
+    });
+
+    it('FLOOR_SCHEDULE exports schedules for acts 1–3 with 7 entries each', () => {
+      for (const act of [1, 2, 3]) {
+        expect(FLOOR_SCHEDULE[act]).toHaveLength(7);
+        expect(FLOOR_SCHEDULE[act][0]).toBe('COMBAT_START');
+        expect(FLOOR_SCHEDULE[act][6]).toBe('BOSS_ROOM');
+      }
     });
   });
 });
