@@ -65,6 +65,74 @@ describe('MapGenerator', () => {
     });
   });
 
+  describe('Act 2 branch floors', () => {
+    it('Act 2 has 1-2 branch floors with 4 nodes', () => {
+      // Run many times to account for randomness
+      let found4 = false;
+      for (let i = 0; i < 20; i++) {
+        const map = MapGenerator.generate(2);
+        const branchFloors = map.floors.slice(0, -1).filter(f => f.length === 4);
+        expect(branchFloors.length).toBeGreaterThanOrEqual(1);
+        expect(branchFloors.length).toBeLessThanOrEqual(2);
+        found4 = true;
+      }
+      expect(found4).toBe(true);
+    });
+
+    it('branch nodes appear only on floors 2-4', () => {
+      for (let i = 0; i < 10; i++) {
+        const map = MapGenerator.generate(2);
+        for (let f = 0; f < map.floors.length - 1; f++) {
+          const floor = map.floors[f];
+          if (floor.length === 4) {
+            expect(f).toBeGreaterThanOrEqual(2);
+            expect(f).toBeLessThanOrEqual(4);
+          }
+        }
+      }
+    });
+
+    it('branch nodes (4th node on branch floor) are rest, shop, or event', () => {
+      const sidepathTypes = new Set([NODE_TYPES.REST, NODE_TYPES.SHOP, NODE_TYPES.EVENT]);
+      for (let i = 0; i < 20; i++) {
+        const map = MapGenerator.generate(2);
+        for (const floor of map.floors) {
+          if (floor.length === 4) {
+            const branchNode = floor[3]; // 4th node is the branch node
+            expect(sidepathTypes.has(branchNode.type)).toBe(true);
+            expect(branchNode.branch).toBe(true);
+          }
+        }
+      }
+    });
+
+    it('Act 1 and Act 3 never have branch floors', () => {
+      for (let act of [1, 3]) {
+        for (let i = 0; i < 10; i++) {
+          const map = MapGenerator.generate(act);
+          for (let f = 0; f < map.floors.length - 1; f++) {
+            expect(map.floors[f].length).toBe(3);
+          }
+        }
+      }
+    });
+
+    it('branch floors still have valid connections', () => {
+      for (let i = 0; i < 10; i++) {
+        const map = MapGenerator.generate(2);
+        for (let f = 0; f < map.floors.length - 1; f++) {
+          for (const node of map.floors[f]) {
+            expect(node.connections.length).toBeGreaterThanOrEqual(1);
+            for (const connId of node.connections) {
+              const target = map.floors[f + 1].find(n => n.id === connId);
+              expect(target).toBeDefined();
+            }
+          }
+        }
+      }
+    });
+  });
+
   describe('getAvailableNodes', () => {
     it('returns first floor nodes when no node visited', () => {
       const map = MapGenerator.generate(1);

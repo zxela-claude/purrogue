@@ -13,6 +13,13 @@ const WEIGHTS = {
   [NODE_TYPES.REST]: 10
 };
 
+// Side-path weights for Act 2 branch nodes — no combat/elite, favour rest/shop/event
+const BRANCH_WEIGHTS = {
+  [NODE_TYPES.REST]: 40,
+  [NODE_TYPES.SHOP]: 35,
+  [NODE_TYPES.EVENT]: 25
+};
+
 function pickNodeType(floor) {
   if (floor === FLOORS_PER_ACT - 1) return NODE_TYPES.BOSS;
   if (floor === 0) return NODE_TYPES.COMBAT; // always start with combat
@@ -25,19 +32,51 @@ function pickNodeType(floor) {
   return NODE_TYPES.COMBAT;
 }
 
+function pickBranchNodeType() {
+  const total = Object.values(BRANCH_WEIGHTS).reduce((a, b) => a + b, 0);
+  const roll = Math.random() * total;
+  let cumulative = 0;
+  for (const [type, weight] of Object.entries(BRANCH_WEIGHTS)) {
+    cumulative += weight;
+    if (roll < cumulative) return type;
+  }
+  return NODE_TYPES.REST;
+}
+
+// Pick 1-2 distinct floor indices from the middle section [2, FLOORS_PER_ACT-3]
+// to serve as branch floors (extra node with a side-path flavour).
+function chooseBranchFloors() {
+  const eligible = [];
+  for (let f = 2; f <= FLOORS_PER_ACT - 3; f++) eligible.push(f);
+  // Shuffle first two eligible slots
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+  const count = Math.random() < 0.5 ? 1 : 2;
+  return new Set(eligible.slice(0, count));
+}
+
 export class MapGenerator {
   static generate(act, options = {}) {
+    // Act 2 gets 1-2 branch floors with an extra side-path node
+    const branchFloors = act === 2 ? chooseBranchFloors() : new Set();
+
     const floors = [];
     for (let f = 0; f < FLOORS_PER_ACT; f++) {
+      const isBossFloor = f === FLOORS_PER_ACT - 1;
+      const nodeCount = isBossFloor ? 1 : FLOOR_NODES + (branchFloors.has(f) ? 1 : 0);
       const floor = [];
-      for (let n = 0; n < (f === FLOORS_PER_ACT - 1 ? 1 : FLOOR_NODES); n++) {
+      for (let n = 0; n < nodeCount; n++) {
+        const isBranchNode = branchFloors.has(f) && n === nodeCount - 1;
         floor.push({
           id: `${act}-${f}-${n}`,
-          type: pickNodeType(f),
+          type: isBranchNode ? pickBranchNodeType() : pickNodeType(f),
           floor: f,
           node: n,
           completed: false,
-          connections: [] // filled below
+          connections: [], // filled below
+          ...(isBranchNode && { branch: true })
         });
       }
       floors.push(floor);
