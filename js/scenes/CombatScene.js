@@ -15,6 +15,16 @@ const STATUS_COLORS_BASE = { poison: '#4caf50', burn: '#ff6b35', freeze: '#a0d8e
 const STATUS_NAMES_FULL = { poison: 'Poison', burn: 'Burn', freeze: 'Freeze', vulnerable: 'Vulnerable', weak: 'Weak', bleed: 'Bleed', strong: 'Strong', thorns: 'Thorns' };
 const STATUS_NAMES_SHORT = { poison: 'Psn', burn: 'Brn', freeze: 'Frz', vulnerable: 'Vul', weak: 'Wk', bleed: 'Bld', strong: 'Str', thorns: 'Thn' };
 
+// Auto-size card description font so long text fits within the 104px wordWrap boundary.
+// At 8px Press Start 2P, ~11 chars fit per line; card has ~4 lines of vertical room.
+// >44 chars → 7px (~12 chars/line, ~5 lines fit); >66 chars → 6px (~14 chars/line).
+function cardDescFontSize(description) {
+  const len = (description || '').length;
+  if (len > 66) return '6px';
+  if (len > 44) return '7px';
+  return '8px';
+}
+
 function getStatusColors() {
   const settings = PurrSettings.load();
   const mode = settings.colorblind || 'off';
@@ -747,7 +757,7 @@ export class CombatScene extends Phaser.Scene {
       }).setDepth(3);
 
       const descText = this.add.text(0, 36, card.description, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px',
+        fontFamily: '"Press Start 2P"', fontSize: cardDescFontSize(card.description),
         color: canPlay ? '#aaaaaa' : '#444444',
         wordWrap: { width: 104 }, align: 'center'
       }).setOrigin(0.5).setDepth(3);
@@ -1083,7 +1093,8 @@ export class CombatScene extends Phaser.Scene {
       }).setDepth(3);
 
       const descText = this.add.text(0, 36, card ? card.description : '', {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#aaaaaa',
+        fontFamily: '"Press Start 2P"', fontSize: cardDescFontSize(card ? card.description : ''),
+        color: '#aaaaaa',
         wordWrap: { width: 104 }, align: 'center'
       }).setOrigin(0.5).setDepth(3);
 
