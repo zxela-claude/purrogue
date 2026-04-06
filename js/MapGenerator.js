@@ -1,8 +1,8 @@
 import { NODE_TYPES } from './constants.js';
+import { SeededRandom } from './SeededRandom.js';
 
 const FLOOR_NODES = 3;
 const FLOORS_PER_ACT = 7;
-const ACTS = 3;
 
 // Node weights per floor (not boss floor)
 const WEIGHTS = {
@@ -16,10 +16,10 @@ const WEIGHTS = {
 // Side-path types used for Act 2 branch nodes (no combat on optional detours)
 const SIDE_PATH_TYPES = [NODE_TYPES.REST, NODE_TYPES.SHOP, NODE_TYPES.EVENT];
 
-function pickNodeType(floor) {
+function pickNodeType(floor, rng) {
   if (floor === FLOORS_PER_ACT - 1) return NODE_TYPES.BOSS;
   if (floor === 0) return NODE_TYPES.COMBAT; // always start with combat
-  const roll = Math.random() * 100;
+  const roll = rng.next() * 100;
   let cumulative = 0;
   for (const [type, weight] of Object.entries(WEIGHTS)) {
     cumulative += weight;
@@ -28,33 +28,59 @@ function pickNodeType(floor) {
   return NODE_TYPES.COMBAT;
 }
 
-function pickSidePathType() {
-  return SIDE_PATH_TYPES[Math.floor(Math.random() * SIDE_PATH_TYPES.length)];
+function pickSidePathType(rng) {
+  return SIDE_PATH_TYPES[Math.floor(rng.next() * SIDE_PATH_TYPES.length)];
 }
 
 /**
  * For Act 2, select 1–2 "wide" floors from the eligible middle floors
  * (floors 2–4). Wide floors get an extra 4th node that is always a
  * side-path type (rest/shop/event) — WFC-inspired branch variety.
+ * Uses a dedicated child RNG so it doesn't affect per-floor generation.
  */
-function buildAct2WideFloors() {
+function buildAct2WideFloors(rng) {
   const eligible = [2, 3, 4];
   // Shuffle in-place (Fisher-Yates) then take 1 or 2
   for (let i = eligible.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng.next() * (i + 1));
     [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
   }
-  const count = 1 + Math.floor(Math.random() * 2); // 1 or 2
+  const count = 1 + Math.floor(rng.next() * 2); // 1 or 2
   return new Set(eligible.slice(0, count));
 }
 
 export class MapGenerator {
-  static generate(act, options = {}) {
+  /**
+   * Generate a floor map for the given act.
+   *
+   * NAN-203: FRandomStream child-seed pattern — a root SeededRandom is
+   * created from `seed`, then each floor receives its own child RNG
+   * (root.child(floor+1)) so floors are independent and the full map
+   * is deterministic given the same seed.  Connection wiring and the
+   * petite modifier each get their own child index range too.
+   *
+   * @param {number} act  - Act number (1–3)
+   * @param {object} [options] - { petite: bool }
+   * @param {number|string} [seed] - Seed for deterministic generation.
+   *   Omit for a random (non-reproducible) run.
+   */
+  static generate(act, options = {}, seed) {
+    const rootSeed = seed !== undefined
+      ? seed
+      : (Math.random() * 0xFFFFFFFF | 0) || 1;
+    const root = new SeededRandom(rootSeed);
+
+    // Child index 0: act-level decisions (wide floor selection for Act 2)
+    const actRng = root.child(0);
     // NAN-173: Act 2 gets 1–2 wide floors with an extra side-path branch node
-    const wideFloors = act === 2 ? buildAct2WideFloors() : new Set();
+    const wideFloors = act === 2 ? buildAct2WideFloors(actRng) : new Set();
 
     const floors = [];
     for (let f = 0; f < FLOORS_PER_ACT; f++) {
+      // Child indices 1–FLOORS_PER_ACT: one child RNG per floor for node types.
+      // Changing a floor's seed doesn't affect any other floor's sequence.
+      const floorRng = root.child(f + 1);
+
       const floor = [];
       const isBossFloor = f === FLOORS_PER_ACT - 1;
       const nodeCount = isBossFloor ? 1 : (wideFloors.has(f) ? FLOOR_NODES + 1 : FLOOR_NODES);
@@ -63,7 +89,7 @@ export class MapGenerator {
         const isExtraNode = wideFloors.has(f) && n === nodeCount - 1;
         floor.push({
           id: `${act}-${f}-${n}`,
-          type: isExtraNode ? pickSidePathType() : pickNodeType(f),
+          type: isExtraNode ? pickSidePathType(floorRng) : pickNodeType(f, floorRng),
           floor: f,
           node: n,
           completed: false,
@@ -74,16 +100,17 @@ export class MapGenerator {
       floors.push(floor);
     }
 
-    // Connect nodes: each node on floor f connects to 1-2 random nodes on floor f+1
+    // Connect nodes: each node on floor f connects to 1-2 random nodes on floor f+1.
+    // Child indices FLOORS_PER_ACT+1 … 2*FLOORS_PER_ACT: one per inter-floor connection pass.
     for (let f = 0; f < FLOORS_PER_ACT - 1; f++) {
+      const connRng = root.child(FLOORS_PER_ACT + 1 + f);
       const curr = floors[f];
       const next = floors[f + 1];
       curr.forEach(node => {
-        // Connect to at least 1 node on next floor
         const targets = new Set();
-        targets.add(Math.floor(Math.random() * next.length));
-        if (Math.random() > 0.5 && next.length > 1) {
-          targets.add(Math.floor(Math.random() * next.length));
+        targets.add(Math.floor(connRng.next() * next.length));
+        if (connRng.next() > 0.5 && next.length > 1) {
+          targets.add(Math.floor(connRng.next() * next.length));
         }
         node.connections = [...targets].map(i => next[i].id);
       });
@@ -95,16 +122,17 @@ export class MapGenerator {
 
     // NAN-125 Petite modifier: replace ~20% of COMBAT nodes (not floor 0 or boss floor) with EVENT
     if (options.petite) {
+      const petiteRng = root.child(FLOORS_PER_ACT * 2 + 1);
       for (let f = 1; f < FLOORS_PER_ACT - 1; f++) {
         for (const node of floors[f]) {
-          if (node.type === NODE_TYPES.COMBAT && Math.random() < 0.2) {
+          if (node.type === NODE_TYPES.COMBAT && petiteRng.next() < 0.2) {
             node.type = NODE_TYPES.EVENT;
           }
         }
       }
     }
 
-    return { act, floors, currentFloor: 0, currentNode: null, wideFloors: [...wideFloors] };
+    return { act, floors, currentFloor: 0, currentNode: null, wideFloors: [...wideFloors], seed: rootSeed };
   }
 
   static _ensureShopAndRest(floors) {

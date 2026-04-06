@@ -39,7 +39,15 @@ export class MapScene extends Phaser.Scene {
     const gs = this.registry.get('gameState');
     const isNewAct = !gs.map;
     if (isNewAct) {
-      gs.map = MapGenerator.generate(gs.act, { petite: gs.hasModifier && gs.hasModifier('petite') });
+      // NAN-203: pass a deterministic seed — daily runs use the date seed so
+      // every player gets the same map; casual runs derive a seed from the
+      // run's daily seed or fall back to a random value stored on GameState.
+      if (!gs.mapBaseSeed) {
+        gs.mapBaseSeed = gs.dailySeed || (Math.random() * 0xFFFFFFFF | 0) || 1;
+      }
+      // Combine base seed with act number so each act has a different layout.
+      const actSeed = `${gs.mapBaseSeed}_act${gs.act}`;
+      gs.map = MapGenerator.generate(gs.act, { petite: gs.hasModifier && gs.hasModifier('petite') }, actSeed);
       // Daily modifier: elites_only — replace all COMBAT nodes with ELITE
       if (gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'elites_only') {
         for (const floor of gs.map.floors) {
