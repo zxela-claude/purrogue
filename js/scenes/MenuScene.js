@@ -2,6 +2,7 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, HERO_CLASSES } from '../constants.
 import { GameState } from '../GameState.js';
 import { DeckCode } from '../DeckCode.js';
 import { MusicManager } from '../MusicManager.js';
+import { RELICS } from '../data/relics.js';
 
 const HERO_FLAVOUR = {
   WARRIOR: 'Tank & smash',
@@ -358,6 +359,30 @@ export class MenuScene extends Phaser.Scene {
     };
 
     renderRows(activeTab);
+
+    // ── Achievements ──────────────────────────────────────────────────────────
+    const ACHIEVEMENT_DEFS = [
+      { id: 'first_win',   label: 'First Blood',    emoji: '🏆', tip: 'Win a run' },
+      { id: 'all_heroes',  label: 'Triple Threat',  emoji: '🐱', tip: 'Win with all 3 heroes' },
+      { id: 'win_feral',   label: 'Feral Victory',  emoji: '😾', tip: 'Win while feral' },
+      { id: 'a5_win',      label: 'Apex Predator',  emoji: '👑', tip: 'Win at Ascension 5' },
+      { id: 'no_heal_win', label: 'Iron Will',       emoji: '🩺', tip: 'Win with No Healing modifier' },
+    ];
+    const meta = GameState.loadMeta();
+    const earned = meta.achievements || [];
+    const achTop = contentTop + MAX_ROWS * ROW_H + 24;
+    this.add.text(panelX, achTop, 'ACHIEVEMENTS', {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#888888'
+    }).setOrigin(0.5);
+    ACHIEVEMENT_DEFS.forEach((def, i) => {
+      const ax = panelX - panelW / 2 + 14 + i * (panelW / ACHIEVEMENT_DEFS.length);
+      const ay = achTop + 22;
+      const unlocked = earned.includes(def.id);
+      const badge = this.add.text(ax, ay, def.emoji, { fontSize: '18px' })
+        .setOrigin(0, 0.5)
+        .setAlpha(unlocked ? 1 : 0.2);
+      badge.setInteractive({ useHandCursor: false });
+    });
   }
 
   _createStars() {
@@ -624,12 +649,151 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _startRunOrTutorial(newGs) {
+    const meta = GameState.loadMeta();
+    const heroWins = (meta.heroWins || {})[newGs.hero] || 0;
+    const a3Wins   = (meta.a3Wins  || {})[newGs.hero] || 0;
+    const hasUnlockedRelic = heroWins >= 1 && !newGs.runModifiers.includes('bare_metal');
+    const hasUnlockedDeck  = a3Wins >= 1;
+    if (hasUnlockedRelic || hasUnlockedDeck) {
+      this._showRunSetupModal(newGs, { hasUnlockedRelic, hasUnlockedDeck });
+    } else {
+      this._launchRun(newGs);
+    }
+  }
+
+  _launchRun(newGs) {
     const tutorialDone = localStorage.getItem('purrogue_tutorial_done');
     if (!tutorialDone) {
       this.scene.start('TutorialScene');
     } else {
       this.scene.start('MapScene');
     }
+  }
+
+  _showRunSetupModal(newGs, { hasUnlockedRelic, hasUnlockedDeck }) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    const HERO_STARTER_RELICS = { WARRIOR: 'iron_paw', MAGE: 'spell_tome', ROGUE: 'shadow_cloak' };
+    const HERO_ALT_DECKS = {
+      WARRIOR: { label: 'Berserk',  tip: '4x Strike + 2x Bash',       deck: ['w_strike','w_strike','w_strike','w_strike','w_bash','w_bash'] },
+      MAGE:    { label: 'Surge',    tip: '4x Zap + 2x Arcane',         deck: ['m_zap','m_zap','m_zap','m_zap','m_arcane','m_arcane'] },
+      ROGUE:   { label: 'Shadow',   tip: '4x Shiv + 2x Sprint',        deck: ['r_shiv','r_shiv','r_shiv','r_shiv','r_sprint','r_sprint'] },
+    };
+    const DEPTH = 40;
+    const overlay = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.80).setDepth(DEPTH).setInteractive();
+
+    const mW = 480, mH = hasUnlockedRelic && hasUnlockedDeck ? 340 : 260;
+    const mX = W/2, mY = H/2;
+    this.add.rectangle(mX, mY, mW, mH, 0x04151f, 0.98).setDepth(DEPTH + 1);
+    const border = this.add.graphics().setDepth(DEPTH + 1);
+    border.lineStyle(2, 0xffd700, 0.6);
+    border.strokeRect(mX - mW/2, mY - mH/2, mW, mH);
+
+    this.add.text(mX, mY - mH/2 + 24, '✨ RUN BONUSES UNLOCKED', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700',
+    }).setOrigin(0.5).setDepth(DEPTH + 2);
+
+    let selectedRelic = null;   // null = default (no starter relic)
+    let selectedDeck  = 'standard';
+
+    let contentY = mY - mH/2 + 60;
+
+    // ── Generic toggle button factory ─────────────────────────────────────────
+    const makeToggleBtn = (label, color, x, y, active) => {
+      const bg = this.add.rectangle(x, y, 200, 34, active ? 0x1a2a00 : 0x0d0d1a).setDepth(DEPTH + 2).setInteractive({ useHandCursor: true });
+      const gfx = this.add.graphics().setDepth(DEPTH + 2);
+      gfx.lineStyle(2, color, active ? 0.9 : 0.3).strokeRect(x - 100, y - 17, 200, 34);
+      const txt = this.add.text(x, y, label, {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: active ? '#c8e6c9' : '#666666'
+      }).setOrigin(0.5).setDepth(DEPTH + 3);
+      const setActive = (on, activeColor) => {
+        bg.setFillStyle(on ? 0x1a2a00 : 0x0d0d1a);
+        gfx.clear().lineStyle(2, on ? activeColor : color, on ? 0.9 : 0.3).strokeRect(x - 100, y - 17, 200, 34);
+        txt.setColor(on ? (activeColor === 0xffd700 ? '#ffd700' : '#c8e6c9') : '#666666');
+      };
+      return { bg, gfx, txt, setActive };
+    };
+
+    // ── Starter relic section ─────────────────────────────────────────────────
+    if (hasUnlockedRelic) {
+      const relicId    = HERO_STARTER_RELICS[newGs.hero];
+      const relicData  = RELICS.find(r => r.id === relicId);
+      const relicLabel = relicData ? relicData.name.toUpperCase() : relicId.replace(/_/g,' ').toUpperCase();
+      this.add.text(mX, contentY, 'STARTER RELIC', {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#888888'
+      }).setOrigin(0.5).setDepth(DEPTH + 2);
+      contentY += 20;
+
+      const rowY = contentY;
+      const noneBtn  = makeToggleBtn('None (default)', 0x4caf50, mX - 110, rowY, true);
+      const relicBtn = makeToggleBtn(relicLabel,       0xffd700, mX + 110, rowY, false);
+
+      noneBtn.bg.on('pointerdown', () => {
+        selectedRelic = null;
+        noneBtn.setActive(true,  0x4caf50);
+        relicBtn.setActive(false, 0xffd700);
+      });
+      relicBtn.bg.on('pointerdown', () => {
+        selectedRelic = relicId;
+        relicBtn.setActive(true,  0xffd700);
+        noneBtn.setActive(false, 0x4caf50);
+      });
+      contentY += 46;
+    }
+
+    // ── Deck variant section ──────────────────────────────────────────────────
+    if (hasUnlockedDeck) {
+      const alt = HERO_ALT_DECKS[newGs.hero];
+      this.add.text(mX, contentY, 'STARTER DECK', {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#888888'
+      }).setOrigin(0.5).setDepth(DEPTH + 2);
+      contentY += 20;
+
+      const rowY = contentY;
+      const stdBtn = makeToggleBtn('STANDARD',            0x4caf50, mX - 110, rowY, true);
+      const altBtn = makeToggleBtn(alt.label.toUpperCase(), 0xffd700, mX + 110, rowY, false);
+
+      stdBtn.bg.on('pointerdown', () => {
+        selectedDeck = 'standard';
+        stdBtn.setActive(true,  0x4caf50);
+        altBtn.setActive(false, 0xffd700);
+      });
+      altBtn.bg.on('pointerdown', () => {
+        selectedDeck = 'alt';
+        altBtn.setActive(true,  0xffd700);
+        stdBtn.setActive(false, 0x4caf50);
+      });
+      this.add.text(mX + 110, rowY + 22, alt.tip, {
+        fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#555577'
+      }).setOrigin(0.5).setDepth(DEPTH + 2);
+      contentY += 56;
+    }
+
+    // ── Begin button ──────────────────────────────────────────────────────────
+    const btnY = mY + mH/2 - 32;
+    const beginBg = this.add.rectangle(mX, btnY, 220, 38, 0x0a2a0a).setDepth(DEPTH + 2).setInteractive({ useHandCursor: true });
+    const beginGfx = this.add.graphics().setDepth(DEPTH + 2);
+    beginGfx.lineStyle(2, 0x4caf50, 0.9).strokeRect(mX - 110, btnY - 19, 220, 38);
+    const beginTxt = this.add.text(mX, btnY, 'BEGIN RUN', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50'
+    }).setOrigin(0.5).setDepth(DEPTH + 3);
+    beginBg.on('pointerover', () => { beginBg.setFillStyle(0x0a3a0a); beginTxt.setColor('#6cd66c'); });
+    beginBg.on('pointerout',  () => { beginBg.setFillStyle(0x0a2a0a); beginTxt.setColor('#4caf50'); });
+    beginBg.on('pointerdown', () => {
+      // Apply selected relic
+      if (selectedRelic && !newGs.relics.includes(selectedRelic)) {
+        newGs.relics.push(selectedRelic);
+        newGs.save();
+      }
+      // Apply selected deck variant
+      if (selectedDeck === 'alt' && hasUnlockedDeck) {
+        const alt = HERO_ALT_DECKS[newGs.hero];
+        newGs.deck = [...alt.deck];
+        newGs.save();
+      }
+      this.registry.set('gameState', newGs);
+      this.children.list.filter(c => c.depth >= DEPTH).forEach(c => c.destroy());
+      this._launchRun(newGs);
+    });
   }
 
   _showModifierModal(newGs) {

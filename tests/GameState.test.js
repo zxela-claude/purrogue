@@ -274,4 +274,95 @@ describe('GameState', () => {
       expect(gs.pendingEnergyBonus).toBe(0);
     });
   });
+
+  // ── meta-progression ──────────────────────────────────────────────────────
+  describe('loadMeta / saveMetaProgress', () => {
+    it('loadMeta returns empty defaults when nothing saved', () => {
+      const meta = GameState.loadMeta();
+      expect(meta.heroWins).toEqual({});
+      expect(meta.a3Wins).toEqual({});
+      expect(meta.achievements).toEqual([]);
+    });
+
+    it('tracks hero win after winning run', () => {
+      gs.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.heroWins.WARRIOR).toBe(1);
+    });
+
+    it('does not track hero win on defeat', () => {
+      gs.saveScore(false);
+      const meta = GameState.loadMeta();
+      expect(meta.heroWins.WARRIOR || 0).toBe(0);
+    });
+
+    it('unlocks first_win achievement on first win', () => {
+      gs.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.achievements).toContain('first_win');
+    });
+
+    it('does not duplicate achievements', () => {
+      gs.saveScore(true);
+      gs.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.achievements.filter(a => a === 'first_win').length).toBe(1);
+    });
+
+    it('unlocks a3_win tracking at ascension 3', () => {
+      gs.ascension = 3;
+      gs.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.a3Wins.WARRIOR).toBe(1);
+    });
+
+    it('does not track a3Win when ascension < 3', () => {
+      gs.ascension = 2;
+      gs.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.a3Wins.WARRIOR || 0).toBe(0);
+    });
+
+    it('unlocks win_feral achievement when feral at win', () => {
+      gs.personality.feral = true;
+      gs.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.achievements).toContain('win_feral');
+    });
+
+    it('unlocks a5_win achievement at ascension 5', () => {
+      gs.ascension = 5;
+      gs.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.achievements).toContain('a5_win');
+    });
+
+    it('unlocks no_heal_win when no_healing modifier active', () => {
+      gs.runModifiers = ['no_healing'];
+      gs.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.achievements).toContain('no_heal_win');
+    });
+
+    it('unlocks all_heroes when all 3 heroes have won', () => {
+      gs.saveScore(true);
+      const gs2 = new GameState();
+      gs2.startRun('MAGE');
+      gs2.saveScore(true);
+      const gs3 = new GameState();
+      gs3.startRun('ROGUE');
+      gs3.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.achievements).toContain('all_heroes');
+    });
+
+    it('does not unlock all_heroes until all 3 heroes have won', () => {
+      gs.saveScore(true);
+      const gs2 = new GameState();
+      gs2.startRun('MAGE');
+      gs2.saveScore(true);
+      const meta = GameState.loadMeta();
+      expect(meta.achievements).not.toContain('all_heroes');
+    });
+  });
 });

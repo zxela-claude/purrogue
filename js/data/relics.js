@@ -19,5 +19,9 @@ export const RELICS = [
   { id: 'tuna_can', name: 'Tuna Can', desc: 'Max HP +10.', effect: 'max_hp_bonus', value: 10 },
   { id: 'golden_ball', name: 'Golden Ball', desc: 'Earn 25% more gold from all sources.', effect: 'gold_bonus', value: 0.25 },
   { id: 'nine_lives', name: 'Nine Lives', desc: 'Once per run, survive a killing blow with 1 HP. (One-time use, consumed on trigger.)', effect: 'revive', value: 1, used: false },
-  { id: 'power_cell', name: 'Power Cell', desc: 'Unspent energy at end of turn carries over (max 1).', effect: 'energy_carry', value: 1 }
+  { id: 'power_cell', name: 'Power Cell', desc: 'Unspent energy at end of turn carries over (max 1).', effect: 'energy_carry', value: 1 },
+  // Hero-specific starter relics — unlocked via meta-progression (first win per hero)
+  { id: 'iron_paw',     name: 'Iron Paw',     desc: 'Start each combat with 5 block.',      effect: 'bonus_block',      value: 5, hero: 'WARRIOR' },
+  { id: 'spell_tome',   name: 'Spell Tome',   desc: 'Draw 2 extra cards each turn.',        effect: 'draw_extra',       value: 2, hero: 'MAGE'    },
+  { id: 'shadow_cloak', name: 'Shadow Cloak', desc: 'Heal 4 HP after each combat.',         effect: 'post_combat_heal', value: 4, hero: 'ROGUE'   }
 ];
