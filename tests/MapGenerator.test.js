@@ -23,7 +23,7 @@ describe('MapGenerator', () => {
       expect(bossFloor[0].type).toBe(NODE_TYPES.BOSS);
     });
 
-    it('non-boss floors have 3 nodes', () => {
+    it('non-boss floors have 3 nodes (act 1)', () => {
       const map = MapGenerator.generate(1);
       for (let i = 0; i < 6; i++) {
         expect(map.floors[i]).toHaveLength(3);
@@ -62,6 +62,73 @@ describe('MapGenerator', () => {
     it('sets act field on map', () => {
       const map = MapGenerator.generate(3);
       expect(map.act).toBe(3);
+    });
+
+    describe('Act 2 wide-floor branching (NAN-173)', () => {
+      it('act 2 map has wideFloors array with 1–2 entries', () => {
+        // Run multiple times since it's random
+        for (let i = 0; i < 20; i++) {
+          const map = MapGenerator.generate(2);
+          expect(Array.isArray(map.wideFloors)).toBe(true);
+          expect(map.wideFloors.length).toBeGreaterThanOrEqual(1);
+          expect(map.wideFloors.length).toBeLessThanOrEqual(2);
+        }
+      });
+
+      it('act 2 wide floors have 4 nodes, non-wide floors have 3', () => {
+        for (let i = 0; i < 10; i++) {
+          const map = MapGenerator.generate(2);
+          const wideSet = new Set(map.wideFloors);
+          for (let f = 0; f < 6; f++) {
+            const expected = wideSet.has(f) ? 4 : 3;
+            expect(map.floors[f]).toHaveLength(expected);
+          }
+        }
+      });
+
+      it('wide floors only appear at floors 2, 3, or 4 in act 2', () => {
+        for (let i = 0; i < 20; i++) {
+          const map = MapGenerator.generate(2);
+          for (const f of map.wideFloors) {
+            expect([2, 3, 4]).toContain(f);
+          }
+        }
+      });
+
+      it('extra node on act 2 wide floor is a side-path type and marked isSidePath', () => {
+        const sidePathTypes = [NODE_TYPES.REST, NODE_TYPES.SHOP, NODE_TYPES.EVENT];
+        for (let i = 0; i < 20; i++) {
+          const map = MapGenerator.generate(2);
+          for (const f of map.wideFloors) {
+            const extraNode = map.floors[f][3]; // index 3 = the 4th node
+            expect(extraNode).toBeDefined();
+            expect(sidePathTypes).toContain(extraNode.type);
+            expect(extraNode.isSidePath).toBe(true);
+          }
+        }
+      });
+
+      it('act 1 and 3 maps have no wideFloors', () => {
+        for (const act of [1, 3]) {
+          const map = MapGenerator.generate(act);
+          expect(map.wideFloors).toHaveLength(0);
+        }
+      });
+
+      it('all act 2 wide-floor nodes still have valid connections', () => {
+        for (let i = 0; i < 10; i++) {
+          const map = MapGenerator.generate(2);
+          for (let f = 0; f < 6; f++) {
+            for (const node of map.floors[f]) {
+              expect(node.connections.length).toBeGreaterThanOrEqual(1);
+              for (const connId of node.connections) {
+                const target = map.floors[f + 1].find(n => n.id === connId);
+                expect(target).toBeDefined();
+              }
+            }
+          }
+        }
+      });
     });
   });
 

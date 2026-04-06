@@ -13,6 +13,9 @@ const WEIGHTS = {
   [NODE_TYPES.REST]: 10
 };
 
+// Side-path types used for Act 2 branch nodes (no combat on optional detours)
+const SIDE_PATH_TYPES = [NODE_TYPES.REST, NODE_TYPES.SHOP, NODE_TYPES.EVENT];
+
 function pickNodeType(floor) {
   if (floor === FLOORS_PER_ACT - 1) return NODE_TYPES.BOSS;
   if (floor === 0) return NODE_TYPES.COMBAT; // always start with combat
@@ -25,19 +28,47 @@ function pickNodeType(floor) {
   return NODE_TYPES.COMBAT;
 }
 
+function pickSidePathType() {
+  return SIDE_PATH_TYPES[Math.floor(Math.random() * SIDE_PATH_TYPES.length)];
+}
+
+/**
+ * For Act 2, select 1–2 "wide" floors from the eligible middle floors
+ * (floors 2–4). Wide floors get an extra 4th node that is always a
+ * side-path type (rest/shop/event) — WFC-inspired branch variety.
+ */
+function buildAct2WideFloors() {
+  const eligible = [2, 3, 4];
+  // Shuffle in-place (Fisher-Yates) then take 1 or 2
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+  const count = 1 + Math.floor(Math.random() * 2); // 1 or 2
+  return new Set(eligible.slice(0, count));
+}
+
 export class MapGenerator {
   static generate(act, options = {}) {
+    // NAN-173: Act 2 gets 1–2 wide floors with an extra side-path branch node
+    const wideFloors = act === 2 ? buildAct2WideFloors() : new Set();
+
     const floors = [];
     for (let f = 0; f < FLOORS_PER_ACT; f++) {
       const floor = [];
-      for (let n = 0; n < (f === FLOORS_PER_ACT - 1 ? 1 : FLOOR_NODES); n++) {
+      const isBossFloor = f === FLOORS_PER_ACT - 1;
+      const nodeCount = isBossFloor ? 1 : (wideFloors.has(f) ? FLOOR_NODES + 1 : FLOOR_NODES);
+
+      for (let n = 0; n < nodeCount; n++) {
+        const isExtraNode = wideFloors.has(f) && n === nodeCount - 1;
         floor.push({
           id: `${act}-${f}-${n}`,
-          type: pickNodeType(f),
+          type: isExtraNode ? pickSidePathType() : pickNodeType(f),
           floor: f,
           node: n,
           completed: false,
-          connections: [] // filled below
+          connections: [], // filled below
+          isSidePath: isExtraNode // optional detour — UI can style differently
         });
       }
       floors.push(floor);
@@ -73,7 +104,7 @@ export class MapGenerator {
       }
     }
 
-    return { act, floors, currentFloor: 0, currentNode: null };
+    return { act, floors, currentFloor: 0, currentNode: null, wideFloors: [...wideFloors] };
   }
 
   static _ensureShopAndRest(floors) {
