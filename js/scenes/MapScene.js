@@ -4,6 +4,7 @@ import { PersonalitySystem } from '../PersonalitySystem.js';
 import { ALL_CARDS } from '../data/cards.js';
 import { MusicManager } from '../MusicManager.js';
 import { RELICS } from '../data/relics.js';
+import { GameState } from '../GameState.js';
 
 const NODE_SPRITE_KEYS = {
   [NODE_TYPES.COMBAT]: 'node_combat',
@@ -80,6 +81,11 @@ export class MapScene extends Phaser.Scene {
 
     // NAN-118: Relic panel
     this._addRelicPanel(gs);
+
+    // NAN-175: Ghost run tracker for daily challenge
+    if (gs.isDaily && gs.dailySeed) {
+      this._addGhostPanel(gs);
+    }
 
     // Settings gear (top-left below act label)
     this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
@@ -684,6 +690,71 @@ export class MapScene extends Phaser.Scene {
       panelOpen = !panelOpen;
       buildPanel();
     });
+  }
+
+  // NAN-175: Ghost run tracker panel — shows the best daily run's progress vs current run
+  _addGhostPanel(gs) {
+    const ghost = GameState.getDailyGhostRecord(gs.dailySeed);
+    if (!ghost) return; // No previous daily run to compare against
+
+    const HERO_EMOJI = { WARRIOR: '⚔️', MAGE: '🔮', ROGUE: '🗡️' };
+    const ghostEmoji = HERO_EMOJI[ghost.hero] || '👻';
+
+    // Find ghost's score at this same floor/act or the closest checkpoint before it
+    const playerFloorIdx = (gs.act - 1) * 7 + gs.floor;
+    let ghostScoreAtThisPoint = 0;
+    let ghostReachedHere = false;
+    if (ghost.checkpoints && ghost.checkpoints.length > 0) {
+      for (const cp of ghost.checkpoints) {
+        const cpIdx = (cp.act - 1) * 7 + cp.floor;
+        if (cpIdx <= playerFloorIdx) {
+          ghostScoreAtThisPoint = cp.score;
+          if (cpIdx === playerFloorIdx) ghostReachedHere = true;
+        }
+      }
+      // Check if ghost reached this point at all
+      const lastCp = ghost.checkpoints[ghost.checkpoints.length - 1];
+      const lastIdx = (lastCp.act - 1) * 7 + lastCp.floor;
+      ghostReachedHere = lastIdx >= playerFloorIdx;
+    }
+
+    const playerScore = gs.computeScore(false);
+    const ahead = playerScore >= ghostScoreAtThisPoint;
+    const diff = Math.abs(playerScore - ghostScoreAtThisPoint);
+
+    // Panel dimensions & position — bottom-right corner
+    const pW = 192, pH = 74;
+    const pX = SCREEN_WIDTH - pW / 2 - 8;
+    const pY = SCREEN_HEIGHT - pH / 2 - 46;
+
+    const bg = this.add.rectangle(pX, pY, pW, pH, 0x0a0a18, 0.88).setDepth(5);
+    const border = this.add.graphics().setDepth(5);
+    border.lineStyle(1, 0x6644aa, 0.7);
+    border.strokeRect(pX - pW / 2, pY - pH / 2, pW, pH);
+
+    // Header
+    this.add.text(pX, pY - pH / 2 + 11, '👻 GHOST RUN', {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#9966dd'
+    }).setOrigin(0.5).setDepth(6);
+
+    // Ghost info line
+    this.add.text(pX, pY - pH / 2 + 26, `${ghostEmoji}  ${ghost.score}pts  ${ghost.won ? '(WIN)' : `Act${ghost.act}`}`, {
+      fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#888899'
+    }).setOrigin(0.5).setDepth(6);
+
+    // Comparison line
+    const compColor = ahead ? '#44dd88' : '#dd4466';
+    const compText = ghostReachedHere
+      ? (ahead ? `▲ +${diff}pts ahead` : `▼ −${diff}pts behind`)
+      : (playerScore > 0 ? `▲ past ghost` : `ghost was here`);
+    this.add.text(pX, pY - pH / 2 + 43, compText, {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: compColor
+    }).setOrigin(0.5).setDepth(6);
+
+    // Player score
+    this.add.text(pX, pY - pH / 2 + 58, `You: ${playerScore}pts`, {
+      fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#cccccc'
+    }).setOrigin(0.5).setDepth(6);
   }
 
   _showFeralWarning(gs) {

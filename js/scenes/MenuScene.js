@@ -467,6 +467,14 @@ export class MenuScene extends Phaser.Scene {
         `Best today: ${best.score}pts  ${best.won ? '(WIN)' : '(defeat)'}  as ${best.hero}`,
         { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#00897b' }
       ).setOrigin(0.5).setDepth(12);
+      // NAN-175: Ghost run hint when a record exists with checkpoints
+      if (best.checkpoints && best.checkpoints.length > 0) {
+        this.add.text(mX, mY + 78,
+          '👻 Ghost run active — race your best on the map!',
+          { fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#6644aa',
+            wordWrap: { width: mW - 80 }, align: 'center' }
+        ).setOrigin(0.5).setDepth(12);
+      }
     }
 
     // Hero select label

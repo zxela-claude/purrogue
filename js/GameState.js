@@ -48,6 +48,8 @@ export class GameState {
     this.isDaily = false;
     this.dailySeed = null;
     this.dailyModifier = null;
+    // Ghost run log: [{act, floor, score}] checkpoints recorded as floors complete
+    this.ghostLog = [];
     // Ascension fields
     this.ascension = 0;     // 0 = Normal, 1-5 = tier for this run
     // Run modifier fields (NAN-125)
@@ -329,6 +331,12 @@ export class GameState {
     return `purrogue_daily_${seed}`;
   }
 
+  // Record a ghost checkpoint at the current act/floor (call after each floor victory)
+  logGhostCheckpoint() {
+    if (!this.isDaily) return;
+    this.ghostLog.push({ act: this.act, floor: this.floor, score: this.computeScore(false) });
+  }
+
   saveDailyScore(won) {
     if (!this.isDaily || !this.dailySeed) return;
     const key = GameState.getDailyStorageKey(this.dailySeed);
@@ -336,6 +344,8 @@ export class GameState {
       try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) { return null; }
     })();
     const score = this.computeScore(won);
+    // Add final checkpoint
+    const finalLog = [...this.ghostLog, { act: this.act, floor: this.floor, score }];
     if (!existing || score > existing.score) {
       try {
         localStorage.setItem(key, JSON.stringify({
@@ -343,7 +353,9 @@ export class GameState {
           hero: this.hero,
           won,
           modifier: this.dailyModifier,
-          date: this.dailySeed
+          date: this.dailySeed,
+          checkpoints: finalLog,
+          stats: this.runStats
         }));
       } catch(e) {}
     }
@@ -354,5 +366,11 @@ export class GameState {
       const raw = localStorage.getItem(GameState.getDailyStorageKey(seed));
       return raw ? JSON.parse(raw) : null;
     } catch(e) { return null; }
+  }
+
+  // Returns ghost run checkpoints for the given daily seed (best run)
+  static getDailyGhostRecord(seed) {
+    const best = GameState.getDailyBestScore(seed);
+    return (best && best.checkpoints) ? best : null;
   }
 }

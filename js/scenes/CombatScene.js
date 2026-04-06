@@ -1336,15 +1336,18 @@ export class CombatScene extends Phaser.Scene {
 
       this.time.delayedCall(1500, () => {
         if (this.isBoss && this.gs.act >= 3) {
+          this.gs.logGhostCheckpoint();
           this.gs.saveScore(true);
           this.gs.endRun();
           this.scene.start('RunSummaryScene', { won: true });
         } else if (this.isBoss) {
+          this.gs.logGhostCheckpoint();
           this.gs.act++;
           this.gs.map = null;
           this.gs.save();
           this.scene.start('MapScene');
         } else {
+          this.gs.logGhostCheckpoint();
           this.scene.start('RewardScene');
         }
       });
