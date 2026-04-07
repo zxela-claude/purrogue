@@ -55,6 +55,7 @@ export class RunSummaryScene extends Phaser.Scene {
         dailySeed:     gs.dailySeed || null,
         dailyModifier: gs.dailyModifier || null,
         ascension:     gs.ascension || 0,
+        score:         gs.computeScore(this.won),
       };
       // Save daily score before run is ended
       if (gs.isDaily) {
@@ -146,6 +147,7 @@ export class RunSummaryScene extends Phaser.Scene {
       { label: 'Cards Played',   value: snap.cardsPlayed },
       { label: 'Enemies Killed', value: snap.enemiesKilled },
       { label: 'Turns',          value: snap.turns },
+      { label: 'Score',          value: snap.score, color: '#ffd700' },
     ];
 
     statRows.forEach((row, i) => {
