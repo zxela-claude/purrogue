@@ -15,6 +15,18 @@ const STATUS_COLORS_BASE = { poison: '#4caf50', burn: '#ff6b35', freeze: '#a0d8e
 const STATUS_NAMES_FULL = { poison: 'Poison', burn: 'Burn', freeze: 'Freeze', vulnerable: 'Vulnerable', weak: 'Weak', bleed: 'Bleed', strong: 'Strong', thorns: 'Thorns' };
 const STATUS_NAMES_SHORT = { poison: 'Psn', burn: 'Brn', freeze: 'Frz', vulnerable: 'Vul', weak: 'Wk', bleed: 'Bld', strong: 'Str', thorns: 'Thn' };
 
+// Tooltip descriptions for status effects (NAN-212)
+const STATUS_TOOLTIPS = {
+  poison:     'Deals N dmg at end of\nenemy turn. Fades each turn.',
+  burn:       'Deals N dmg at start of\nyour turn. Halved each turn.',
+  freeze:     'Enemy skips its next attack.',
+  vulnerable: 'Target takes 50% more damage.',
+  weak:       'Target deals 25% less damage.',
+  bleed:      'Lose N HP at start of\nyour turn.',
+  strong:     'Deal 25% more damage.',
+  thorns:     'Deals N dmg to attacker\non each hit taken.',
+};
+
 // Auto-size card description font so long text fits within the 104px wordWrap boundary.
 // At 8px Press Start 2P, ~11 chars fit per line; card has ~4 lines of vertical room.
 // >44 chars → 7px (~12 chars/line, ~5 lines fit); >66 chars → 6px (~14 chars/line).
@@ -299,8 +311,9 @@ export class CombatScene extends Phaser.Scene {
     this.energyOrbGfx = this.add.graphics().setDepth(2);
     this.add.text(20, H - 122, 'ENERGY', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#888888' }).setDepth(3);
 
-    // Player status text
-    this.playerStatusText = this.add.text(170, H - 70, '', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa' }).setDepth(3);
+    // Player status text (NAN-212: replaced by interactive container for tooltips)
+    this.playerStatusText = this.add.text(170, H - 70, '', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa' }).setDepth(3).setAlpha(0);
+    this.playerStatusContainer = this.add.container(170, H - 70).setDepth(3);
 
     // End turn button
     const endTurnHitZone = this.add.rectangle(W - 110, H - 155, 220, 60, 0x000000, 0).setInteractive({ useHandCursor: true });
@@ -563,7 +576,7 @@ export class CombatScene extends Phaser.Scene {
     // Enemy block
     this.enemyBlockText.setText(this.enemy.block > 0 ? `🛡 ${this.enemy.block}` : '');
 
-    // Enemy status badges
+    // Enemy status badges (NAN-212: interactive with hover tooltips)
     this.enemyStatusContainer.removeAll(true);
     const statuses = Object.entries(this.enemy.statuses || {}).filter(([,v]) => v > 0);
     const _statusColors = getStatusColors();
@@ -574,7 +587,19 @@ export class CombatScene extends Phaser.Scene {
       const badge = this.add.text(i * 72 - statuses.length * 36 + 36, 0, `${displayName}\u00d7${v}`, {
         fontFamily: '"Press Start 2P"', fontSize: '11px', color: col,
         backgroundColor: '#111111', padding: { x: 5, y: 3 }
-      }).setOrigin(0.5);
+      }).setOrigin(0.5).setInteractive({ useHandCursor: false });
+      let tipTimer = null, tipObj = null;
+      badge.on('pointerover', () => {
+        const wx = this.enemyStatusContainer.x + badge.x;
+        const wy = this.enemyStatusContainer.y + badge.y;
+        tipTimer = this.time.delayedCall(280, () => {
+          tipObj = this._showStatusTooltip(k, v, wx, wy);
+        });
+      });
+      badge.on('pointerout', () => {
+        if (tipTimer) { tipTimer.remove(); tipTimer = null; }
+        if (tipObj) { tipObj.destroy(true); tipObj = null; }
+      });
       this.enemyStatusContainer.add(badge);
     });
 
@@ -608,10 +633,34 @@ export class CombatScene extends Phaser.Scene {
     // Energy orbs
     this._drawEnergyOrbs(this.energyOrbGfx);
 
-    // Player statuses
+    // Player statuses (NAN-212: interactive badges with tooltips)
     const _pStatusNames = getStatusNames();
     const pStatuses = Object.entries(this.playerStatuses || {}).filter(([,v]) => v > 0);
-    this.playerStatusText.setText(pStatuses.map(([k,v]) => `${_pStatusNames[k] || k}\u00d7${v}`).join(' '));
+    this.playerStatusContainer.removeAll(true);
+    const _pStatusColors = getStatusColors();
+    let pBadgeOffsetX = 0;
+    pStatuses.forEach(([k, v]) => {
+      const col = _pStatusColors[k] || '#aaaaaa';
+      const label = `${_pStatusNames[k] || k}\u00d7${v}`;
+      const pbadge = this.add.text(pBadgeOffsetX, 0, label, {
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: col,
+        backgroundColor: '#111111', padding: { x: 5, y: 3 }
+      }).setOrigin(0, 0.5).setInteractive({ useHandCursor: false });
+      let ptipTimer = null, ptipObj = null;
+      pbadge.on('pointerover', () => {
+        const wx = this.playerStatusContainer.x + pbadge.x + pbadge.displayWidth / 2;
+        const wy = this.playerStatusContainer.y + pbadge.y;
+        ptipTimer = this.time.delayedCall(280, () => {
+          ptipObj = this._showStatusTooltip(k, v, wx, wy);
+        });
+      });
+      pbadge.on('pointerout', () => {
+        if (ptipTimer) { ptipTimer.remove(); ptipTimer = null; }
+        if (ptipObj) { ptipObj.destroy(true); ptipObj = null; }
+      });
+      this.playerStatusContainer.add(pbadge);
+      pBadgeOffsetX += pbadge.displayWidth + 6;
+    });
 
     // Deck / discard
     this.deckCountText.setText(`📚 Draw: ${this.drawPile.length}`);
@@ -1491,6 +1540,45 @@ export class CombatScene extends Phaser.Scene {
     tip.add(items);
     tip.setAlpha(0);
     this.tweens.add({ targets: tip, alpha: 1, duration: 120 });
+    return tip;
+  }
+
+  // NAN-212: lightweight tooltip for status effect badges
+  _showStatusTooltip(statusKey, stackCount, worldX, worldY) {
+    const name = STATUS_NAMES_FULL[statusKey] || statusKey;
+    const rawDesc = STATUS_TOOLTIPS[statusKey] || 'No description available.';
+    // Replace N with the actual stack count
+    const desc = rawDesc.replace(/\bN\b/g, String(stackCount));
+    const col = (getStatusColors()[statusKey] || '#aaaaaa');
+
+    const W = 200, H = 88;
+    const clampedX = Math.max(W / 2 + 8, Math.min(SCREEN_WIDTH - W / 2 - 8, worldX));
+    const clampedY = Math.max(H / 2 + 8, Math.min(SCREEN_HEIGHT - H / 2 - 8, worldY - 56));
+
+    const tip = this.add.container(clampedX, clampedY).setDepth(110);
+    const colNum = Phaser.Display.Color.HexStringToColor(col).color;
+
+    const bg     = this.add.rectangle(0, 0, W, H, 0x08081a);
+    const border = this.add.graphics();
+    border.lineStyle(2, colNum);
+    border.strokeRect(-W / 2, -H / 2, W, H);
+
+    const nameText = this.add.text(0, -H / 2 + 14, name, {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: col
+    }).setOrigin(0.5);
+
+    const sep = this.add.graphics();
+    sep.lineStyle(1, colNum, 0.4);
+    sep.lineBetween(-W / 2 + 10, -H / 2 + 26, W / 2 - 10, -H / 2 + 26);
+
+    const descText = this.add.text(0, -H / 2 + 44, desc, {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#cccccc',
+      wordWrap: { width: W - 20 }, align: 'center'
+    }).setOrigin(0.5, 0);
+
+    tip.add([bg, border, nameText, sep, descText]);
+    tip.setAlpha(0);
+    this.tweens.add({ targets: tip, alpha: 1, duration: 100 });
     return tip;
   }
 
