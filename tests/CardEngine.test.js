@@ -265,3 +265,37 @@ describe('CardEngine.resolveEnemyIntent', () => {
     expect(m3.type).toBe('attack'); // wraps
   });
 });
+
+// ── Smith upgrade key derivation (NAN-211) ────────────────────────────────────
+// Mirrors the logic in MapScene._showSmithMenu showPreview()
+function getSmithUpgradeKey(cardId, card, mood) {
+  const upgMood = mood || 'default';
+  const hasSpecific = upgMood !== 'default' && card.upgrades[upgMood];
+  return hasSpecific ? `${cardId}_u_${upgMood}` : `${cardId}_u`;
+}
+
+describe('Smith upgrade key derivation', () => {
+  it('uses mood-specific upgrade key when mood upgrade exists', () => {
+    const cardId = 'w_strike';
+    const card = { id: cardId, upgrades: { default: {}, feisty: {} } };
+    expect(getSmithUpgradeKey(cardId, card, 'feisty')).toBe('w_strike_u_feisty');
+  });
+
+  it('falls back to default upgrade key when mood has no specific path', () => {
+    const cardId = 'w_headbutt';
+    const card = { id: cardId, upgrades: { default: {} } };
+    expect(getSmithUpgradeKey(cardId, card, 'cozy')).toBe('w_headbutt_u');
+  });
+
+  it('uses default key when mood is null', () => {
+    const cardId = 'w_defend';
+    const card = { id: cardId, upgrades: { default: {} } };
+    expect(getSmithUpgradeKey(cardId, card, null)).toBe('w_defend_u');
+  });
+
+  it('uses default key for explicit default mood', () => {
+    const cardId = 'w_cleave';
+    const card = { id: cardId, upgrades: { default: {} } };
+    expect(getSmithUpgradeKey(cardId, card, 'default')).toBe('w_cleave_u');
+  });
+});

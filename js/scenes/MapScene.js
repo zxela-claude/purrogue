@@ -449,6 +449,71 @@ export class MapScene extends Phaser.Scene {
     escKey.once('down', () => { group.destroy(true); });
   }
 
+  // NAN-211: draw a mini card frame (before or after upgrade) into a Phaser container
+  _buildSmithCardPreview(card, tinted = false) {
+    const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
+    const RARITY_BORDER_COLORS = { common: 0x888888, uncommon: 0x22cc77, rare: 0xffd700 };
+    const CW = 130, CH = 170;
+    const container = this.add.container(0, 0);
+
+    // Shadow
+    container.add(this.add.rectangle(3, 4, CW, CH, 0x000000, 0.5));
+
+    // Body
+    const bodyColor = tinted ? 0x1e3a1e : 0x1e2a4a;
+    container.add(this.add.rectangle(0, 0, CW, CH, bodyColor));
+
+    // Rarity border
+    const rarityColor = RARITY_BORDER_COLORS[card.rarity] || 0x888888;
+    const borderGfx = this.add.graphics();
+    borderGfx.lineStyle(3, tinted ? 0x44ff88 : rarityColor);
+    borderGfx.strokeRect(-CW/2, -CH/2, CW, CH);
+    container.add(borderGfx);
+
+    // Type pip (top-right)
+    const typeColor = CARD_TYPE_COLORS[card.type] || 0x666666;
+    container.add(this.add.rectangle(CW/2 - 10, -CH/2 + 10, 18, 18, typeColor));
+
+    // Cost (top-left)
+    container.add(this.add.text(-CW/2 + 7, -CH/2 + 6, `${card.cost}`, {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
+    }));
+
+    // Card art
+    const baseCardId = card.id.replace(/_u(_\w+)?$/, '');
+    const artKey = `card_art_${baseCardId}`;
+    if (this.textures && this.textures.exists(artKey)) {
+      container.add(this.add.rectangle(0, -10, 84, 84, 0x000000, 0.3));
+      container.add(this.add.image(0, -10, artKey).setDisplaySize(80, 80));
+    } else {
+      // Placeholder art area
+      const artGfx = this.add.graphics();
+      artGfx.fillStyle(0x000000, 0.3);
+      artGfx.fillRect(-42, -52, 84, 84);
+      container.add(artGfx);
+    }
+
+    // Card name
+    container.add(this.add.text(0, -70, card.name, {
+      fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#f0ead6',
+      wordWrap: { width: 110 }, align: 'center'
+    }).setOrigin(0.5));
+
+    // Description
+    container.add(this.add.text(0, 52, card.description, {
+      fontFamily: '"Press Start 2P"', fontSize: '6px', color: tinted ? '#aaffbb' : '#aaaaaa',
+      wordWrap: { width: 114 }, align: 'center'
+    }).setOrigin(0.5));
+
+    // Rarity label (bottom-left)
+    container.add(this.add.text(-CW/2 + 4, CH/2 - 14, card.rarity ? card.rarity[0].toUpperCase() : '', {
+      fontFamily: '"Press Start 2P"', fontSize: '7px',
+      color: `#${rarityColor.toString(16).padStart(6, '0')}`
+    }));
+
+    return container;
+  }
+
   _showSmithMenu(gs) {
     const mood = gs.getDominantPersonality();
     const allCards = ALL_CARDS;
@@ -458,41 +523,160 @@ export class MapScene extends Phaser.Scene {
       if (c.upgrades) {
         for (const [m, upgrade] of Object.entries(c.upgrades)) {
           const upgradeId = m === 'default' ? `${c.id}_u` : `${c.id}_u_${m}`;
-          cardDb[upgradeId] = { ...c, id: upgradeId, name: c.name + '+', effects: upgrade.effects };
+          const upgradeDesc = upgrade.description || c.description;
+          cardDb[upgradeId] = { ...c, id: upgradeId, name: c.name + '+', effects: upgrade.effects, description: upgradeDesc };
         }
       }
     }
     const upgradeable = gs.deck.filter(id => !id.includes('_u') && cardDb[id]?.upgrades);
 
     const group = this.add.group();
-    const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
+    const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 60, SCREEN_HEIGHT - 60, COLORS.PANEL, 0.96).setDepth(20);
     group.add(bg);
-    const title = this.add.text(SCREEN_WIDTH/2, 90, 'SMITH — Pick a card to upgrade', { fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#ffd700' }).setOrigin(0.5).setDepth(21);
+    const border = this.add.graphics().setDepth(20);
+    border.lineStyle(2, 0xffd700);
+    border.strokeRect(30, 30, SCREEN_WIDTH - 60, SCREEN_HEIGHT - 60);
+    group.add(border);
+
+    const title = this.add.text(SCREEN_WIDTH/2, 58, '⚒  SMITH', {
+      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#ffd700'
+    }).setOrigin(0.5).setDepth(21);
     group.add(title);
 
+    // Preview containers tracked outside if/else so cancel can clean them up
+    let smithBeforeContainer = null, smithAfterContainer = null;
+    const destroyPreviews = () => {
+      if (smithBeforeContainer) { smithBeforeContainer.destroy(true); smithBeforeContainer = null; }
+      if (smithAfterContainer)  { smithAfterContainer.destroy(true);  smithAfterContainer = null; }
+    };
+
     if (upgradeable.length === 0) {
-      const t = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'No cards to upgrade!', { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#aaaaaa' }).setOrigin(0.5).setDepth(21);
+      const t = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'No cards to upgrade!', {
+        fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#aaaaaa'
+      }).setOrigin(0.5).setDepth(21);
       group.add(t);
     } else {
-      upgradeable.forEach((cardId, i) => {
+      // ── Left panel: card list ─────────────────────────────────────────────
+      const listX = 200;
+      group.add(this.add.text(listX, 100, 'Choose a card:', {
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa'
+      }).setOrigin(0.5).setDepth(21));
+
+      // ── Right panel: before/after preview ────────────────────────────────
+      const previewLabelY = 100;
+      const previewY = SCREEN_HEIGHT / 2 + 20;
+      const beforeX = SCREEN_WIDTH - 360;
+      const afterX  = SCREEN_WIDTH - 180;
+
+      const beforeLabel = this.add.text(beforeX, previewLabelY, 'BEFORE', {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888'
+      }).setOrigin(0.5).setDepth(21).setAlpha(0);
+      group.add(beforeLabel);
+
+      const afterLabel = this.add.text(afterX, previewLabelY, 'AFTER', {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#44ff88'
+      }).setOrigin(0.5).setDepth(21).setAlpha(0);
+      group.add(afterLabel);
+
+      const arrowLabel = this.add.text((beforeX + afterX)/2, previewY, '→', {
+        fontFamily: '"Press Start 2P"', fontSize: '22px', color: '#ffd700'
+      }).setOrigin(0.5).setDepth(21).setAlpha(0);
+      group.add(arrowLabel);
+
+      // Upgrade button (shown when a card is selected)
+      const upgradeBtn = this.add.text(afterX, previewY + 120, '[ UPGRADE ]', {
+        fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700'
+      }).setOrigin(0.5).setDepth(22).setAlpha(0);
+      group.add(upgradeBtn);
+
+      // Selected card state
+      let selectedCardId = null;
+
+      const showPreview = (cardId) => {
+        selectedCardId = cardId;
         const card = cardDb[cardId];
-        const col = i % 3, row = Math.floor(i / 3);
-        const x = 320 + col * 220, y = 180 + row * 50;
-        const btn = this.add.text(x, y, `► ${card.name} → ${card.name}+`, { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6' })
-          .setDepth(21).setInteractive({ useHandCursor: true });
-        btn.on('pointerover', function() { this.setColor('#ffd700'); });
-        btn.on('pointerout', function() { this.setColor('#f0ead6'); });
-        btn.on('pointerdown', () => {
-          gs.upgradeCard(cardId, mood);
+
+        // Get the upgraded card — 'default' maps to cardId_u, mood-specific to cardId_u_mood
+        const upgMood = mood || 'default';
+        const hasSpecific = upgMood !== 'default' && card.upgrades[upgMood];
+        const upgKey = hasSpecific ? `${cardId}_u_${upgMood}` : `${cardId}_u`;
+        const upgCard = cardDb[upgKey] || { ...card, name: card.name + '+', id: upgKey };
+
+        // Destroy old previews
+        destroyPreviews();
+
+        smithBeforeContainer = this._buildSmithCardPreview(card, false);
+        smithBeforeContainer.setPosition(beforeX, previewY).setDepth(22);
+
+        smithAfterContainer = this._buildSmithCardPreview(upgCard, true);
+        smithAfterContainer.setPosition(afterX, previewY).setDepth(22);
+
+        beforeLabel.setAlpha(1);
+        afterLabel.setAlpha(1);
+        arrowLabel.setAlpha(1);
+        upgradeBtn.setAlpha(1).setInteractive({ useHandCursor: true });
+        upgradeBtn.removeListener('pointerdown');
+        upgradeBtn.on('pointerdown', () => {
+          gs.upgradeCard(selectedCardId, mood);
+          destroyPreviews();
           group.destroy(true);
           this.scene.start('MapScene');
         });
-        group.add(btn);
+      };
+
+      // Card list buttons
+      upgradeable.forEach((cardId, i) => {
+        const card = cardDb[cardId];
+        const y = 135 + i * 38;
+        const isSelected = () => selectedCardId === cardId;
+
+        const rowBg = this.add.rectangle(listX, y, 300, 32, 0x000000, 0).setDepth(21).setInteractive({ useHandCursor: true });
+        const btn = this.add.text(listX + 10, y, `► ${card.name}`, {
+          fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
+        }).setOrigin(0, 0.5).setDepth(22);
+
+        const rarityDot = this.add.text(listX - 120, y, '●', {
+          fontFamily: '"Press Start 2P"', fontSize: '10px',
+          color: card.rarity === 'rare' ? '#ffd700' : card.rarity === 'uncommon' ? '#22cc77' : '#888888'
+        }).setOrigin(0.5).setDepth(22);
+
+        group.add(rowBg); group.add(btn); group.add(rarityDot);
+
+        rowBg.on('pointerover', () => {
+          btn.setColor('#ffd700');
+          rowBg.setFillStyle(0x1e2a4a, 0.6);
+        });
+        rowBg.on('pointerout', () => {
+          btn.setColor(isSelected() ? '#ffd700' : '#f0ead6');
+          rowBg.setFillStyle(0x000000, isSelected() ? 0.3 : 0);
+        });
+        rowBg.on('pointerdown', () => {
+          // Reset all buttons
+          group.getChildren().forEach(c => {
+            if (c.type === 'Text' && c !== title && c !== beforeLabel && c !== afterLabel && c !== arrowLabel && c !== upgradeBtn) {
+              if (typeof c.setColor === 'function') c.setColor('#f0ead6');
+            }
+          });
+          btn.setColor('#ffd700');
+          rowBg.setFillStyle(0x1e2a4a, 0.3);
+          showPreview(cardId);
+        });
+
+        // Auto-select first card on open
+        if (i === 0) {
+          this.time.delayedCall(0, () => {
+            btn.setColor('#ffd700');
+            showPreview(cardId);
+          });
+        }
       });
     }
 
-    const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#e94560' }).setOrigin(0.5).setDepth(21)
-      .setInteractive({ useHandCursor: true }).on('pointerdown', () => { group.destroy(true); this.scene.start('MapScene'); });
+    const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 42, '[ CANCEL ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#e94560'
+    }).setOrigin(0.5).setDepth(21)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => { destroyPreviews(); group.destroy(true); this.scene.start('MapScene'); });
     group.add(cancelBtn);
   }
 
