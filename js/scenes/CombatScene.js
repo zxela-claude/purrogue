@@ -682,6 +682,7 @@ export class CombatScene extends Phaser.Scene {
     }
     this.playerBlock = 0;
     this.coffeeMugUsed = false;
+    this.bellCollarUsed = false;
 
     // Sundial: gain 2 energy every 3rd turn (turn 3, 6, 9...)
     if (this.gs.relics.includes('sundial') && this.turnNumber % 3 === 0) {
