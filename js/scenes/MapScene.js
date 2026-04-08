@@ -5,6 +5,7 @@ import { ALL_CARDS } from '../data/cards.js';
 import { MusicManager } from '../MusicManager.js';
 import { RELICS } from '../data/relics.js';
 import { GameState } from '../GameState.js';
+import { getBiome } from '../DungeonBuilding.js';
 
 const NODE_SPRITE_KEYS = {
   [NODE_TYPES.COMBAT]: 'node_combat',
@@ -14,29 +15,14 @@ const NODE_SPRITE_KEYS = {
   [NODE_TYPES.REST]: 'node_rest',
   [NODE_TYPES.BOSS]: 'node_boss'
 };
-const NODE_LABELS = {
-  [NODE_TYPES.COMBAT]: 'Combat',
-  [NODE_TYPES.ELITE]:  'Elite',
-  [NODE_TYPES.SHOP]:   'Shop',
-  [NODE_TYPES.EVENT]:  'Event',
-  [NODE_TYPES.REST]:   'Rest',
-  [NODE_TYPES.BOSS]:   'BOSS'
-};
-
-const NODE_COLORS = {
-  [NODE_TYPES.COMBAT]: 0xe94560,
-  [NODE_TYPES.ELITE]: 0x9b59b6,
-  [NODE_TYPES.SHOP]: 0xffd700,
-  [NODE_TYPES.EVENT]: 0x4fc3f7,
-  [NODE_TYPES.REST]: 0x4caf50,
-  [NODE_TYPES.BOSS]: 0xff4400
-};
 
 export class MapScene extends Phaser.Scene {
   constructor() { super('MapScene'); }
 
   create() {
     const gs = this.registry.get('gameState');
+    // NAN-215: resolve biome config for this act — drives node colours, labels, atmosphere
+    const biome = getBiome(gs.act);
     const isNewAct = !gs.map;
     if (isNewAct) {
       // NAN-203: pass a deterministic seed — daily runs use the date seed so
@@ -72,13 +58,15 @@ export class MapScene extends Phaser.Scene {
     const mapBgKey = `bg_combat_${Math.min(gs.act || 1, 3)}`;
     if (this.textures.exists(mapBgKey)) {
       this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, mapBgKey).setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
-      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.6).setDepth(-1);
+      // NAN-215: use biome fog colour as the dark overlay tint
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, biome.fogColor, 0.6).setDepth(-1);
     } else {
       this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
     }
 
-    // Header
+    // Header — NAN-215: show biome name as act subtitle
     this.add.text(20, 20, `ACT ${gs.act} — FLOOR ${gs.floor + 1}/7`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 });
+    this.add.text(20, 42, biome.headerSuffix, { fontFamily: '"Press Start 2P"', fontSize: '8px', color: `#${biome.accentColor.toString(16).padStart(6, '0')}`, stroke: '#000000', strokeThickness: 1 });
     this.add.text(SCREEN_WIDTH - 20, 20, `❤️ ${gs.hp}/${gs.maxHp}  💰 ${gs.gold}`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(1, 0);
 
     // NAN-126: Floor pip progress indicator
@@ -155,14 +143,14 @@ export class MapScene extends Phaser.Scene {
           });
         }
 
-        // Draw node
+        // Draw node — NAN-215: node colour and label come from the biome data asset
         const isAvail = availableIds.has(node.id);
-        const color = node.completed ? 0x444444 : NODE_COLORS[node.type];
+        const color = node.completed ? 0x444444 : (biome.nodeColors[node.type] ?? 0x888888);
         const circle = this.add.circle(x, y, 28, color, node.completed ? 0.3 : 0.85);
         const nodeSprite = this.add.image(x, y, NODE_SPRITE_KEYS[node.type]).setDisplaySize(40, 40);
         if (node.completed) nodeSprite.setAlpha(0.35);
 
-        const label = (node.completed ? '✓ ' : '') + (NODE_LABELS[node.type] || node.type);
+        const label = (node.completed ? '✓ ' : '') + (biome.nodeLabels[node.type] || node.type);
 
         if (isAvail && !node.completed) {
           // Pulsing outline

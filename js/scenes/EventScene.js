@@ -1,6 +1,7 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { RELICS } from '../data/relics.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
+import { getBiome } from '../DungeonBuilding.js';
 
 const EVENTS = [
   { title: 'Mysterious Fisherman', desc: 'A fisherman offers you fish. Take it?', choices: [
@@ -196,9 +197,11 @@ export class EventScene extends Phaser.Scene {
     const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
 
     const eventBgKey = `bg_combat_${Math.min(gs.act || 1, 3)}`;
+    // NAN-215: use biome fog colour as the atmospheric overlay tint
+    const biome = getBiome(gs.act);
     if (this.textures.exists(eventBgKey)) {
       this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, eventBgKey).setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
-      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.65).setDepth(-1);
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, biome.fogColor, 0.65).setDepth(-1);
     } else {
       this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
     }

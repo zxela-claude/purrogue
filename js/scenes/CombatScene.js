@@ -7,6 +7,7 @@ import { SoundManager } from '../SoundManager.js';
 import { MusicManager } from '../MusicManager.js';
 import { PurrSettings } from '../PurrSettings.js';
 import { COLORBLIND_MAPS } from './SettingsScene.js';
+import { getBiome } from '../DungeonBuilding.js';
 
 const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
 const STATUS_COLORS_BASE = { poison: '#4caf50', burn: '#ff6b35', freeze: '#a0d8ef', vulnerable: '#e67e22', weak: '#95a5a6', strong: '#f1c40f' };
@@ -158,7 +159,9 @@ export class CombatScene extends Phaser.Scene {
     const bgKey = this.isBoss ? 'bg_boss' : `bg_combat_${Math.min(gs.act || 1, 3)}`;
     if (this.textures.exists(bgKey)) {
       this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, bgKey).setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
-      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.45).setDepth(-1);
+      // NAN-215: use biome fog colour as the dark overlay tint for atmosphere
+      const biome = getBiome(gs.act);
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, biome.fogColor, 0.45).setDepth(-1);
     } else {
       this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
     }
