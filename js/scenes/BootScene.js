@@ -38,6 +38,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('the_dog', 'assets/enemies/boss_dog.png');
     this.load.image('vacuum_boss', 'assets/enemies/boss_vacuum.png');
     this.load.image('the_vet', 'assets/enemies/the_vet.png');
+    this.load.image('raccoon', 'assets/enemies/raccoon.png');
+    this.load.image('the_washing_machine', 'assets/enemies/the_washing_machine.png');
 
     // Map node icons
     this.load.image('node_combat', 'assets/mapnodes/node_combat.png');

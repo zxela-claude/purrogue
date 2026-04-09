@@ -103,7 +103,6 @@ export const ENEMIES = {
   raccoon: {
     id: 'raccoon', name: 'Raccoon', hp: 100, maxHp: 100, block: 0, statuses: {},
     act: 2, elite: true,
-    emoji: '🦝',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:14,desc:'Scratches for 14'},
@@ -220,7 +219,6 @@ export const ENEMIES = {
   the_washing_machine: {
     id: 'the_washing_machine', name: 'The Washing Machine', hp: 230, maxHp: 230, block: 0, statuses: {},
     act: 2, elite: false, boss: true,
-    emoji: '🫧',
     moveIndex: 0,
     movePattern: [
       {type:'attack',value:16,desc:'Spin cycle for 16'},
