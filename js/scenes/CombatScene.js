@@ -19,7 +19,7 @@ const STATUS_NAMES_SHORT = { poison: 'Psn', burn: 'Brn', freeze: 'Frz', vulnerab
 // Tooltip descriptions for status effects (NAN-212)
 const STATUS_TOOLTIPS = {
   poison:     'Deals N dmg at end of\nenemy turn. Fades each turn.',
-  burn:       'Deals N dmg at start of\nyour turn. Halved each turn.',
+  burn:       'Deals N×3 damage in one\nburst next turn, then expires.',
   freeze:     'Enemy skips its next attack.',
   vulnerable: 'Target takes 50% more damage.',
   weak:       'Target deals 25% less damage.',
