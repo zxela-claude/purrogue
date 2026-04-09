@@ -45,7 +45,7 @@ const EVENTS = [
     { label: 'Resist (+3 max HP)', action: gs => { gs.maxHp += 3; gs.heal(3); } }
   ]},
   { title: 'The Yarn Tangle', desc: 'A glorious tangle of yarn sprawls across the path. Something glints inside...', choices: [
-    { label: 'Untangle it (gain relic, lose 1 card)', action: gs => {
+    { label: 'Untangle it (gain relic, lose 1 card)', requiresConfirm: true, confirmText: 'A random card will be permanently removed from your deck. Continue?', action: gs => {
       const relicPool = ['laser_toy','bell_collar','toy_mouse','lucky_paw','claw_sharpener','warm_blanket'];
       gs.addRelic(relicPool[Math.floor(Math.random() * relicPool.length)]);
       if (gs.deck.length > 1) {
@@ -63,7 +63,7 @@ const EVENTS = [
     { label: 'Leave it (nothing)', action: gs => {} }
   ]},
   { title: "The Mysterious Box", desc: "A cardboard box sits in the middle of the path. It could contain anything.", choices: [
-    { label: "Open it (random: good or bad)", action: gs => {
+    { label: "Open it (random: good or bad)", requiresConfirm: true, confirmText: 'The outcome is random — it could heal, grant gold or a relic, or permanently remove a card from your deck. Continue?', action: gs => {
       const outcomes = [
         gs2 => { gs2.heal(20); },
         gs2 => { gs2.gold += 30; gs2.save(); },
@@ -223,11 +223,67 @@ export class EventScene extends Phaser.Scene {
       btn.on('pointerover', function() { this.setColor('#ffd700'); });
       btn.on('pointerout', function() { this.setColor('#f0ead6'); });
       btn.on('pointerdown', () => {
-        choice.action(gs);
-        gs.save();
-        this.scene.start('MapScene');
+        if (choice.requiresConfirm) {
+          this._showConfirmModal(gs, choice);
+        } else {
+          choice.action(gs);
+          gs.save();
+          this.scene.start('MapScene');
+        }
       });
     });
     PurrSettings.scaleSceneText(this); // NAN-222
+  }
+
+  _showConfirmModal(gs, choice) {
+    // Dim overlay
+    const overlay = this.add.rectangle(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.75)
+      .setDepth(10).setInteractive(); // block clicks through
+
+    // Modal box
+    const boxW = 640, boxH = 260;
+    const boxX = SCREEN_WIDTH / 2, boxY = SCREEN_HEIGHT / 2;
+    this.add.rectangle(boxX, boxY, boxW, boxH, 0x1a1a2e, 1).setDepth(11);
+    this.add.rectangle(boxX, boxY, boxW, boxH).setDepth(11).setStrokeStyle(2, 0xffd700);
+
+    // Warning text
+    this.add.text(boxX, boxY - 70, '⚠ Are you sure?', {
+      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#ffd700'
+    }).setOrigin(0.5).setDepth(12);
+
+    this.add.text(boxX, boxY - 10, choice.confirmText, {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#f0ead6',
+      wordWrap: { width: boxW - 60 }, align: 'center'
+    }).setOrigin(0.5).setDepth(12);
+
+    // Confirm button
+    const confirmBtn = this.add.text(boxX - 120, boxY + 80, '✓ CONFIRM', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50',
+      backgroundColor: '#1a3a1a', padding: { x: 14, y: 8 }
+    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+
+    confirmBtn.on('pointerover', function() { this.setColor('#a5d6a7'); });
+    confirmBtn.on('pointerout', function() { this.setColor('#4caf50'); });
+    confirmBtn.on('pointerdown', () => {
+      choice.action(gs);
+      gs.save();
+      this.scene.start('MapScene');
+    });
+
+    // Cancel button
+    const cancelBtn = this.add.text(boxX + 120, boxY + 80, '✗ CANCEL', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ef5350',
+      backgroundColor: '#3a1a1a', padding: { x: 14, y: 8 }
+    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+
+    cancelBtn.on('pointerover', function() { this.setColor('#ef9a9a'); });
+    cancelBtn.on('pointerout', function() { this.setColor('#ef5350'); });
+    cancelBtn.on('pointerdown', () => {
+      overlay.destroy();
+      // destroy all modal elements by depth
+      this.children.list
+        .filter(c => c.depth >= 11)
+        .forEach(c => c.destroy());
+    });
   }
 }
