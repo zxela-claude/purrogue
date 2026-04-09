@@ -1,6 +1,7 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { RELICS } from '../data/relics.js';
+import { PurrSettings } from '../PurrSettings.js';
 
 function buildShareText(snap, won) {
   const relicDb = {};
@@ -214,6 +215,7 @@ export class RunSummaryScene extends Phaser.Scene {
     // ── Buttons ───────────────────────────────────────────────────────────────
     this._addReturnButton(W, H);
     if (snap) this._addShareButton(W, H, snap);
+    PurrSettings.scaleSceneText(this); // NAN-222
   }
 
   _addActBadges(W, snap, won) {

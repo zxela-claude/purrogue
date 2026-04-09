@@ -6,6 +6,7 @@ import { MusicManager } from '../MusicManager.js';
 import { RELICS } from '../data/relics.js';
 import { GameState } from '../GameState.js';
 import { getBiome } from '../DungeonBuilding.js';
+import { PurrSettings } from '../PurrSettings.js';
 
 const NODE_SPRITE_KEYS = {
   [NODE_TYPES.COMBAT]: 'node_combat',
@@ -192,6 +193,7 @@ export class MapScene extends Phaser.Scene {
     if (gs.personality.feralPending && !gs.personality.feral) {
       this._showFeralWarning(gs);
     }
+    PurrSettings.scaleSceneText(this); // NAN-222
   }
 
   _enterNode(node, gs) {

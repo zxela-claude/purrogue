@@ -2,6 +2,7 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { RELICS } from '../data/relics.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { getBiome } from '../DungeonBuilding.js';
+import { PurrSettings } from '../PurrSettings.js';
 
 const EVENTS = [
   { title: 'Mysterious Fisherman', desc: 'A fisherman offers you fish. Take it?', choices: [
@@ -227,5 +228,6 @@ export class EventScene extends Phaser.Scene {
         this.scene.start('MapScene');
       });
     });
+    PurrSettings.scaleSceneText(this); // NAN-222
   }
 }

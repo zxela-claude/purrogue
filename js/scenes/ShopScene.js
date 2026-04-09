@@ -1,6 +1,7 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { RELICS } from '../data/relics.js';
 import { ALL_CARDS } from '../data/cards.js';
+import { PurrSettings } from '../PurrSettings.js';
 
 const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
 const RARITY_BORDER_COLORS = { common: 0x888888, uncommon: 0x22cc77, rare: 0xffd700 };
@@ -127,6 +128,7 @@ export class ShopScene extends Phaser.Scene {
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 28, '[ LEAVE SHOP ]', {
       fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.scene.start('MapScene'));
+    PurrSettings.scaleSceneText(this); // NAN-222
   }
 
   _buildShopCard(x, cy, card, price, canAfford, gs, noGold) {

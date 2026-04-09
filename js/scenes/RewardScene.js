@@ -1,6 +1,7 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { ALL_CARDS } from '../data/cards.js';
+import { PurrSettings } from '../PurrSettings.js';
 
 const CARD_TYPE_COLORS = { attack: 0xe94560, skill: 0x4fc3f7, power: 0x9b59b6 };
 const CARD_TYPE_LABEL_COLORS = { attack: '#e94560', skill: '#4fc3f7', power: '#bb86fc' };
@@ -157,6 +158,7 @@ export class RewardScene extends Phaser.Scene {
       .on('pointerover', function() { this.setColor('#cccccc'); })
       .on('pointerout',  function() { this.setColor('#888888'); })
       .on('pointerdown', () => this.scene.start('MapScene'));
+    PurrSettings.scaleSceneText(this); // NAN-222
   }
 
   _weightedCardDraft(heroCards, act, mood, count) {

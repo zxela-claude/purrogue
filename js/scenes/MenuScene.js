@@ -3,6 +3,7 @@ import { GameState } from '../GameState.js';
 import { DeckCode } from '../DeckCode.js';
 import { MusicManager } from '../MusicManager.js';
 import { RELICS } from '../data/relics.js';
+import { PurrSettings } from '../PurrSettings.js';
 
 const HERO_FLAVOUR = {
   WARRIOR: 'Tank & smash',
@@ -229,6 +230,7 @@ export class MenuScene extends Phaser.Scene {
     // ── High scores ───────────────────────────────────────────────────────────
     const scores = GameState.getScores();
     this._buildLeaderboard(scores, W);
+    PurrSettings.scaleSceneText(this); // NAN-222
   }
 
   _buildLeaderboard(allScores, W) {

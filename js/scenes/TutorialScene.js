@@ -1,4 +1,5 @@
 import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
+import { PurrSettings } from '../PurrSettings.js';
 
 const STEPS = [
   {
@@ -78,6 +79,7 @@ export class TutorialScene extends Phaser.Scene {
     this._contentGroup = this.add.group();
 
     this._renderStep();
+    PurrSettings.scaleSceneText(this); // NAN-222
   }
 
   _clearStep() {

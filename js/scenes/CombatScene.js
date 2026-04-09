@@ -168,6 +168,7 @@ export class CombatScene extends Phaser.Scene {
 
     this._drawUI();
     this._startPlayerTurn();
+    PurrSettings.scaleSceneText(this); // NAN-222: apply font scale setting
   }
 
   // ── Visual helpers ──────────────────────────────────────────────────────────
@@ -822,6 +823,7 @@ export class CombatScene extends Phaser.Scene {
       }).setOrigin(1, 1).setDepth(4).setAlpha(0.6) : null;
 
       container.add([shadow, bg, border, pip, ...artItems, nameText, costText, descText, ...(keyHint ? [keyHint] : [])]);
+      PurrSettings.scaleTextObjects([nameText, costText, descText, ...(keyHint ? [keyHint] : [])]); // NAN-222
 
       // Make container interactive using card bounds
       container.setInteractive(

@@ -114,6 +114,7 @@ export class SettingsScene extends Phaser.Scene {
 
     // ESC to close
     this.input.keyboard.once('keydown-ESC', () => this._close());
+    PurrSettings.scaleSceneText(this); // NAN-222
   }
 
   // ── Row builders ─────────────────────────────────────────────────────────
