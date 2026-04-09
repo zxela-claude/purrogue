@@ -694,12 +694,6 @@ export class CombatScene extends Phaser.Scene {
     // Thorns: grant block equal to thorns stacks at start of turn
     if (this.playerStatuses?.thorns > 0) this.playerBlock += this.playerStatuses.thorns;
 
-    const fakePlayer = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
-    CardEngine.tickStatuses(fakePlayer);
-    this.gs.hp = fakePlayer.hp;
-    this.playerBlock = fakePlayer.block;
-    this.playerStatuses = fakePlayer.statuses;
-
     const drawBonusThisTurn = (this.turnNumber === 1) ? (this._pendingDrawBonus || 0) : 0;
     this._pendingDrawBonus = 0;
     this._drawCards(HAND_SIZE + (this.gs.relics.includes('laser_toy') ? 1 : 0) + drawBonusThisTurn);
@@ -1277,6 +1271,15 @@ export class CombatScene extends Phaser.Scene {
   }
 
   _continueEndTurn() {
+    // Tick player statuses at END of player turn (after all cards played), so buffs
+    // like Strong persist for the full turn rather than expiring before first swing.
+    const fakePlayer = { hp: this.gs.hp, maxHp: this.gs.maxHp, block: this.playerBlock, statuses: this.playerStatuses };
+    CardEngine.tickStatuses(fakePlayer);
+    this.gs.hp = fakePlayer.hp;
+    this.playerBlock = fakePlayer.block;
+    this.playerStatuses = fakePlayer.statuses;
+    this._updateStatsDisplay();
+
     this._endTurnHitZone.removeInteractive();
     this.time.delayedCall(400, () => this._enemyTurn());
   }
