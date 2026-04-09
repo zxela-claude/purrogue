@@ -79,7 +79,7 @@ export class MenuScene extends Phaser.Scene {
     const dailyModifier = GameState.getDailyModifier(dailySeed);
     const dailyBest = GameState.getDailyBestScore(dailySeed);
 
-    const dailyBtnY = 580;
+    const dailyBtnY = 635;
     const dailyBtnW = 360;
     const dailyBtnH = 40;
     const dailyBg = this.add.rectangle(W/2, dailyBtnY, dailyBtnW, dailyBtnH, 0x001a1a)
@@ -102,7 +102,7 @@ export class MenuScene extends Phaser.Scene {
     dailyBg.on('pointerdown', () => this._showDailyModal(dailySeed, dailyModifier));
 
     // START RUN button (hidden until a hero is selected)
-    const startBtnY = 570;
+    const startBtnY = 555;
     const startBtnBg = this.add.rectangle(W/2, startBtnY, 280, 40, 0x1a3300, 0)
       .setDepth(2);
     const startBtnBorder = this.add.graphics().setDepth(2);
