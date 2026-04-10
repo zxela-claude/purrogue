@@ -30,10 +30,9 @@ const STATUS_TOOLTIPS = {
 
 // Auto-size card description font so long text fits within the 104px wordWrap boundary.
 // At 8px Press Start 2P, ~11 chars fit per line; card has ~4 lines of vertical room.
-// >44 chars → 7px (~12 chars/line, ~5 lines fit); >66 chars → 6px (~14 chars/line).
+// >44 chars → 7px (~12 chars/line, ~5 lines fit). 7px is the minimum — 6px is unreadable.
 function cardDescFontSize(description) {
   const len = (description || '').length;
-  if (len > 66) return '6px';
   if (len > 44) return '7px';
   return '8px';
 }
