@@ -14,7 +14,7 @@ const EVENTS = [
     { label: 'Ignore (nothing)', action: gs => {} }
   ]},
   { title: 'Suspicious Dog', desc: 'A dog wants to trade.', choices: [
-    { label: 'Trade (lose 30g, gain relic)', action: gs => {
+    { label: 'Trade (lose 30g, gain relic)', goldCost: 30, action: gs => {
       if (gs.gold >= 30) {
         gs.spendGold(30);
         if (!gs.relics.includes('yarn_ball')) {
@@ -100,7 +100,7 @@ const EVENTS = [
     { label: 'Skip it (draw 1 extra card next combat)', action: gs => { gs._pendingDrawBonus = (gs._pendingDrawBonus || 0) + 1; gs.save(); } }
   ]},
   { title: 'Shiny Vending Machine', desc: 'An ancient machine hums. It wants gold.', choices: [
-    { label: 'Pay 50g (random relic)', action: gs => {
+    { label: 'Pay 50g (random relic)', goldCost: 50, action: gs => {
       if (gs.gold >= 50) {
         gs.spendGold(50);
         const available = RELICS.filter(r => !gs.relics.includes(r.id));
@@ -118,10 +118,10 @@ const EVENTS = [
     { label: 'Walk away (+20 gold)', action: gs => { gs.gainGold(20); } }
   ]},
   { title: 'Travelling Merchant', desc: 'A robed figure sells forbidden knowledge.', choices: [
-    { label: 'Buy a curse (-20g, -1 max HP, draw +1/turn)', action: gs => {
+    { label: 'Buy a curse (-20g, -1 max HP, draw +1/turn)', goldCost: 20, action: gs => {
       if (gs.gold >= 20) { gs.spendGold(20); gs.maxHp = Math.max(1, gs.maxHp - 1); gs.pendingDrawBonus = (gs.pendingDrawBonus || 0) + 1; }
     }},
-    { label: 'Buy a tonic (-15g, +20 HP)', action: gs => {
+    { label: 'Buy a tonic (-15g, +20 HP)', goldCost: 15, action: gs => {
       if (gs.gold >= 15) { gs.spendGold(15); gs.heal(20); }
     }},
     { label: 'Ignore (nothing)', action: gs => {} }
@@ -132,7 +132,7 @@ const EVENTS = [
   ]},
   { title: 'The Doppelganger', desc: 'A cat that looks exactly like you blocks the path.', choices: [
     { label: 'Fight! (take 15 dmg, gain 40 gold)', action: gs => { gs.takeDamage(15); gs.gainGold(40); } },
-    { label: 'Befriend it (lose 20g, copy its relic)', action: gs => {
+    { label: 'Befriend it (lose 20g, copy its relic)', goldCost: 20, action: gs => {
       if (gs.gold >= 20) {
         gs.spendGold(20);
         const available = RELICS.filter(r => !gs.relics.includes(r.id));
@@ -176,7 +176,7 @@ const EVENTS = [
     { label: 'Back down (nothing)', action: gs => {} }
   ]},
   { title: 'The Toymaker', desc: 'A wizened cat merchant displays a single exquisite, upgraded card under glass.', choices: [
-    { label: 'Buy it (-45 gold, upgraded card)', action: gs => {
+    { label: 'Buy it (-45 gold, upgraded card)', goldCost: 45, action: gs => {
       if (gs.gold >= 45) {
         gs.spendGold(45);
         const allUpgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
@@ -215,22 +215,28 @@ export class EventScene extends Phaser.Scene {
     const choiceSpacing = Math.min(80, (700 - choiceStartY) / event.choices.length);
 
     event.choices.forEach((choice, i) => {
+      const canAfford = !choice.goldCost || gs.gold >= choice.goldCost;
+      const btnColor = canAfford ? '#f0ead6' : '#666666';
       const btn = this.add.text(SCREEN_WIDTH/2, choiceStartY + i * choiceSpacing, `► ${choice.label}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6',
+        fontFamily: '"Press Start 2P"', fontSize: '15px', color: btnColor,
         wordWrap: { width: 700 }, align: 'center'
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      }).setOrigin(0.5).setInteractive({ useHandCursor: canAfford });
 
-      btn.on('pointerover', function() { this.setColor('#ffd700'); });
-      btn.on('pointerout', function() { this.setColor('#f0ead6'); });
-      btn.on('pointerdown', () => {
-        if (choice.requiresConfirm) {
-          this._showConfirmModal(gs, choice);
-        } else {
-          choice.action(gs);
-          gs.save();
-          this.scene.start('MapScene');
-        }
-      });
+      if (canAfford) {
+        btn.on('pointerover', function() { this.setColor('#ffd700'); });
+        btn.on('pointerout', function() { this.setColor('#f0ead6'); });
+        btn.on('pointerdown', () => {
+          if (choice.requiresConfirm) {
+            this._showConfirmModal(gs, choice);
+          } else {
+            choice.action(gs);
+            gs.save();
+            this.scene.start('MapScene');
+          }
+        });
+      } else {
+        btn.on('pointerdown', () => { this._showGoldToast(`Need ${choice.goldCost}g (have ${gs.gold}g)`); });
+      }
     });
     PurrSettings.scaleSceneText(this); // NAN-222
   }
@@ -285,5 +291,22 @@ export class EventScene extends Phaser.Scene {
         .filter(c => c.depth >= 11)
         .forEach(c => c.destroy());
     });
+  }
+
+  _showGoldToast(message) {
+    if (this._goldToast) return; // debounce
+    const toast = this.add.text(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 80, `💰 ${message}`, {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700',
+      backgroundColor: '#1a1a2e', padding: { x: 14, y: 8 }
+    }).setOrigin(0.5).setDepth(20).setAlpha(0);
+    this._goldToast = toast;
+    this.tweens.add({ targets: toast, alpha: 1, duration: 150, onComplete: () => {
+      this.time.delayedCall(1200, () => {
+        this.tweens.add({ targets: toast, alpha: 0, duration: 300, onComplete: () => {
+          toast.destroy();
+          this._goldToast = null;
+        }});
+      });
+    }});
   }
 }
