@@ -22,17 +22,25 @@ export class ShopScene extends Phaser.Scene {
     this.add.text(SCREEN_WIDTH/2, 30, '🛒 SHOP', { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffd700' }).setOrigin(0.5);
     this.add.text(SCREEN_WIDTH/2, 58, `💰 ${gs.gold} gold`, { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6' }).setOrigin(0.5);
 
-    const allCards = ALL_CARDS.filter(c => c.heroClass === gs.hero);
-    const shopCardCount = (gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'double_shop') ? 5 : 3;
-    const shopCards = allCards.sort(() => Math.random() - 0.5).slice(0, shopCardCount);
-    const shopRelics = RELICS.filter(r => !gs.relics.includes(r.id)).sort(() => Math.random() - 0.5).slice(0, 2);
+    // Preserve shop inventory across restarts so buying one item doesn't re-roll the others
     const noGold = gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'no_gold';
+    const shopCardCount = (gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'double_shop') ? 5 : 3;
+    if (!gs.shopInventory) {
+      const allCards = ALL_CARDS.filter(c => c.heroClass === gs.hero);
+      gs.shopInventory = {
+        cards: allCards.sort(() => Math.random() - 0.5).slice(0, shopCardCount),
+        relics: RELICS.filter(r => !gs.relics.includes(r.id)).sort(() => Math.random() - 0.5).slice(0, 2)
+      };
+    }
+    const shopCards = gs.shopInventory.cards;
+    const shopRelics = gs.shopInventory.relics;
 
     // ── Cards section ─────────────────────────────────────────────
     this.add.text(SCREEN_WIDTH/2, 90, '— CARDS —', { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555577' }).setOrigin(0.5);
 
-    const cardSpacing = Math.min(260, Math.floor((SCREEN_WIDTH - 120) / shopCardCount));
-    const cardsTotalW = cardSpacing * (shopCardCount - 1);
+    const displayCount = Math.max(1, shopCards.length);
+    const cardSpacing = Math.min(260, Math.floor((SCREEN_WIDTH - 120) / displayCount));
+    const cardsTotalW = cardSpacing * (displayCount - 1);
     const cardsStartX = SCREEN_WIDTH / 2 - cardsTotalW / 2;
     const cardCenterY = 255;
 
@@ -40,7 +48,7 @@ export class ShopScene extends Phaser.Scene {
       const x = cardsStartX + i * cardSpacing;
       const price = noGold ? 0 : (card.cost === 0 ? 50 : card.cost === 1 ? 75 : 100);
       const canAfford = noGold || gs.gold >= price;
-      this._buildShopCard(x, cardCenterY, card, price, canAfford, gs, noGold);
+      this._buildShopCard(x, cardCenterY, card, i, price, canAfford, gs, noGold);
     });
 
     // ── Relics section ────────────────────────────────────────────
@@ -97,6 +105,8 @@ export class ShopScene extends Phaser.Scene {
             if (gs.gold >= price || noGold) {
               if (!noGold) gs.spendGold(price);
               gs.addRelic(relic.id);
+              // Remove purchased relic from inventory so remaining relics stay the same
+              if (gs.shopInventory) gs.shopInventory.relics.splice(i, 1);
               this.scene.restart();
             }
           });
@@ -127,11 +137,14 @@ export class ShopScene extends Phaser.Scene {
 
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 28, '[ LEAVE SHOP ]', {
       fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.scene.start('MapScene'));
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+      gs.shopInventory = null; // Clear so next shop visit gets fresh items
+      this.scene.start('MapScene');
+    });
     PurrSettings.scaleSceneText(this); // NAN-222
   }
 
-  _buildShopCard(x, cy, card, price, canAfford, gs, noGold) {
+  _buildShopCard(x, cy, card, cardIndex, price, canAfford, gs, noGold) {
     const container = this.add.container(x, cy);
     const typeColor = CARD_TYPE_COLORS[card.type] || 0x666666;
     const rarityColor = RARITY_BORDER_COLORS[card.rarity] || 0x888888;
@@ -211,6 +224,8 @@ export class ShopScene extends Phaser.Scene {
         if (gs.gold >= price || noGold) {
           if (!noGold) gs.spendGold(price);
           gs.addCard(card.id);
+          // Remove purchased card from inventory so other cards stay the same
+          if (gs.shopInventory) gs.shopInventory.cards.splice(cardIndex, 1);
           this.scene.restart();
         }
       });
