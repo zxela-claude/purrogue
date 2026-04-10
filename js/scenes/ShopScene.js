@@ -49,6 +49,9 @@ export class ShopScene extends Phaser.Scene {
       const price = noGold ? 0 : (card.cost === 0 ? 50 : card.cost === 1 ? 75 : 100);
       const canAfford = noGold || gs.gold >= price;
       this._buildShopCard(x, cardCenterY, card, i, price, canAfford, gs, noGold);
+      this.add.text(x, cardCenterY - CARD_H/2 - 14, `[${i+1}]`, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700'
+      }).setOrigin(0.5);
     });
 
     // ── Relics section ────────────────────────────────────────────
@@ -135,13 +138,46 @@ export class ShopScene extends Phaser.Scene {
       removeLabel.on('pointerdown', () => this._showRemoveMenu(gs, removalCost));
     }
 
-    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 28, '[ LEAVE SHOP ]', {
+    this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 28, '[ LEAVE SHOP ] (ESC)', {
       fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-      gs.shopInventory = null; // Clear so next shop visit gets fresh items
+      gs.shopInventory = null;
       this.scene.start('MapScene');
     });
     PurrSettings.scaleSceneText(this); // NAN-222
+
+    // Keyboard: 1-N buys card, Q/W buys relics, R removes card, ESC leaves
+    const NUM_KEYS = ['ONE','TWO','THREE','FOUR','FIVE'];
+    shopCards.forEach((card, i) => {
+      if (i >= NUM_KEYS.length) return;
+      this.input.keyboard.on(`keydown-${NUM_KEYS[i]}`, () => {
+        const price = noGold ? 0 : (card.cost === 0 ? 50 : card.cost === 1 ? 75 : 100);
+        if (!noGold && gs.gold < price) return;
+        if (!noGold) gs.spendGold(price);
+        gs.addCard(card.id);
+        if (gs.shopInventory) gs.shopInventory.cards.splice(i, 1);
+        this.scene.restart();
+      });
+    });
+    ['Q','W'].forEach((k, i) => {
+      this.input.keyboard.on(`keydown-${k}`, () => {
+        const relic = shopRelics[i];
+        if (!relic) return;
+        const price = noGold ? 0 : 120 + (gs.getAscensionModifiers().relicPriceBonus || 0);
+        if (!noGold && gs.gold < price) return;
+        if (!noGold) gs.spendGold(price);
+        gs.addRelic(relic.id);
+        if (gs.shopInventory) gs.shopInventory.relics.splice(i, 1);
+        this.scene.restart();
+      });
+    });
+    this.input.keyboard.on('keydown-R', () => {
+      if (canRemove) this._showRemoveMenu(gs, removalCost);
+    });
+    this.input.keyboard.on('keydown-ESC', () => {
+      gs.shopInventory = null;
+      this.scene.start('MapScene');
+    });
   }
 
   _buildShopCard(x, cy, card, cardIndex, price, canAfford, gs, noGold) {

@@ -217,7 +217,8 @@ export class EventScene extends Phaser.Scene {
     event.choices.forEach((choice, i) => {
       const canAfford = !choice.goldCost || gs.gold >= choice.goldCost;
       const btnColor = canAfford ? '#f0ead6' : '#666666';
-      const btn = this.add.text(SCREEN_WIDTH/2, choiceStartY + i * choiceSpacing, `► ${choice.label}`, {
+      const keyHint = i < 5 ? `[${i+1}] ` : '';
+      const btn = this.add.text(SCREEN_WIDTH/2, choiceStartY + i * choiceSpacing, `${keyHint}► ${choice.label}`, {
         fontFamily: '"Press Start 2P"', fontSize: '15px', color: btnColor,
         wordWrap: { width: 700 }, align: 'center'
       }).setOrigin(0.5).setInteractive({ useHandCursor: canAfford });
@@ -239,6 +240,22 @@ export class EventScene extends Phaser.Scene {
       }
     });
     PurrSettings.scaleSceneText(this); // NAN-222
+
+    // Keyboard: 1-N selects choice by index
+    const NUM_KEYS = ['ONE','TWO','THREE','FOUR','FIVE'];
+    event.choices.forEach((choice, i) => {
+      if (i >= NUM_KEYS.length) return;
+      this.input.keyboard.on(`keydown-${NUM_KEYS[i]}`, () => {
+        if (this._eventChosen || this._confirmOpen) return;
+        const canAfford = !choice.goldCost || gs.gold >= choice.goldCost;
+        if (!canAfford) { this._showGoldToast(`Need ${choice.goldCost}g (have ${gs.gold}g)`); return; }
+        if (choice.requiresConfirm) { this._showConfirmModal(gs, choice); return; }
+        this._eventChosen = true;
+        choice.action(gs);
+        gs.save();
+        this.scene.start('MapScene');
+      });
+    });
   }
 
   _showConfirmModal(gs, choice) {
@@ -263,7 +280,7 @@ export class EventScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(12);
 
     // Confirm button
-    const confirmBtn = this.add.text(boxX - 120, boxY + 80, '✓ CONFIRM', {
+    const confirmBtn = this.add.text(boxX - 120, boxY + 80, '✓ CONFIRM [Y]', {
       fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50',
       backgroundColor: '#1a3a1a', padding: { x: 14, y: 8 }
     }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
@@ -271,13 +288,14 @@ export class EventScene extends Phaser.Scene {
     confirmBtn.on('pointerover', function() { this.setColor('#a5d6a7'); });
     confirmBtn.on('pointerout', function() { this.setColor('#4caf50'); });
     confirmBtn.on('pointerdown', () => {
+      this._eventChosen = true;
       choice.action(gs);
       gs.save();
       this.scene.start('MapScene');
     });
 
     // Cancel button
-    const cancelBtn = this.add.text(boxX + 120, boxY + 80, '✗ CANCEL', {
+    const cancelBtn = this.add.text(boxX + 120, boxY + 80, '✗ CANCEL [N/ESC]', {
       fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ef5350',
       backgroundColor: '#3a1a1a', padding: { x: 14, y: 8 }
     }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
@@ -285,11 +303,28 @@ export class EventScene extends Phaser.Scene {
     cancelBtn.on('pointerover', function() { this.setColor('#ef9a9a'); });
     cancelBtn.on('pointerout', function() { this.setColor('#ef5350'); });
     cancelBtn.on('pointerdown', () => {
+      this._confirmOpen = false;
       overlay.destroy();
-      // destroy all modal elements by depth
-      this.children.list
-        .filter(c => c.depth >= 11)
-        .forEach(c => c.destroy());
+      this.children.list.filter(c => c.depth >= 11).forEach(c => c.destroy());
+    });
+
+    // Y to confirm, N/ESC to cancel (temporarily gated by _confirmOpen flag)
+    this._confirmOpen = true;
+    this.input.keyboard.on('keydown-Y', () => {
+      if (!this._confirmOpen) return;
+      this._confirmOpen = false;
+      this._eventChosen = true;
+      choice.action(gs);
+      gs.save();
+      this.scene.start('MapScene');
+    });
+    ['N','ESC'].forEach(k => {
+      this.input.keyboard.on(`keydown-${k}`, () => {
+        if (!this._confirmOpen) return;
+        this._confirmOpen = false;
+        overlay.destroy();
+        this.children.list.filter(c => c.depth >= 11).forEach(c => c.destroy());
+      });
     });
   }
 

@@ -103,6 +103,7 @@ export class MapScene extends Phaser.Scene {
 
     const available = MapGenerator.getAvailableNodes(gs.map);
     const availableIds = new Set(available.map(n => n.id));
+    this._mapKeyNodes = []; // populated below: [{node, fi, x}] sorted left→right
 
     // Draw nodes and connections
     const { floors } = gs.map;
@@ -158,6 +159,10 @@ export class MapScene extends Phaser.Scene {
           const outline = this.add.circle(x, y, 28, 0xffd700, 0).setStrokeStyle(2, 0xffd700);
           this.tweens.add({ targets: outline, alpha: { from: 0.3, to: 1 }, duration: 800, yoyo: true, repeat: -1 });
 
+          // Track for keyboard navigation (sorted by x = left→right)
+          this._mapKeyNodes.push({ node, fi, x });
+          this._mapKeyNodes.sort((a, b) => a.x - b.x);
+
           // Invisible 48px hit zone for easy mobile tapping
           const hitZone = this.add.circle(x, y, 48, 0xffffff, 0)
             .setInteractive({ useHandCursor: true });
@@ -182,6 +187,15 @@ export class MapScene extends Phaser.Scene {
       });
     });
 
+    // Add key-number labels above available nodes (sorted left→right)
+    this._mapKeyNodes.forEach(({ x, fi }, i) => {
+      if (i >= 5) return;
+      const y = SCREEN_HEIGHT - 60 - fi * ((SCREEN_HEIGHT - 120) / floors.length);
+      this.add.text(x, y - 44, `[${i+1}]`, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700'
+      }).setOrigin(0.5).setDepth(5);
+    });
+
     // Deck viewer button (backed by a 200×44 hit zone for mobile)
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 20, '[ VIEW DECK ]', {
       fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#aaaaaa'
@@ -194,6 +208,24 @@ export class MapScene extends Phaser.Scene {
       this._showFeralWarning(gs);
     }
     PurrSettings.scaleSceneText(this); // NAN-222
+
+    // Keyboard: 1-N selects available nodes sorted left→right, D views deck
+    const NUM_KEYS = ['ONE','TWO','THREE','FOUR','FIVE'];
+    this._mapKeyNodes.forEach((entry, i) => {
+      if (i >= NUM_KEYS.length) return;
+      this.input.keyboard.on(`keydown-${NUM_KEYS[i]}`, () => {
+        if (this._mapChosen) return;
+        this._mapChosen = true;
+        const { node, fi } = entry;
+        node.completed = true;
+        gs.map.currentNode = node.id;
+        gs.map.currentFloor = fi;
+        gs.floor = fi;
+        gs.save();
+        this._enterNode(node, gs);
+      });
+    });
+    this.input.keyboard.on('keydown-D', () => this._showDeck(gs));
   }
 
   _enterNode(node, gs) {

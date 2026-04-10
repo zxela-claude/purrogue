@@ -55,6 +55,12 @@ export class RewardScene extends Phaser.Scene {
         duration: 280, delay: i * 100, ease: 'Back.easeOut'
       });
 
+      // Key hint above card
+      const keyLabel = this.add.text(0, -cardH/2 - 20, `[${i+1}]`, {
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
+      }).setOrigin(0.5);
+      cardGroup.add(keyLabel);
+
       // Shadow
       const shadow = this.add.rectangle(4, 6, cardW, cardH, 0x000000, 0.45);
       cardGroup.add(shadow);
@@ -152,13 +158,33 @@ export class RewardScene extends Phaser.Scene {
     });
 
     // Skip
-    this.add.text(W/2, H - 40, '[ SKIP ]', {
+    this.add.text(W/2, H - 40, '[ SKIP ] (S)', {
       fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#888888'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#cccccc'); })
       .on('pointerout',  function() { this.setColor('#888888'); })
       .on('pointerdown', () => this.scene.start('MapScene'));
     PurrSettings.scaleSceneText(this); // NAN-222
+
+    // Keyboard: 1-N selects card, S/ESC skips
+    const NUM_KEYS = ['ONE','TWO','THREE','FOUR'];
+    choices.forEach((card, i) => {
+      if (i < NUM_KEYS.length) {
+        this.input.keyboard.on(`keydown-${NUM_KEYS[i]}`, () => {
+          if (this._rewardChosen) return;
+          this._rewardChosen = true;
+          gs.addCard(card.id);
+          this.scene.start('MapScene');
+        });
+      }
+    });
+    ['S', 'ESC'].forEach(k => {
+      this.input.keyboard.on(`keydown-${k}`, () => {
+        if (this._rewardChosen) return;
+        this._rewardChosen = true;
+        this.scene.start('MapScene');
+      });
+    });
   }
 
   _weightedCardDraft(heroCards, act, mood, count) {
