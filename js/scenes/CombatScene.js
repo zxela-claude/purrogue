@@ -44,7 +44,7 @@ function getStatusColors() {
   const remap = COLORBLIND_MAPS[mode] || {};
   const result = {};
   for (const [k, v] of Object.entries(STATUS_COLORS_BASE)) {
-    result[k] = remap[v] || v;
+    result[k] = remap[k] ?? v;   // name-based lookup — immune to hex case/format variants
   }
   return result;
 }

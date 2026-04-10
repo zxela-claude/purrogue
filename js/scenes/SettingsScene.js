@@ -9,11 +9,12 @@ const PANEL_X = W / 2, PANEL_Y = H / 2;
 const SEG_COUNT = 8;          // volume bar segments
 const SEG_W = 22, SEG_H = 18, SEG_GAP = 4;
 
-// Colorblind palette remaps applied over STATUS_COLORS in CombatScene
+// Colorblind palette remaps keyed by STATUS name (not hex) to avoid fragile string matching.
+// Keys match STATUS_COLORS_BASE: poison, burn, freeze, vulnerable, weak, strong
 export const COLORBLIND_MAPS = {
-  deuteranopia: { '#4caf50': '#4fc3f7', '#e94560': '#ff9800' },  // greens→blues, reds→oranges
-  protanopia:   { '#e94560': '#ffd700' },                         // reds→yellows
-  tritanopia:   { '#4fc3f7': '#e94560', '#a0d8ef': '#e94560' },   // blues→reds
+  deuteranopia: { poison: '#4fc3f7', burn: '#ff9800' },         // green→blue, red→orange
+  protanopia:   { poison: '#4fc3f7', burn: '#ffd700' },         // green→blue, red→yellow
+  tritanopia:   { freeze: '#e94560', strong: '#ff9800' },       // blue→red, yellow→orange
 };
 
 export class SettingsScene extends Phaser.Scene {
