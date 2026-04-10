@@ -344,18 +344,30 @@ export class MapScene extends Phaser.Scene {
       const card = cardDb[cardId];
       if (!card) return;
       const col = i % 4, row = Math.floor(i / 4);
-      const x = 220 + col * 220, y = 160 + row * 46;
-      const btn = this.add.text(x, y, `✕ ${card.name}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
+      const x = 220 + col * 220, y = 155 + row * 56;
+      const isUpgraded = cardId.includes('_u');
+      const nameColor = isUpgraded ? '#ffd700' : '#f0ead6';
+
+      // NAN-232: show cost, type, and effect summary below card name
+      const costTypeLabel = `[${card.cost ?? '?'}] ${(card.type || '').toUpperCase()}`;
+      const effectDesc = this._effectSummary(card.effects);
+      const contextLine = effectDesc ? `${costTypeLabel} · ${effectDesc}` : costTypeLabel;
+
+      const btn = this.add.text(x, y - 6, `✕ ${card.name}${isUpgraded ? '+' : ''}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '12px', color: nameColor
       }).setDepth(21).setInteractive({ useHandCursor: true });
+      const ctxText = this.add.text(x, y + 10, contextLine, {
+        fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#7799cc'
+      }).setDepth(21);
       btn.on('pointerover', function() { this.setColor('#e94560'); });
-      btn.on('pointerout', function() { this.setColor('#f0ead6'); });
+      btn.on('pointerout', function() { this.setColor(nameColor); });
       btn.on('pointerdown', () => {
         gs.removeCard(cardId);
         group.destroy(true);
         this.scene.start(returnScene);
       });
       group.add(btn);
+      group.add(ctxText);
     });
 
     const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', {
@@ -469,6 +481,26 @@ export class MapScene extends Phaser.Scene {
     // Escape key to close
     const escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     escKey.once('down', () => { group.destroy(true); });
+  }
+
+  // NAN-231: generate a short effect summary for the smith list (e.g. "Deal 6 dmg + 2 Vuln")
+  _effectSummary(effects) {
+    if (!effects || effects.length === 0) return '';
+    const STATUS_ABBR = { vulnerable: 'Vuln', weak: 'Weak', burn: 'Burn', poison: 'Poison', freeze: 'Freeze', bleed: 'Bleed', thorns: 'Thorns', strong: 'Strong' };
+    const parts = [];
+    for (const e of effects) {
+      if (parts.length >= 2) { parts.push('…'); break; }
+      if (e.type === 'damage')             parts.push(`${e.value} dmg`);
+      else if (e.type === 'block')         parts.push(`+${e.value} block`);
+      else if (e.type === 'draw')          parts.push(`Draw ${e.value}`);
+      else if (e.type === 'heal')          parts.push(`+${e.value} HP`);
+      else if (e.type === 'gain_energy')   parts.push(`+${e.value} nrg`);
+      else if (e.type === 'apply_status')  parts.push(`${e.value} ${STATUS_ABBR[e.status] || e.status}`);
+      else if (e.type === 'apply_self_status') parts.push(`+${e.value} ${STATUS_ABBR[e.status] || e.status}`);
+      else if (e.type === 'scry')          parts.push(`Scry ${e.value}`);
+      else if (e.type === 'feral_override') parts.push(`Feral ${e.damage} dmg`);
+    }
+    return parts.join(' + ');
   }
 
   // NAN-211: draw a mini card frame (before or after upgrade) into a Phaser container
@@ -649,12 +681,27 @@ export class MapScene extends Phaser.Scene {
       // Card list buttons
       upgradeable.forEach((cardId, i) => {
         const card = cardDb[cardId];
-        const y = 135 + i * 38;
+        const y = 130 + i * 46;
         const isSelected = () => selectedCardId === cardId;
 
-        const rowBg = this.add.rectangle(listX, y, 300, 32, 0x000000, 0).setDepth(21).setInteractive({ useHandCursor: true });
-        const btn = this.add.text(listX + 10, y, `► ${card.name}`, {
+        // Compute before/after effect summary for inline display (NAN-231)
+        const upgMoodKey = mood || 'default';
+        const hasSpecific = upgMoodKey !== 'default' && card.upgrades?.[upgMoodKey];
+        const upgKey = hasSpecific ? `${cardId}_u_${upgMoodKey}` : `${cardId}_u`;
+        const upgCard = cardDb[upgKey];
+        const beforeSummary = this._effectSummary(card.effects);
+        const afterSummary  = upgCard ? this._effectSummary(upgCard.effects) : beforeSummary;
+        const effectLine = beforeSummary || afterSummary
+          ? `${beforeSummary} → ${afterSummary}`
+          : '';
+
+        const rowBg = this.add.rectangle(listX, y, 300, 42, 0x000000, 0).setDepth(21).setInteractive({ useHandCursor: true });
+        const btn = this.add.text(listX + 10, y - 8, `► ${card.name}`, {
           fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
+        }).setOrigin(0, 0.5).setDepth(22);
+
+        const effectHint = this.add.text(listX + 10, y + 10, effectLine, {
+          fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#7799cc'
         }).setOrigin(0, 0.5).setDepth(22);
 
         const rarityDot = this.add.text(listX - 120, y, '●', {
@@ -662,7 +709,7 @@ export class MapScene extends Phaser.Scene {
           color: card.rarity === 'rare' ? '#ffd700' : card.rarity === 'uncommon' ? '#22cc77' : '#888888'
         }).setOrigin(0.5).setDepth(22);
 
-        group.add(rowBg); group.add(btn); group.add(rarityDot);
+        group.add(rowBg); group.add(btn); group.add(effectHint); group.add(rarityDot);
 
         rowBg.on('pointerover', () => {
           btn.setColor('#ffd700');
