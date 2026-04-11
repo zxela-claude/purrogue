@@ -41,8 +41,15 @@ export class RewardScene extends Phaser.Scene {
     const mood = gs.getDominantPersonality();
     const choices = this._weightedCardDraft(heroCards, gs.act, mood, count);
 
+    const displayCount = choices.length;
+    if (displayCount < count) {
+      this.add.text(W / 2, 560, 'No more cards available', {
+        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#888888'
+      }).setOrigin(0.5);
+    }
+
     choices.forEach((card, i) => {
-      const x = W / (count + 1) * (i + 1);
+      const x = W / (displayCount + 1) * (i + 1);
       const cardY = 370;
       const cardW = 210, cardH = 310;
       const typeColor = CARD_TYPE_COLORS[card.type] || 0x666666;
@@ -212,17 +219,20 @@ export class RewardScene extends Phaser.Scene {
     addWithWeight(byRarity.uncommon, weights[1]);
     addWithWeight(byRarity.rare, weights[2]);
 
-    // Pick `count` unique cards
+    // Pick `count` unique cards via weighted shuffle
+    // Shuffle the pool, then greedily pick unique cards by id
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
     const chosen = new Set();
     const result = [];
-    let attempts = 0;
-    while (result.length < count && attempts < 200) {
-      const card = pool[Math.floor(Math.random() * pool.length)];
+    for (const card of pool) {
+      if (result.length >= count) break;
       if (!chosen.has(card.id)) {
         chosen.add(card.id);
         result.push(card);
       }
-      attempts++;
     }
     return result;
   }

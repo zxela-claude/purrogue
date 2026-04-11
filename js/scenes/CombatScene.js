@@ -403,6 +403,7 @@ export class CombatScene extends Phaser.Scene {
   _showDeckOverlay() {
     // Don't open if already open
     if (this._deckOverlay) return;
+    this._deckPage = 0;
 
     const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
     const gs = this.gs;
