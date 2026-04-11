@@ -51,6 +51,7 @@ export class TutorialScene extends Phaser.Scene {
     this._heroData = data || {};
     this._step = 0;
     this._stepObjects = [];
+    this._keyHandlers = null;
   }
 
   create() {
@@ -78,6 +79,23 @@ export class TutorialScene extends Phaser.Scene {
     // Container for per-step content
     this._contentGroup = this.add.group();
 
+    // Register keyboard handlers once; remove on scene shutdown
+    const onSpace = () => this._advance();
+    const onEnter = () => this._advance();
+    const onBack  = () => this._goBack();
+    this.input.keyboard.on('keydown-SPACE', onSpace);
+    this.input.keyboard.on('keydown-ENTER', onEnter);
+    this.input.keyboard.on('keydown-LEFT',  onBack);
+    this.input.keyboard.on('keydown-BACKSPACE', onBack);
+    this._keyHandlers = { onSpace, onEnter, onBack };
+
+    this.events.once('shutdown', () => {
+      this.input.keyboard.off('keydown-SPACE', onSpace);
+      this.input.keyboard.off('keydown-ENTER', onEnter);
+      this.input.keyboard.off('keydown-LEFT',  onBack);
+      this.input.keyboard.off('keydown-BACKSPACE', onBack);
+    });
+
     this._renderStep();
     PurrSettings.scaleSceneText(this); // NAN-222
   }
@@ -93,6 +111,7 @@ export class TutorialScene extends Phaser.Scene {
     const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
     const step = STEPS[this._step];
     const g = this._contentGroup;
+    const isReturning = !!localStorage.getItem('purrogue_tutorial_done');
 
     // Step indicator
     this._stepIndicator.setText(`${this._step + 1} / ${STEPS.length}`);
@@ -160,49 +179,51 @@ export class TutorialScene extends Phaser.Scene {
       this._renderNodeGrid(g, panelX, panelY + 80, panelW);
     }
 
-    // Next / finish button
-    const btnLabel = step.finalStep ? 'Begin Run →' : 'Next →';
     const btnY = panelY + panelH / 2 - 44;
 
-    const btnBg = this.add.rectangle(panelX, btnY, 240, 44, 0x1a1a3e).setDepth(6).setInteractive({ useHandCursor: true });
-    g.add(btnBg);
-
-    const btnBorder = this.add.graphics().setDepth(6);
-    btnBorder.lineStyle(2, 0xffd700, 0.9);
-    btnBorder.strokeRect(panelX - 120, btnY - 22, 240, 44);
-    g.add(btnBorder);
-
-    const btnText = this.add.text(panelX, btnY, btnLabel, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '14px',
-      color: '#ffd700',
-    }).setOrigin(0.5).setDepth(7);
-    g.add(btnText);
-
-    btnBg.on('pointerover', () => {
-      btnBg.setFillStyle(0x2a2a5e);
-      btnText.setColor('#ffffff');
-    });
-    btnBg.on('pointerout', () => {
-      btnBg.setFillStyle(0x1a1a3e);
-      btnText.setColor('#ffd700');
-    });
-    btnBg.on('pointerdown', () => this._advance());
-
-    // Also allow spacebar / enter
-    if (!this._keyHandlerAdded) {
-      this._keyHandlerAdded = true;
-      this.input.keyboard.on('keydown-SPACE', () => this._advance());
-      this.input.keyboard.on('keydown-ENTER', () => this._advance());
+    // SKIP button — only on step 0 for returning players
+    if (this._step === 0 && isReturning) {
+      this._addButton(g, panelX - 280, btnY, 160, 'Skip ✕', '#888888', 0x111122, () => this._finish());
     }
+
+    // BACK button — visible on steps > 0
+    if (this._step > 0) {
+      this._addButton(g, panelX - 145, btnY, 200, '← Back', '#aaaaaa', 0x111122, () => this._goBack());
+    }
+
+    // NEXT / FINISH button
+    const nextLabel = step.finalStep ? 'Begin Run →' : 'Next →';
+    const nextX = this._step > 0 ? panelX + 145 : panelX;
+    this._addButton(g, nextX, btnY, 240, nextLabel, '#ffd700', 0x1a1a3e, () => this._advance());
 
     // Animate panel in
     this.tweens.add({
-      targets: [panelBg, border, corners, title, body, btnBg, btnBorder, btnText],
+      targets: [panelBg, border, corners, title, body],
       alpha: { from: 0, to: 1 },
       duration: 220,
       ease: 'Sine.easeOut',
     });
+  }
+
+  _addButton(group, x, y, w, label, color, fill, onClick) {
+    const bg = this.add.rectangle(x, y, w, 44, fill).setDepth(6).setInteractive({ useHandCursor: true });
+    group.add(bg);
+
+    const bdr = this.add.graphics().setDepth(6);
+    bdr.lineStyle(2, Phaser.Display.Color.HexStringToColor(color).color, 0.9);
+    bdr.strokeRect(x - w / 2, y - 22, w, 44);
+    group.add(bdr);
+
+    const txt = this.add.text(x, y, label, {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '14px',
+      color,
+    }).setOrigin(0.5).setDepth(7);
+    group.add(txt);
+
+    bg.on('pointerover',  () => { bg.setFillStyle(0x2a2a5e); txt.setColor('#ffffff'); });
+    bg.on('pointerout',   () => { bg.setFillStyle(fill);      txt.setColor(color);    });
+    bg.on('pointerdown',  onClick);
   }
 
   _renderNodeGrid(group, centerX, centerY, panelW) {
@@ -250,6 +271,13 @@ export class TutorialScene extends Phaser.Scene {
       this._renderStep();
     } else {
       this._finish();
+    }
+  }
+
+  _goBack() {
+    if (this._step > 0) {
+      this._step--;
+      this._renderStep();
     }
   }
 
