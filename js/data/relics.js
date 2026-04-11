@@ -15,7 +15,7 @@ export const RELICS = [
   { id: 'mirror', name: 'Mirror', desc: 'At end of turn, replay the last card you played for free.', effect: 'copy_last', value: 1 },
   { id: 'claw_sharpener', name: 'Claw Sharpener', desc: 'Attack cards deal +2 damage.', effect: 'attack_bonus', value: 2 },
   { id: 'warm_blanket', name: 'Warm Blanket', desc: 'Skill cards give +2 block.', effect: 'skill_block_bonus', value: 2 },
-  { id: 'magnifying_glass', name: 'Magnifying Glass', desc: 'Status effects you apply last 1 extra turn.', effect: 'status_extend', value: 1 },
+  { id: 'magnifying_glass', name: 'Magnifying Glass', desc: 'Status effects you apply gain +1 extra stack.', effect: 'status_extend', value: 1 },
   { id: 'tuna_can', name: 'Tuna Can', desc: 'Max HP +10.', effect: 'max_hp_bonus', value: 10 },
   { id: 'golden_ball', name: 'Golden Ball', desc: 'Earn 25% more gold from all sources.', effect: 'gold_bonus', value: 0.25 },
   { id: 'nine_lives', name: 'Nine Lives', desc: 'Once per run, survive a killing blow with 1 HP. (One-time use, consumed on trigger.)', effect: 'revive', value: 1, used: false },

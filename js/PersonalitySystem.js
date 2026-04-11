@@ -5,7 +5,7 @@ export class PersonalitySystem {
     const descriptions = {
       [PERSONALITY.FEISTY]: { name: 'Feisty 😾', desc: 'Attack cards cost 1 less energy', color: '#e74c3c' },
       [PERSONALITY.COZY]: { name: 'Cozy 😸', desc: 'Block cards restore 1 HP', color: '#3498db' },
-      [PERSONALITY.CUNNING]: { name: 'Cunning 😼', desc: 'Status effects last 1 extra turn', color: '#9b59b6' },
+      [PERSONALITY.CUNNING]: { name: 'Cunning 😼', desc: 'Status effects apply +1 extra stack', color: '#9b59b6' },
       [PERSONALITY.FERAL]: { name: 'FERAL 🔥', desc: 'Double damage. No healing.', color: '#e67e22' },
     };
     return descriptions[mood] || null;
