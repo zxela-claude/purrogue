@@ -6,7 +6,6 @@ import { CombatScene } from './scenes/CombatScene.js';
 import { ShopScene } from './scenes/ShopScene.js';
 import { EventScene } from './scenes/EventScene.js';
 import { RewardScene } from './scenes/RewardScene.js';
-import { GameOverScene } from './scenes/GameOverScene.js';
 import { RunSummaryScene } from './scenes/RunSummaryScene.js';
 import { SettingsScene } from './scenes/SettingsScene.js';
 import { SCREEN_WIDTH, SCREEN_HEIGHT } from './constants.js';
@@ -18,7 +17,7 @@ const config = {
   height: SCREEN_HEIGHT,
   backgroundColor: '#1a1a2e',
   pixelArt: true,
-  scene: [BootScene, MenuScene, TutorialScene, MapScene, CombatScene, ShopScene, EventScene, RewardScene, GameOverScene, RunSummaryScene, SettingsScene],
+  scene: [BootScene, MenuScene, TutorialScene, MapScene, CombatScene, ShopScene, EventScene, RewardScene, RunSummaryScene, SettingsScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
