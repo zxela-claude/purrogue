@@ -880,10 +880,24 @@ export class MapScene extends Phaser.Scene {
     let panelOpen = false;
     let tooltipObj = null;
 
+    // Transparent fullscreen overlay: captures outside clicks to close the panel
+    const overlay = this.add.rectangle(
+      SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
+      SCREEN_WIDTH, SCREEN_HEIGHT,
+      0x000000, 0
+    ).setDepth(9).setInteractive().setVisible(false);
+    overlay.on('pointerdown', () => {
+      panelOpen = false;
+      overlay.setVisible(false);
+      buildPanel();
+    });
+
     const buildPanel = () => {
       panelGroup.clear(true, true);
       if (tooltipObj) { tooltipObj.destroy(); tooltipObj = null; }
-      if (!panelOpen) return;
+      if (!panelOpen) { overlay.setVisible(false); return; }
+
+      overlay.setVisible(true);
 
       const rowCount = Math.max(1, gs.relics.length);
       const panelH = 28 + rowCount * ROW_H + 8;
