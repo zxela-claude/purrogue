@@ -607,25 +607,74 @@ export class CombatScene extends Phaser.Scene {
       this.enemyStatusContainer.add(badge);
     });
 
-    // Enemy intent — use threshold pattern when below HP threshold
+    // Enemy intent — use threshold pattern when below HP threshold (NAN-273)
+    // Clean up any lingering intent tooltip from previous render
+    if (this._intentTipTimer) { this._intentTipTimer.remove(); this._intentTipTimer = null; }
+    if (this._intentTipObj) { this._intentTipObj.destroy(true); this._intentTipObj = null; }
+
     const _tb = this.enemy.thresholdBehavior;
     const _useThreshold = _tb && (this.enemy.hp / this.enemy.maxHp) < _tb.below;
     const _intentPattern = _useThreshold ? _tb.pattern : this.enemy.movePattern;
     const move = _intentPattern[this.enemy.moveIndex % _intentPattern.length];
-    const intentIcon = move.type === 'attack' ? '⚔️' : move.type === 'block' ? '🛡' : '✨';
-    const intentColor = move.type === 'attack' ? 0xe94560 : move.type === 'block' ? 0x4fc3f7 : 0x9b59b6;
-    const intentLabel = (_useThreshold ? '⚠️ ' : '') + `${intentIcon} ${move.desc}`;
+
+    // Player-debuff statuses vs self-buff statuses
+    const _PLAYER_DEBUFFS = new Set(['vulnerable', 'weak', 'poison', 'burn', 'bleed', 'freeze']);
+    const _isPlayerDebuff = move.type === 'buff' && _PLAYER_DEBUFFS.has(move.status);
+    const _isSelfBuff = move.type === 'buff' && !_isPlayerDebuff;
+
+    // Compact badge: icon + value/status name
+    let intentBadge, intentColor;
+    if (move.type === 'attack') {
+      intentBadge = `⚔ ${move.value}`;
+      intentColor = 0xe94560;  // red — damage threat
+    } else if (move.type === 'block') {
+      intentBadge = `🛡 ${move.value}`;
+      intentColor = 0x4fc3f7;  // blue — defensive
+    } else if (_isSelfBuff) {
+      intentBadge = `↑ ${STATUS_NAMES_FULL[move.status] || move.status}`;
+      intentColor = 0x9b59b6;  // purple — self-buff
+    } else if (_isPlayerDebuff) {
+      intentBadge = `↓ ${STATUS_NAMES_FULL[move.status] || move.status}`;
+      intentColor = 0xe8c04a;  // yellow — player debuff
+    } else {
+      intentBadge = '?';
+      intentColor = 0x666666;  // grey — unknown
+    }
+    if (_useThreshold) intentBadge = '⚠ ' + intentBadge;
 
     this.enemyIntentContainer.removeAll(true);
-    const pillW = Math.min(260, intentLabel.length * 10 + 32);
+    const pillW = Math.min(200, intentBadge.length * 11 + 32);
     const pillBg = this.add.rectangle(0, 0, pillW, 28, intentColor, 0.25);
     const pillBorder = this.add.graphics();
     pillBorder.lineStyle(1, intentColor, 0.8);
     pillBorder.strokeRoundedRect(-pillW / 2, -14, pillW, 28, 8);
-    const pillText = this.add.text(0, 0, intentLabel, {
+    const pillText = this.add.text(0, 0, intentBadge, {
       fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffffff'
     }).setOrigin(0.5);
-    this.enemyIntentContainer.add([pillBg, pillBorder, pillText]);
+    // Hit zone for hover/tap tooltip
+    const pillHit = this.add.rectangle(0, 0, pillW, 28, 0x000000, 0).setInteractive({ useHandCursor: true });
+    pillHit.on('pointerover', () => {
+      this._intentTipTimer = this.time.delayedCall(250, () => {
+        const wx = this.enemyIntentContainer.x;
+        const wy = this.enemyIntentContainer.y + 34;
+        this._intentTipObj = this._showIntentTooltip(move, intentColor, wx, wy);
+      });
+    });
+    pillHit.on('pointerout', () => {
+      if (this._intentTipTimer) { this._intentTipTimer.remove(); this._intentTipTimer = null; }
+      if (this._intentTipObj) { this._intentTipObj.destroy(true); this._intentTipObj = null; }
+    });
+    // Mobile: tap to show/hide tooltip
+    pillHit.on('pointerdown', () => {
+      if (this._intentTipObj) {
+        this._intentTipObj.destroy(true); this._intentTipObj = null;
+      } else {
+        const wx = this.enemyIntentContainer.x;
+        const wy = this.enemyIntentContainer.y + 34;
+        this._intentTipObj = this._showIntentTooltip(move, intentColor, wx, wy);
+      }
+    });
+    this.enemyIntentContainer.add([pillBg, pillBorder, pillText, pillHit]);
 
     // Player HP bar
     this._drawHPBar(this.playerHpBar, 160, H - 180, 200, 14, gs.hp, gs.maxHp);
@@ -1549,6 +1598,27 @@ export class CombatScene extends Phaser.Scene {
     tip.add(items);
     tip.setAlpha(0);
     this.tweens.add({ targets: tip, alpha: 1, duration: 120 });
+    return tip;
+  }
+
+  // NAN-273: tooltip for enemy intent badge — shows full move description
+  _showIntentTooltip(move, intentColor, worldX, worldY) {
+    const W = 220, H = 68;
+    const clampedX = Math.max(W / 2 + 8, Math.min(SCREEN_WIDTH - W / 2 - 8, worldX));
+    const clampedY = Math.max(H / 2 + 8, Math.min(SCREEN_HEIGHT - H / 2 - 8, worldY));
+
+    const tip = this.add.container(clampedX, clampedY).setDepth(110);
+    const bg     = this.add.rectangle(0, 0, W, H, 0x08081a);
+    const border = this.add.graphics();
+    border.lineStyle(2, intentColor);
+    border.strokeRect(-W / 2, -H / 2, W, H);
+    const descText = this.add.text(0, 0, move.desc, {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#cccccc',
+      wordWrap: { width: W - 20 }, align: 'center'
+    }).setOrigin(0.5);
+    tip.add([bg, border, descText]);
+    tip.setAlpha(0);
+    this.tweens.add({ targets: tip, alpha: 1, duration: 100 });
     return tip;
   }
 
