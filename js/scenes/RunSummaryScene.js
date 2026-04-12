@@ -2,6 +2,7 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { RELICS } from '../data/relics.js';
 import { PurrSettings } from '../PurrSettings.js';
+import { GameState } from '../GameState.js';
 
 function buildShareText(snap, won) {
   const relicDb = {};
@@ -37,6 +38,9 @@ export class RunSummaryScene extends Phaser.Scene {
 
   init(data) {
     this.won = data.won;
+    // Cat profile delta: compare before vs after this run was recorded
+    this.prevCatProfile = GameState.getCatProfile(1);
+    this.newCatProfile  = GameState.getCatProfile(0);
     // Capture a snapshot of gs data before it is cleared
     const gs = this.registry.get('gameState');
     if (gs) {
@@ -215,6 +219,9 @@ export class RunSummaryScene extends Phaser.Scene {
     // ── Buttons ───────────────────────────────────────────────────────────────
     this._addReturnButton(W, H);
     if (snap) this._addShareButton(W, H, snap);
+    if (this.newCatProfile && this.newCatProfile.totalRuns > 0) {
+      this._addCatProfileDelta(W, H);
+    }
     PurrSettings.scaleSceneText(this); // NAN-222
   }
 
@@ -353,5 +360,43 @@ export class RunSummaryScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(102).setInteractive({ useHandCursor: true });
     closeBtn.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
     overlay.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
+  }
+
+  _addCatProfileDelta(W, H) {
+    const prev = this.prevCatProfile;
+    const next = this.newCatProfile;
+    if (!next || next.totalRuns === 0) return;
+
+    // Find the trait that changed most
+    const traits = ['feisty', 'cozy', 'cunning'];
+    let biggestTrait = null, biggestDelta = 0;
+    traits.forEach(t => {
+      const delta = Math.abs((next[t] || 0) - ((prev && prev.totalRuns > 0) ? (prev[t] || 0) : 0));
+      if (delta > biggestDelta) { biggestDelta = delta; biggestTrait = t; }
+    });
+
+    const moodInfo = next.dominant ? PersonalitySystem.getMoodDescription(next.dominant) : null;
+    let msg;
+    if (!prev || prev.totalRuns === 0) {
+      msg = `Your cat's personality is taking shape — ${moodInfo ? moodInfo.name : 'still undecided'}`;
+    } else if (biggestTrait && biggestDelta > 0) {
+      const sign = (next[biggestTrait] || 0) > (prev[biggestTrait] || 0) ? '+' : '-';
+      const traitInfo = PersonalitySystem.getMoodDescription(biggestTrait);
+      const tName = traitInfo ? traitInfo.name : biggestTrait;
+      msg = `Your cat is becoming more ${tName} (${sign}${biggestDelta}%)`;
+    } else {
+      msg = `Your cat's personality holds steady — ${moodInfo ? moodInfo.name : '—'}`;
+    }
+
+    const color = moodInfo ? moodInfo.color : '#888888';
+    const bannerY = H - 78;
+    const bannerW = 580;
+
+    this.add.rectangle(W / 2, bannerY, bannerW, 28, 0x0d0d1a, 0.88);
+    this.add.graphics().lineStyle(1, Phaser.Display.Color.HexStringToColor(color).color, 0.5)
+      .strokeRect(W / 2 - bannerW / 2, bannerY - 14, bannerW, 28);
+    this.add.text(W / 2, bannerY, `🐱 ${msg}`, {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color,
+    }).setOrigin(0.5);
   }
 }

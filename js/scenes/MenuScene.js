@@ -4,6 +4,7 @@ import { DeckCode } from '../DeckCode.js';
 import { MusicManager } from '../MusicManager.js';
 import { RELICS } from '../data/relics.js';
 import { PurrSettings } from '../PurrSettings.js';
+import { PersonalitySystem } from '../PersonalitySystem.js';
 
 const HERO_FLAVOUR = {
   WARRIOR: 'Tank & smash',
@@ -229,6 +230,9 @@ export class MenuScene extends Phaser.Scene {
       .on('pointerover', function() { this.setColor('#888888'); })
       .on('pointerout',  function() { this.setColor('#444444'); })
       .on('pointerdown', () => { this._showImportModal(); });
+
+    // ── Cat identity panel (left side) ────────────────────────────────────────
+    this._buildCatProfile(W, H);
 
     // ── High scores ───────────────────────────────────────────────────────────
     const scores = GameState.getScores();
@@ -1068,5 +1072,149 @@ export class MenuScene extends Phaser.Scene {
     this._importOpen = true;
     escHandler = () => { if (this._importOpen) cleanup(); };
     this.input.keyboard.on('keydown-ESC', escHandler);
+  }
+
+  _buildCatProfile(W, H) {
+    const profile = GameState.getCatProfile();
+    const panelW  = 330;
+    const panelX  = panelW / 2 + 8;    // mirror leaderboard position
+    const panelTop = 20;
+    const panelH   = 300;
+
+    // Panel background
+    this.add.rectangle(panelX, panelTop + panelH / 2, panelW, panelH, 0x0d0d1a, 0.88);
+    this.add.graphics().lineStyle(1, 0x334466).strokeRect(panelX - panelW / 2, panelTop, panelW, panelH);
+
+    // Header
+    this.add.rectangle(panelX, panelTop + 18, panelW, 34, 0x1a1a3e);
+    this.add.text(panelX, panelTop + 18, 'YOUR CAT', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#e94560',
+    }).setOrigin(0.5);
+
+    if (profile.totalRuns === 0) {
+      // Empty state
+      this.add.text(panelX, panelTop + panelH / 2, 'Play your first run\nto shape your cat', {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#444466',
+        align: 'center', lineSpacing: 8,
+      }).setOrigin(0.5);
+      return;
+    }
+
+    // Dominant personality display
+    const moodInfo = profile.dominant ? PersonalitySystem.getMoodDescription(profile.dominant) : null;
+    const moodName = moodInfo ? moodInfo.name : '—';
+    const moodColor = moodInfo ? moodInfo.color : '#888888';
+    const domPct = profile.dominant === 'feral' ? profile.feral
+      : profile.dominant === 'feisty'  ? profile.feisty
+      : profile.dominant === 'cozy'    ? profile.cozy
+      : profile.dominant === 'cunning' ? profile.cunning : 0;
+
+    this.add.text(panelX, panelTop + 58, moodName, {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: moodColor,
+    }).setOrigin(0.5);
+    this.add.text(panelX, panelTop + 80, `${domPct}%`, {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: moodColor,
+    }).setOrigin(0.5);
+
+    // Personality bars
+    const barTraits = [
+      { key: 'feisty',  label: 'Feisty',  pct: profile.feisty,  col: 0xe74c3c },
+      { key: 'cozy',    label: 'Cozy',    pct: profile.cozy,    col: 0x3498db },
+      { key: 'cunning', label: 'Cunning', pct: profile.cunning, col: 0x9b59b6 },
+    ];
+    const barLeft = panelX - panelW / 2 + 14;
+    const barMaxW = panelW - 28;
+    barTraits.forEach((t, i) => {
+      const rowY = panelTop + 108 + i * 34;
+      this.add.text(barLeft, rowY, t.label, {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#777799',
+      }).setOrigin(0, 0.5);
+      // Track bg
+      this.add.rectangle(barLeft + barMaxW / 2, rowY + 14, barMaxW, 10, 0x1a1a3e);
+      // Fill
+      const fillW = Math.max(4, Math.round(barMaxW * t.pct / 100));
+      this.add.rectangle(barLeft + fillW / 2, rowY + 14, fillW, 10, t.col, 0.85);
+      this.add.text(barLeft + barMaxW + 4, rowY + 14, `${t.pct}%`, {
+        fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#888899',
+      }).setOrigin(0, 0.5);
+    });
+
+    // Stats row
+    const meta  = GameState.loadMeta();
+    const runs  = meta.runHistory || [];
+    const wins  = runs.filter(r => r.won).length;
+    const winRate = runs.length > 0 ? Math.round(wins / runs.length * 100) : 0;
+    this.add.text(panelX, panelTop + 218, `${profile.totalRuns} runs  ·  ${winRate}% win rate`, {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#555577',
+    }).setOrigin(0.5);
+
+    // Streak
+    if (profile.winStreak >= 2 || profile.lossStreak >= 2) {
+      const streakStr = profile.winStreak >= 2 ? `🔥 ${profile.winStreak} win streak` : `💀 ${profile.lossStreak} loss streak`;
+      const streakCol = profile.winStreak >= 2 ? '#ffd700' : '#e94560';
+      this.add.text(panelX, panelTop + 240, streakStr, {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: streakCol,
+      }).setOrigin(0.5);
+    }
+
+    // Share button
+    const shareBtnY = panelTop + panelH - 20;
+    const shareBg = this.add.rectangle(panelX, shareBtnY, panelW - 16, 28, 0x0a1a2a)
+      .setInteractive({ useHandCursor: true });
+    this.add.graphics().lineStyle(1, 0x4fc3f7, 0.6).strokeRect(panelX - (panelW - 16) / 2, shareBtnY - 14, panelW - 16, 28);
+    const shareLabel = this.add.text(panelX, shareBtnY, 'SHARE MY CAT', {
+      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#4fc3f7',
+    }).setOrigin(0.5);
+    shareBg.on('pointerover', () => { shareBg.setFillStyle(0x0a2a3a); shareLabel.setColor('#7fd8f8'); });
+    shareBg.on('pointerout',  () => { shareBg.setFillStyle(0x0a1a2a); shareLabel.setColor('#4fc3f7'); });
+    shareBg.on('pointerdown', () => this._showCatCard(profile));
+  }
+
+  _showCatCard(profile) {
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    const moodInfo = profile.dominant ? PersonalitySystem.getMoodDescription(profile.dominant) : null;
+    const moodName = moodInfo ? moodInfo.name : 'Undecided';
+    const domPct = profile.dominant === 'feral' ? profile.feral
+      : profile.dominant === 'feisty'  ? profile.feisty
+      : profile.dominant === 'cozy'    ? profile.cozy
+      : profile.dominant === 'cunning' ? profile.cunning : 0;
+
+    const meta    = GameState.loadMeta();
+    const runs    = meta.runHistory || [];
+    const wins    = runs.filter(r => r.won).length;
+    const winRate = runs.length > 0 ? Math.round(wins / runs.length * 100) : 0;
+
+    const heroCounts = {};
+    runs.forEach(r => { heroCounts[r.hero] = (heroCounts[r.hero] || 0) + 1; });
+    const favHero = Object.entries(heroCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+
+    const shareText = [
+      `🐱 My Purrogue Cat — ${moodName} (${domPct}%)`,
+      `${profile.totalRuns} runs  ·  ${winRate}% win rate  ·  Fav: ${favHero}`,
+      `Feisty ${profile.feisty}%  ·  Cozy ${profile.cozy}%  ·  Cunning ${profile.cunning}%`,
+      `purrogue.cat`,
+    ].join('\n');
+
+    const boxW = 520, boxH = 200;
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.75)
+      .setInteractive({ useHandCursor: false }).setDepth(100);
+    this.add.rectangle(W / 2, H / 2, boxW, boxH, 0x0d0d1a, 1).setDepth(101);
+    this.add.graphics().setDepth(101).lineStyle(1, 0x4fc3f7).strokeRect(W / 2 - boxW / 2, H / 2 - boxH / 2, boxW, boxH);
+    this.add.text(W / 2, H / 2 - boxH / 2 + 18, 'Share your cat:', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4fc3f7',
+    }).setOrigin(0.5).setDepth(102);
+
+    const ta = this.add.dom(W / 2, H / 2 + 16, 'textarea', {
+      width: (boxW - 32) + 'px', height: '90px',
+      background: '#0d1a2a', color: '#f0ead6', border: '1px solid #4fc3f7',
+      fontFamily: 'monospace', fontSize: '12px', resize: 'none', padding: '6px',
+    }, shareText).setDepth(102);
+    if (ta.node) ta.node.select();
+
+    const closeBtn = this.add.text(W / 2, H / 2 + boxH / 2 - 16, '[ CLOSE ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa',
+    }).setOrigin(0.5).setDepth(102).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
+    overlay.on('pointerdown',  () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
   }
 }

@@ -54,6 +54,8 @@ export class GameState {
     this.ascension = 0;     // 0 = Normal, 1-5 = tier for this run
     // Run modifier fields (NAN-125)
     this.runModifiers = []; // e.g. ['petite','relentless']
+    // Persistent cat identity (cat mood modifier for this run: 'confident' | 'frustrated' | null)
+    this.catMoodModifier = null;
   }
 
   startRun(heroClass) {
@@ -66,6 +68,23 @@ export class GameState {
     this.act = 1;
     this.floor = 0;
     this.inRun = true;
+
+    // ── Persistent cat identity: seed personality + apply streak modifier ─────
+    const profile = GameState.getCatProfile();
+    if (profile.dominant && profile.totalRuns >= 3) {
+      // Nudge starting personality points toward cat's established style (cap at 8 so no pre-lock)
+      const domPct = Math.max(profile.feisty, profile.cozy, profile.cunning);
+      const seed = Math.min(8, Math.round(domPct / 100 * 7));
+      if (seed > 0) {
+        if      (profile.dominant === 'feisty')  this.personality.feisty  = seed;
+        else if (profile.dominant === 'cozy')    this.personality.cozy    = seed;
+        else if (profile.dominant === 'cunning') this.personality.cunning = seed;
+      }
+      // Streak-based run modifier
+      if (profile.winStreak >= 3)  this.catMoodModifier = 'confident';
+      else if (profile.lossStreak >= 3) this.catMoodModifier = 'frustrated';
+    }
+
     // Glass Cannon: halve maxHp (runModifiers set before startRun via reset, apply after hero stats)
     // Note: runModifiers is applied after startRun call in MenuScene via gs.runModifiers assignment
     this.save();
@@ -256,9 +275,11 @@ export class GameState {
   static loadMeta() {
     try {
       const raw = localStorage.getItem(META_KEY);
-      if (!raw) return { heroWins: {}, a3Wins: {}, achievements: [] };
-      return JSON.parse(raw);
-    } catch(e) { return { heroWins: {}, a3Wins: {}, achievements: [] }; }
+      if (!raw) return { heroWins: {}, a3Wins: {}, achievements: [], runHistory: [] };
+      const m = JSON.parse(raw);
+      if (!m.runHistory) m.runHistory = [];
+      return m;
+    } catch(e) { return { heroWins: {}, a3Wins: {}, achievements: [], runHistory: [] }; }
   }
 
   static saveMetaProgress(gs, won) {
@@ -276,7 +297,91 @@ export class GameState {
       if ((gs.ascension || 0) >= 5) add('a5_win');
       if ((gs.runModifiers || []).includes('no_healing')) add('no_heal_win');
     }
+    // Always record run history for persistent cat identity
+    const p = gs.personality || {};
+    const snap = {
+      mood: gs.getDominantPersonality(),
+      feisty:  p.feisty  || 0,
+      cozy:    p.cozy    || 0,
+      cunning: p.cunning || 0,
+      feral:   !!p.feral,
+      won,
+      hero:    gs.hero,
+      act:     gs.act,
+      floor:   gs.floor,
+      ts:      Date.now(),
+    };
+    if (!meta.runHistory) meta.runHistory = [];
+    meta.runHistory.push(snap);
+    if (meta.runHistory.length > 20) meta.runHistory = meta.runHistory.slice(-20);
     try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch(e) {}
+  }
+
+  /**
+   * Derive the persistent cat personality profile from run history.
+   * @param {number} skipLast - skip the last N runs (use 1 to get pre-run profile)
+   * @returns {{ dominant, feisty, cozy, cunning, feral, totalRuns, winStreak, lossStreak }}
+   *   feisty/cozy/cunning/feral are 0-100 (weighted % across recent runs)
+   */
+  static getCatProfile(skipLast = 0) {
+    const meta = GameState.loadMeta();
+    const history = meta.runHistory || [];
+    const runs = skipLast > 0 ? history.slice(0, -skipLast) : history;
+    const totalRuns = history.length;
+
+    if (runs.length === 0) {
+      return { dominant: null, feisty: 0, cozy: 0, cunning: 0, feral: 0, totalRuns, winStreak: 0, lossStreak: 0 };
+    }
+
+    // Weighted rolling average — most recent runs count more (linear weight)
+    let wFeisty = 0, wCozy = 0, wCunning = 0, wFeral = 0, totalW = 0;
+    runs.forEach((r, i) => {
+      const w = i + 1;
+      totalW += w;
+      const total = (r.feisty || 0) + (r.cozy || 0) + (r.cunning || 0);
+      if (total > 0) {
+        wFeisty  += w * (r.feisty  || 0) / total;
+        wCozy    += w * (r.cozy    || 0) / total;
+        wCunning += w * (r.cunning || 0) / total;
+      } else {
+        wFeisty  += w / 3;
+        wCozy    += w / 3;
+        wCunning += w / 3;
+      }
+      if (r.feral) wFeral += w;
+    });
+
+    const feisty  = Math.round(wFeisty  / totalW * 100);
+    const cozy    = Math.round(wCozy    / totalW * 100);
+    const cunning = Math.round(wCunning / totalW * 100);
+    const feral   = Math.round(wFeral   / totalW * 100);
+
+    // Dominant personality
+    let dominant = null;
+    if (feral > 30) {
+      dominant = 'feral';
+    } else {
+      const max = Math.max(feisty, cozy, cunning);
+      if (max > 0) {
+        if      (feisty  === max) dominant = 'feisty';
+        else if (cozy    === max) dominant = 'cozy';
+        else if (cunning === max) dominant = 'cunning';
+      }
+    }
+
+    // Win/loss streak from the end of full history
+    let winStreak = 0, lossStreak = 0;
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i].won) {
+        if (lossStreak > 0) break;
+        winStreak++;
+      } else {
+        if (winStreak > 0) break;
+        lossStreak++;
+      }
+    }
+
+    return { dominant, feisty, cozy, cunning, feral, totalRuns, winStreak, lossStreak };
   }
 
   getAscensionModifiers() {

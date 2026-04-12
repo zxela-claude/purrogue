@@ -102,7 +102,7 @@ export class CombatScene extends Phaser.Scene {
     this.drawPile = [...gs.deck].sort(() => Math.random() - 0.5);
     this.discardPile = [];
     this.hand = [];
-    this.energy = ENERGY_PER_TURN + (gs.relics.includes('catnip') ? 1 : 0) + (gs.pendingEnergyBonus || 0);
+    this.energy = ENERGY_PER_TURN + (gs.relics.includes('catnip') ? 1 : 0) + (gs.pendingEnergyBonus || 0) + (gs.catMoodModifier === 'confident' ? 1 : 0);
     gs.pendingEnergyBonus = 0;
     this.maxEnergy = this.energy;
     this.pendingEnemyDamage = gs.pendingEnemyDamage || 0;

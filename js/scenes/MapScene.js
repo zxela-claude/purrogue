@@ -84,6 +84,11 @@ export class MapScene extends Phaser.Scene {
       this._addGhostPanel(gs);
     }
 
+    // Cat mood modifier banner — show once at the start of Act 1
+    if (gs.act === 1 && gs.floor === 0 && gs.catMoodModifier && isNewAct) {
+      this._showCatMoodBanner(gs.catMoodModifier);
+    }
+
     // Settings gear (top-left below act label)
     this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
       .setOrigin(0, 1).setInteractive({ useHandCursor: true })
@@ -1224,5 +1229,26 @@ export class MapScene extends Phaser.Scene {
 
     const escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     escKey.once('down', () => { group.destroy(true); });
+  }
+
+  _showCatMoodBanner(modifier) {
+    const W = SCREEN_WIDTH;
+    const isConfident = modifier === 'confident';
+    const color  = isConfident ? 0xffd700 : 0xe94560;
+    const hexStr = isConfident ? '#ffd700' : '#e94560';
+    const icon   = isConfident ? '😼' : '😾';
+    const label  = isConfident ? 'CONFIDENT — +1 energy per combat' : 'FRUSTRATED — feisty energy rising';
+
+    const bannerBg  = this.add.rectangle(W / 2, 680, W - 40, 36, 0x0d0d1a, 0.92).setDepth(50);
+    const borderGfx = this.add.graphics().setDepth(50);
+    borderGfx.lineStyle(1, color, 0.7);
+    borderGfx.strokeRect(20, 662, W - 40, 36);
+    const bannerTxt = this.add.text(W / 2, 680, `${icon}  Your cat feels ${label}`, {
+      fontFamily: '"Press Start 2P"', fontSize: '9px', color: hexStr,
+    }).setOrigin(0.5).setDepth(51);
+
+    this.time.delayedCall(4000, () => {
+      this.tweens.add({ targets: [bannerBg, borderGfx, bannerTxt], alpha: 0, duration: 800 });
+    });
   }
 }
