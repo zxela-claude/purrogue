@@ -830,16 +830,38 @@ export class MapScene extends Phaser.Scene {
       [PERSONALITY.FERAL]:  'Feral'
     };
 
+    // Draw personality bar using Phaser graphics instead of Unicode block chars
+    // (Press Start 2P bitmap font may not contain ▓/░ glyphs — NAN-239)
+    const BAR_W = 100;
+    const BAR_H = 8;
+    const BAR_Y = 22;
+    const cx = SCREEN_WIDTH / 2;
+
     if (p.mood !== null) {
-      // Mood locked
+      // Mood locked — full solid bar + LOCKED label
       const col = MOOD_COLORS[p.mood] || '#f0ead6';
-      const label = (MOOD_LABELS[p.mood] || p.mood) + ' ▓▓▓▓▓▓▓▓▓▓ LOCKED';
-      this.add.text(SCREEN_WIDTH / 2, 20, label, {
+      const colNum = parseInt(col.replace('#', ''), 16);
+      const moodName = MOOD_LABELS[p.mood] || p.mood;
+
+      this.add.text(cx - BAR_W / 2 - 4, 20, moodName, {
         fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
         stroke: '#000000', strokeThickness: 1
-      }).setOrigin(0.5, 0);
+      }).setOrigin(1, 0);
+
+      const gfx = this.add.graphics();
+      // Background track
+      gfx.fillStyle(0x333333, 1);
+      gfx.fillRect(cx - BAR_W / 2, BAR_Y, BAR_W, BAR_H);
+      // Full filled bar
+      gfx.fillStyle(colNum, 1);
+      gfx.fillRect(cx - BAR_W / 2, BAR_Y, BAR_W, BAR_H);
+
+      this.add.text(cx + BAR_W / 2 + 4, 20, 'LOCKED', {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
+        stroke: '#000000', strokeThickness: 1
+      }).setOrigin(0, 0);
     } else {
-      // Find dominant counter
+      // In progress — find dominant counter, draw partial bar
       const counters = [
         { key: PERSONALITY.FEISTY, val: p.feisty || 0 },
         { key: PERSONALITY.COZY,   val: p.cozy   || 0 },
@@ -848,14 +870,30 @@ export class MapScene extends Phaser.Scene {
       const dominant = counters.reduce((a, b) => b.val > a.val ? b : a, counters[0]);
       const count = dominant.val;
       const threshold = PERSONALITY_THRESHOLD;
-      const filled = Math.min(10, Math.round(count / threshold * 10));
-      const bar = '▓'.repeat(filled) + '░'.repeat(10 - filled);
-      const label = `${MOOD_LABELS[dominant.key] || dominant.key} ${bar} ${count}/${threshold}`;
+      const fillFrac = Math.min(1, count / threshold);
       const col = MOOD_COLORS[dominant.key] || '#f0ead6';
-      this.add.text(SCREEN_WIDTH / 2, 20, label, {
+      const colNum = parseInt(col.replace('#', ''), 16);
+      const moodName = MOOD_LABELS[dominant.key] || dominant.key;
+
+      this.add.text(cx - BAR_W / 2 - 4, 20, moodName, {
         fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
         stroke: '#000000', strokeThickness: 1
-      }).setOrigin(0.5, 0);
+      }).setOrigin(1, 0);
+
+      const gfx = this.add.graphics();
+      // Background track
+      gfx.fillStyle(0x333333, 1);
+      gfx.fillRect(cx - BAR_W / 2, BAR_Y, BAR_W, BAR_H);
+      // Filled portion
+      if (fillFrac > 0) {
+        gfx.fillStyle(colNum, 1);
+        gfx.fillRect(cx - BAR_W / 2, BAR_Y, Math.round(BAR_W * fillFrac), BAR_H);
+      }
+
+      this.add.text(cx + BAR_W / 2 + 4, 20, `${count}/${threshold}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
+        stroke: '#000000', strokeThickness: 1
+      }).setOrigin(0, 0);
     }
   }
 
