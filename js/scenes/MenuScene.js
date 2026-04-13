@@ -212,6 +212,16 @@ export class MenuScene extends Phaser.Scene {
         if (!this.scene.isActive('SettingsScene')) this.scene.launch('SettingsScene');
       });
 
+    // ── How to Play button ────────────────────────────────────────────────────
+    this.add.text(W - 24, H - 24, '[ ? HOW TO PLAY ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#444466'
+    }).setOrigin(1, 1).setInteractive({ useHandCursor: true })
+      .on('pointerover', function() { this.setColor('#8888cc'); })
+      .on('pointerout',  function() { this.setColor('#444466'); })
+      .on('pointerdown', () => {
+        this.scene.start('TutorialScene', { returnTo: 'MenuScene' });
+      });
+
     // ── Import deck code ──────────────────────────────────────────────────────
     this.add.text(W/2, H - 52, '[ IMPORT DECK CODE ]', {
       fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#444444'

@@ -283,6 +283,7 @@ export class TutorialScene extends Phaser.Scene {
 
   _finish() {
     localStorage.setItem('purrogue_tutorial_done', '1');
-    this.scene.start('MapScene');
+    const returnTo = (this._heroData && this._heroData.returnTo) || 'MapScene';
+    this.scene.start(returnTo);
   }
 }
