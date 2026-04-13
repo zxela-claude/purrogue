@@ -1034,14 +1034,18 @@ export class CombatScene extends Phaser.Scene {
     this.gs.runStats.damage_dealt += dmg;
     if (dmg > 0) {
       this._flashAttack();
-      this._showDamageNumber(SCREEN_WIDTH/2, 220, dmg);
+      const ex = this.enemySprite?.x ?? SCREEN_WIDTH / 2;
+      const ey = (this.enemySprite?.y ?? 200) - 50;
+      this._showDamageNumber(ex, ey, dmg);
       this.cameras.main.shake(dmg >= 10 ? 200 : 100, dmg >= 10 ? 0.014 : 0.005);
       // SFX: damage dealt
       this.soundManager.play('damage_dealt');
     }
     // Show heal if hp increased
     if (this.gs.hp > prevHp) {
-      this._showHealNumber(100, SCREEN_HEIGHT - 220, this.gs.hp - prevHp);
+      const hx = this.heroSprite?.x ?? 100;
+      const hy = (this.heroSprite?.y ?? (SCREEN_HEIGHT - 200)) - 50;
+      this._showHealNumber(hx, hy, this.gs.hp - prevHp);
       // SFX: heal
       this.soundManager.play('heal');
     }
@@ -1281,7 +1285,7 @@ export class CombatScene extends Phaser.Scene {
       this.playerStatuses = player.statuses;
       const dmg = results.filter(r => r.type === 'damage').reduce((s, r) => s + r.amount, 0);
       this.gs.runStats.damage_dealt += dmg;
-      if (dmg > 0) this._showDamageNumber(SCREEN_WIDTH/2, 220, dmg);
+      if (dmg > 0) this._showDamageNumber(this.enemySprite?.x ?? SCREEN_WIDTH / 2, (this.enemySprite?.y ?? 200) - 50, dmg);
       this._updateStatsDisplay();
       if (this.enemy.hp <= 0) { this._enemyDefeated(); return; }
       if (this.gs.hp <= 0) { this._playerDied(); return; }
@@ -1363,7 +1367,7 @@ export class CombatScene extends Phaser.Scene {
         this.gs.runStats.damage_taken += result.amount;
         const dmgTaken = prevHp - this.gs.hp;
         if (dmgTaken > 0) {
-          this._showDamageNumber(100, SCREEN_HEIGHT - 240, dmgTaken, '#ff8888');
+          this._showDamageNumber(this.heroSprite?.x ?? 100, (this.heroSprite?.y ?? (SCREEN_HEIGHT - 200)) - 50, dmgTaken, '#ff8888');
           this.cameras.main.shake(150, 0.008);
           if (dmgTaken >= 10) this.cameras.main.shake(150, 0.02);
           // Hit-flash on player HP bar area
