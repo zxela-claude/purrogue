@@ -214,10 +214,10 @@ export class MenuScene extends Phaser.Scene {
 
     // ── How to Play button ────────────────────────────────────────────────────
     this.add.text(W - 24, H - 24, '[ ? HOW TO PLAY ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#444466'
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#7777aa'
     }).setOrigin(1, 1).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#8888cc'); })
-      .on('pointerout',  function() { this.setColor('#444466'); })
+      .on('pointerout',  function() { this.setColor('#7777aa'); })
       .on('pointerdown', () => {
         this.scene.start('TutorialScene', { returnTo: 'MenuScene' });
       });
@@ -481,7 +481,7 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(12);
 
     this.add.text(mX, mY - mH/2 + 60, dailySeed, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#444466'
+      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaacc'
     }).setOrigin(0.5).setDepth(12);
 
     // Modifier name
