@@ -144,6 +144,16 @@ export class ShopScene extends Phaser.Scene {
       gs.shopInventory = null;
       this.scene.start('MapScene');
     });
+
+    // Settings gear button (NAN-245: accessible from shop)
+    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
+      .setOrigin(0, 1).setDepth(10).setInteractive({ useHandCursor: true })
+      .on('pointerover', function() { this.setColor('#aaaaaa'); })
+      .on('pointerout',  function() { this.setColor('#444444'); })
+      .on('pointerdown', () => {
+        if (!this.scene.isActive('SettingsScene')) this.scene.launch('SettingsScene');
+      });
+
     PurrSettings.scaleSceneText(this); // NAN-222
 
     // Keyboard: 1-N buys card, Q/W buys relics, R removes card, ESC leaves

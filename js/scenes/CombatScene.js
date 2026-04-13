@@ -397,6 +397,15 @@ export class CombatScene extends Phaser.Scene {
       fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#666666'
     });
 
+    // Settings gear button (NAN-245: accessible from combat)
+    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
+      .setOrigin(0, 1).setDepth(10).setInteractive({ useHandCursor: true })
+      .on('pointerover', function() { this.setColor('#aaaaaa'); })
+      .on('pointerout',  function() { this.setColor('#444444'); })
+      .on('pointerdown', () => {
+        if (!this.scene.isActive('SettingsScene')) this.scene.launch('SettingsScene');
+      });
+
     this._updateStatsDisplay();
   }
 
