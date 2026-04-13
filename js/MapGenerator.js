@@ -242,7 +242,7 @@ export class MapGenerator {
           !lockedIds.has(n.id)
         );
         if (candidates.length > 0) {
-          candidates[candidates.length - 1].type = NODE_TYPES.SHOP;
+          candidates[0].type = NODE_TYPES.SHOP;
         }
       }
 
@@ -255,7 +255,7 @@ export class MapGenerator {
           !lockedIds.has(n.id)
         );
         if (candidates.length > 0) {
-          candidates[candidates.length - 1].type = NODE_TYPES.REST;
+          candidates[0].type = NODE_TYPES.REST;
         }
       }
     }
