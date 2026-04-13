@@ -386,6 +386,16 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(panelX, achTop, 'ACHIEVEMENTS', {
       fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#888888'
     }).setOrigin(0.5);
+    // shared tooltip objects (created once, repositioned on hover)
+    const tipBg = this.add.rectangle(0, 0, 160, 40, 0x111122, 0.95)
+      .setStrokeStyle(1, 0x4444aa).setDepth(50).setVisible(false).setOrigin(0.5, 1);
+    const tipLabel = this.add.text(0, 0, '', {
+      fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#ffffff', wordWrap: { width: 148 }
+    }).setDepth(51).setVisible(false).setOrigin(0.5, 1);
+    const tipSub = this.add.text(0, 0, '', {
+      fontFamily: '"Press Start 2P"', fontSize: '6px', color: '#aaaacc', wordWrap: { width: 148 }
+    }).setDepth(51).setVisible(false).setOrigin(0.5, 1);
+
     ACHIEVEMENT_DEFS.forEach((def, i) => {
       const ax = panelX - panelW / 2 + 14 + i * (panelW / ACHIEVEMENT_DEFS.length);
       const ay = achTop + 22;
@@ -393,7 +403,23 @@ export class MenuScene extends Phaser.Scene {
       const badge = this.add.text(ax, ay, def.emoji, { fontSize: '18px' })
         .setOrigin(0, 0.5)
         .setAlpha(unlocked ? 1 : 0.2);
-      badge.setInteractive({ useHandCursor: false });
+      badge.setInteractive({ useHandCursor: true });
+
+      badge.on('pointerover', () => {
+        const tipX = ax + 9;
+        const tipY = ay - 18;
+        const statusText = unlocked ? def.label : '???';
+        const subText = unlocked ? def.tip : 'Locked';
+        // size the bg to fit content
+        tipBg.setPosition(tipX, tipY).setSize(160, 36).setVisible(true);
+        tipLabel.setPosition(tipX, tipY - 18).setText(statusText).setVisible(true);
+        tipSub.setPosition(tipX, tipY - 4).setText(subText).setVisible(true);
+      });
+      badge.on('pointerout', () => {
+        tipBg.setVisible(false);
+        tipLabel.setVisible(false);
+        tipSub.setVisible(false);
+      });
     });
   }
 
