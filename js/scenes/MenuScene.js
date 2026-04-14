@@ -351,11 +351,11 @@ export class MenuScene extends Phaser.Scene {
         dotGfx.fillCircle(panelX - panelW / 2 + 56, rowY, 5);
 
         const heroLabel = this.add.text(panelX - panelW / 2 + 66, rowY,
-          s.hero ? s.hero.slice(0, 3) : '???',
+          s.hero ? s.hero.charAt(0) + s.hero.slice(1).toLowerCase() : '???',
           { fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: resultCol }
         ).setOrigin(0, 0.5);
 
-        const actLabel = this.add.text(panelX - panelW / 2 + 118, rowY, `Act${s.act}`, {
+        const actLabel = this.add.text(panelX - panelW / 2 + 138, rowY, `Act${s.act}`, {
           fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#aaaaaa'
         }).setOrigin(0, 0.5);
 
