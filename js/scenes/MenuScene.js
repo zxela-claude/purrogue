@@ -228,14 +228,7 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#888888'); })
       .on('pointerout',  function() { this.setColor('#444444'); })
-      .on('pointerdown', () => {
-        const code = prompt('Enter deck code:');
-        if (code) {
-          const result = DeckCode.decode(code);
-          if (result.error) { alert(result.error); return; }
-          alert(`Imported: ${result.hero} deck with ${result.deck.length} cards`);
-        }
-      });
+      .on('pointerdown', () => { this._showImportModal(); });
 
     // ── High scores ───────────────────────────────────────────────────────────
     const scores = GameState.getScores();
@@ -961,5 +954,119 @@ export class MenuScene extends Phaser.Scene {
       this.registry.set('gameState', newGs);
       this._startRunOrTutorial(newGs);
     });
+  }
+
+  // NAN-249: Replace native prompt()/alert() with styled in-game modal
+  _showImportModal() {
+    if (this._importOpen) return;
+    const W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+
+    // Container groups all Phaser objects for single-call cleanup
+    const container = this.add.container(0, 0).setDepth(60);
+
+    // Dim overlay — blocks clicks behind modal
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.80)
+      .setInteractive();
+    container.add(overlay);
+
+    // Modal box
+    const boxW = 580, boxH = 290;
+    const boxX = W / 2, boxY = H / 2;
+    const boxBg = this.add.rectangle(boxX, boxY, boxW, boxH, 0x0d0d1a);
+    const boxBorder = this.add.graphics().lineStyle(2, 0x4fc3f7)
+      .strokeRect(boxX - boxW / 2, boxY - boxH / 2, boxW, boxH);
+    container.add([boxBg, boxBorder]);
+
+    // Title
+    container.add(this.add.text(boxX, boxY - 115, 'IMPORT DECK CODE', {
+      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4fc3f7'
+    }).setOrigin(0.5));
+
+    // Instruction
+    container.add(this.add.text(boxX, boxY - 80, 'Paste your deck code below, then press IMPORT:', {
+      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#aaaaaa'
+    }).setOrigin(0.5));
+
+    // Status / feedback text
+    const statusText = this.add.text(boxX, boxY + 80, '', {
+      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ef5350',
+      wordWrap: { width: boxW - 40 }, align: 'center'
+    }).setOrigin(0.5);
+    container.add(statusText);
+
+    // HTML textarea positioned over the Phaser canvas
+    const canvas = this.game.canvas;
+    const cb = canvas.getBoundingClientRect();
+    const sx = cb.width / W, sy = cb.height / H;
+    const taX = cb.left + (boxX - boxW / 2 + 20) * sx;
+    const taY = cb.top  + (boxY - 55) * sy;
+    const ta = document.createElement('textarea');
+    ta.placeholder = 'Paste deck code here…';
+    ta.style.cssText = [
+      `position:fixed`,
+      `left:${taX}px`,
+      `top:${taY}px`,
+      `width:${(boxW - 40) * sx}px`,
+      `height:${90 * sy}px`,
+      `background:#0d1a2a`,
+      `color:#f0ead6`,
+      `border:1px solid #4fc3f7`,
+      `font-family:monospace`,
+      `font-size:${Math.max(11 * sy, 11)}px`,
+      `resize:none`,
+      `padding:6px`,
+      `box-sizing:border-box`,
+      `z-index:9999`,
+    ].join(';');
+    document.body.appendChild(ta);
+    ta.focus();
+
+    let escHandler = null;
+    const cleanup = () => {
+      this._importOpen = false;
+      container.destroy(true);
+      if (ta.parentNode) ta.parentNode.removeChild(ta);
+      if (escHandler) this.input.keyboard.off('keydown-ESC', escHandler);
+    };
+
+    // IMPORT button
+    const importBtn = this.add.text(boxX - 110, boxY + 115, '[ IMPORT ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4caf50',
+      backgroundColor: '#1a3a1a', padding: { x: 12, y: 7 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    importBtn.on('pointerover', function() { this.setColor('#a5d6a7'); });
+    importBtn.on('pointerout',  function() { this.setColor('#4caf50'); });
+    importBtn.on('pointerdown', () => {
+      const code = ta.value.trim();
+      if (!code) {
+        statusText.setText('Please paste a deck code first.').setColor('#ef5350');
+        return;
+      }
+      const result = DeckCode.decode(code);
+      if (result.error) {
+        statusText.setText(result.error).setColor('#ef5350');
+        return;
+      }
+      statusText.setText(`Imported: ${result.hero} deck — ${result.deck.length} cards`).setColor('#4caf50');
+      importBtn.disableInteractive();
+      cancelBtn.disableInteractive();
+      this.time.delayedCall(1800, cleanup);
+    });
+    container.add(importBtn);
+
+    // CANCEL button
+    const cancelBtn = this.add.text(boxX + 110, boxY + 115, '[ CANCEL ]', {
+      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ef5350',
+      backgroundColor: '#3a1a1a', padding: { x: 12, y: 7 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    cancelBtn.on('pointerover', function() { this.setColor('#ef9a9a'); });
+    cancelBtn.on('pointerout',  function() { this.setColor('#ef5350'); });
+    cancelBtn.on('pointerdown', cleanup);
+    container.add(cancelBtn);
+
+    // ESC key closes modal
+    this._importOpen = true;
+    escHandler = () => { if (this._importOpen) cleanup(); };
+    this.input.keyboard.on('keydown-ESC', escHandler);
   }
 }
