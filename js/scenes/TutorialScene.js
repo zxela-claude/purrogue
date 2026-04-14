@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
+import { COLORS, FONT_BANNER, FONT_HEADER, FONT_LG, FONT_MD, FONT_SM, FONT_XS, FONT_XXS, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { PurrSettings } from '../PurrSettings.js';
 
 const STEPS = [
@@ -72,7 +72,7 @@ export class TutorialScene extends Phaser.Scene {
     // Step indicator container (persistent)
     this._stepIndicator = this.add.text(W / 2, H - 28, '', {
       fontFamily: '"Press Start 2P"',
-      fontSize: '10px',
+      fontSize: FONT_SM,
       color: '#555577',
     }).setOrigin(0.5).setDepth(10);
 
@@ -149,7 +149,7 @@ export class TutorialScene extends Phaser.Scene {
     const titleY = panelY - panelH / 2 + 52;
     const title = this.add.text(panelX, titleY, step.title, {
       fontFamily: '"Press Start 2P"',
-      fontSize: '24px',
+      fontSize: FONT_BANNER,
       color: '#ffd700',
       stroke: '#000000',
       strokeThickness: 2,
@@ -166,7 +166,7 @@ export class TutorialScene extends Phaser.Scene {
     const bodyY = step.extra === 'nodes' ? panelY - 100 : panelY - 20;
     const body = this.add.text(panelX, bodyY, step.body, {
       fontFamily: '"Press Start 2P"',
-      fontSize: '12px',
+      fontSize: FONT_MD,
       color: '#d0c8b8',
       wordWrap: { width: panelW - 100 },
       align: 'center',
@@ -216,7 +216,7 @@ export class TutorialScene extends Phaser.Scene {
 
     const txt = this.add.text(x, y, label, {
       fontFamily: '"Press Start 2P"',
-      fontSize: '14px',
+      fontSize: FONT_LG,
       color,
     }).setOrigin(0.5).setDepth(7);
     group.add(txt);
@@ -246,19 +246,19 @@ export class TutorialScene extends Phaser.Scene {
       chipBorder.strokeRect(x - 100, y - 24, 200, 48);
       group.add(chipBorder);
 
-      const emoji = this.add.text(x - 80, y, node.emoji, { fontSize: '20px' }).setOrigin(0, 0.5).setDepth(7);
+      const emoji = this.add.text(x - 80, y, node.emoji, { fontSize: FONT_HEADER }).setOrigin(0, 0.5).setDepth(7);
       group.add(emoji);
 
       const label = this.add.text(x - 50, y - 9, node.label, {
         fontFamily: '"Press Start 2P"',
-        fontSize: '9px',
+        fontSize: FONT_XS,
         color: node.color,
       }).setDepth(7);
       group.add(label);
 
       const desc = this.add.text(x - 50, y + 5, node.desc, {
         fontFamily: '"Press Start 2P"',
-        fontSize: '8px',
+        fontSize: FONT_XXS,
         color: '#888888',
       }).setDepth(7);
       group.add(desc);

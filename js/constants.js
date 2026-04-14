@@ -40,8 +40,20 @@ export const HERO_CLASSES = {
   ROGUE: { name: 'Rogue Cat', hp: 70, color: 0x27ae60, emoji: '🗡️' }
 };
 
+export const FONT_MICRO = '6px';
+export const FONT_TINY = '7px';
+export const FONT_XXS = '8px';
+export const FONT_XS = '9px';
 export const FONT_SM = '10px';
+export const FONT_SM2 = '11px';
 export const FONT_MD = '12px';
+export const FONT_MD2 = '13px';
 export const FONT_LG = '14px';
 export const FONT_XL = '15px';
+export const FONT_2XL = '16px';
+export const FONT_3XL = '18px';
 export const FONT_HEADER = '20px';
+export const FONT_TITLE = '22px';
+export const FONT_BANNER = '24px';
+export const FONT_HERO = '28px';
+export const FONT_DISPLAY = '30px';

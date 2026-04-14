@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, ENERGY_PER_TURN, HAND_SIZE } from '../constants.js';
+import { COLORS, ENERGY_PER_TURN, FONT_3XL, FONT_DISPLAY, FONT_HEADER, FONT_HERO, FONT_LG, FONT_MD, FONT_MD2, FONT_SM, FONT_SM2, FONT_TINY, FONT_TITLE, FONT_XS, FONT_XXS, HAND_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { CardEngine } from '../CardEngine.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { getRandomEnemy, getBoss } from '../data/enemies.js';
@@ -202,7 +202,7 @@ export class CombatScene extends Phaser.Scene {
 
   _spawnFloatingText(x, y, text, color) {
     const txt = this.add.text(x, y, text, {
-      fontFamily: '"Press Start 2P"', fontSize: '20px', color,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color,
       stroke: '#000000', strokeThickness: 3
     }).setOrigin(0.5).setDepth(40);
     this.tweens.add({ targets: txt, y: y - 60, alpha: 0, duration: 800, ease: 'Power2', onComplete: () => txt.destroy() });
@@ -220,7 +220,7 @@ export class CombatScene extends Phaser.Scene {
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 60, 440, 56, 0x000000, 0.7)
       .setDepth(35);
     const txt = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 60, label, {
-      fontFamily: '"Press Start 2P"', fontSize: '22px', color,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TITLE, color,
       stroke: '#000000', strokeThickness: 2
     }).setOrigin(0.5).setDepth(36).setAlpha(0);
     this.tweens.add({
@@ -239,7 +239,7 @@ export class CombatScene extends Phaser.Scene {
     border.lineStyle(2, colorNum);
     border.strokeRect(W/2 - 180, 60, 360, 40);
     const txt = this.add.text(W/2, 80, label, {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: colorHex,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: colorHex,
       stroke: '#000000', strokeThickness: 2
     }).setOrigin(0.5).setDepth(39);
     this.tweens.add({
@@ -261,13 +261,13 @@ export class CombatScene extends Phaser.Scene {
     if (this.isBoss) this.add.rectangle(W/2, enemyPanelY, 340, 210, 0xe94560, 0.12).setDepth(0);
 
     this.enemyNameText = this.add.text(W/2, 22, this.enemy.name + (this.isElite ? ' ⚡' : this.isBoss ? ' 👑' : ''), {
-      fontFamily: '"Press Start 2P"', fontSize: '18px', color: this.isBoss ? '#ff4444' : '#e94560',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_3XL, color: this.isBoss ? '#ff4444' : '#e94560',
       stroke: '#000000', strokeThickness: 2
     }).setOrigin(0.5);
 
     // Enemy HP bar
     this.enemyHpBar = this.add.graphics().setDepth(2);
-    this.enemyHpLabel = this.add.text(W/2, 70, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5).setDepth(3);
+    this.enemyHpLabel = this.add.text(W/2, 70, '', { fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5).setDepth(3);
 
     // Enemy sprite
     const enemySpriteKey = this.enemy.id;
@@ -287,7 +287,7 @@ export class CombatScene extends Phaser.Scene {
     // what the enemy plans to do next turn before committing their actions.
     this.enemyIntentContainer = this.add.container(W/2, 78).setDepth(5);
 
-    this.enemyBlockText = this.add.text(W/2, 285, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4fc3f7', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5);
+    this.enemyBlockText = this.add.text(W/2, 285, '', { fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4fc3f7', stroke: '#000000', strokeThickness: 1 }).setOrigin(0.5);
     this.enemyStatusContainer = this.add.container(W/2, 310).setDepth(5);
 
     // ── Player section ──
@@ -305,17 +305,17 @@ export class CombatScene extends Phaser.Scene {
 
     // Player HP bar
     this.playerHpBar = this.add.graphics().setDepth(2);
-    this.playerHpLabel = this.add.text(170, H - 168, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setDepth(3);
+    this.playerHpLabel = this.add.text(170, H - 168, '', { fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setDepth(3);
 
     // Block indicator
-    this.playerBlockLabel = this.add.text(170, H - 148, '', { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4fc3f7', stroke: '#000000', strokeThickness: 1 }).setDepth(3);
+    this.playerBlockLabel = this.add.text(170, H - 148, '', { fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4fc3f7', stroke: '#000000', strokeThickness: 1 }).setDepth(3);
 
     // Energy orbs
     this.energyOrbGfx = this.add.graphics().setDepth(2);
-    this.add.text(20, H - 122, 'ENERGY', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#888888' }).setDepth(3);
+    this.add.text(20, H - 122, 'ENERGY', { fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#888888' }).setDepth(3);
 
     // Player status text (NAN-212: replaced by interactive container for tooltips)
-    this.playerStatusText = this.add.text(170, H - 70, '', { fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa' }).setDepth(3).setAlpha(0);
+    this.playerStatusText = this.add.text(170, H - 70, '', { fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#aaaaaa' }).setDepth(3).setAlpha(0);
     this.playerStatusContainer = this.add.container(170, H - 70).setDepth(3);
 
     // End turn button
@@ -323,10 +323,10 @@ export class CombatScene extends Phaser.Scene {
     const endTurnBg = this.add.rectangle(W - 110, H - 155, 210, 50, 0x2a0a12).setDepth(4);
     this.add.graphics().setDepth(4).lineStyle(2, 0xe94560).strokeRect(W - 215, H - 180, 210, 50);
     this.endTurnBtn = this.add.text(W - 110, H - 162, 'END TURN', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#e94560'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#e94560'
     }).setOrigin(0.5).setDepth(5);
     this.add.text(W - 110, H - 144, '[E / ENTER]', {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#884040'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#884040'
     }).setOrigin(0.5).setDepth(5);
     endTurnHitZone.on('pointerdown', () => { if (!endTurnHitZone.input?.enabled) return; this._endPlayerTurn(); });
     endTurnHitZone.on('pointerover', () => endTurnBg.setFillStyle(0x500a20));
@@ -340,19 +340,19 @@ export class CombatScene extends Phaser.Scene {
       if (moodInfo) {
         const chip = this.add.rectangle(W - 80, 18, 150, 26, 0x111111).setDepth(3);
         this.add.graphics().setDepth(3).lineStyle(1, Phaser.Display.Color.HexStringToColor(moodInfo.color).color).strokeRect(W - 155, 5, 150, 26);
-        this.add.text(W - 80, 18, moodInfo.name, { fontFamily: '"Press Start 2P"', fontSize: '11px', color: moodInfo.color }).setOrigin(0.5).setDepth(4);
+        this.add.text(W - 80, 18, moodInfo.name, { fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: moodInfo.color }).setOrigin(0.5).setDepth(4);
       }
     }
 
     // Deck / discard counters
-    this.deckCountText = this.add.text(20, H - 32, '', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888' });
-    this.discardCountText = this.add.text(200, H - 32, '', { fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888' });
+    this.deckCountText = this.add.text(20, H - 32, '', { fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#888888' });
+    this.discardCountText = this.add.text(200, H - 32, '', { fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#888888' });
 
     // View Deck button — small, unobtrusive, bottom-center
     const deckBtnBg = this.add.rectangle(W / 2, H - 20, 140, 28, 0x111122).setDepth(6);
     this.add.graphics().setDepth(6).lineStyle(1, 0x4fc3f7, 0.6).strokeRect(W / 2 - 70, H - 34, 140, 28);
     const deckBtnLabel = this.add.text(W / 2, H - 20, 'VIEW DECK [D]', {
-      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#4fc3f7'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#4fc3f7'
     }).setOrigin(0.5).setDepth(7);
     const deckBtnZone = this.add.rectangle(W / 2, H - 20, 140, 28, 0xffffff, 0)
       .setDepth(8).setInteractive({ useHandCursor: true });
@@ -394,11 +394,11 @@ export class CombatScene extends Phaser.Scene {
 
     // Act indicator top-left
     this.add.text(20, 22, `ACT ${this.gs.act}${this.isBoss ? ' — BOSS' : this.isElite ? ' — ELITE' : ''}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#666666'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#666666'
     });
 
     // Settings gear button (NAN-245: accessible from combat)
-    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
+    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: FONT_TITLE, color: '#444444' })
       .setOrigin(0, 1).setDepth(10).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#aaaaaa'); })
       .on('pointerout',  function() { this.setColor('#444444'); })
@@ -442,13 +442,13 @@ export class CombatScene extends Phaser.Scene {
 
     // Title
     const title = this.add.text(panelX, panelY - panelH / 2 + 22, `FULL DECK — ${fullDeck.length} cards`, {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#4fc3f7',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#4fc3f7',
       stroke: '#000000', strokeThickness: 1
     }).setOrigin(0.5);
     overlay.add(title);
 
     const subTitle = this.add.text(panelX, panelY - panelH / 2 + 44, 'Draw + Discard + Hand  |  [ESC] or click outside to close', {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#666666'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#666666'
     }).setOrigin(0.5);
     overlay.add(subTitle);
 
@@ -458,7 +458,7 @@ export class CombatScene extends Phaser.Scene {
     const powerCount = fullDeck.filter(id => this.cardDb[id]?.type === 'power').length;
     const compText = this.add.text(panelX, panelY - panelH / 2 + 60,
       `${attackCount} ATK  ${skillCount} SKL  ${powerCount} PWR`, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XXS,
         color: '#888888'
       }).setOrigin(0.5);
     overlay.add(compText);
@@ -499,7 +499,7 @@ export class CombatScene extends Phaser.Scene {
 
       // Card name
       const nameText = this.add.text(cx + 18, cy + 4, card.name + (isUpgraded ? '+' : ''), {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: nameColor
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: nameColor
       });
       overlay.add(nameText);
 
@@ -512,7 +512,7 @@ export class CombatScene extends Phaser.Scene {
       if (blockEffect) statParts.push(`BLK:${blockEffect.value}`);
 
       const statText = this.add.text(cx + 18, cy + 18, statParts.join('  '), {
-        fontFamily: '"Press Start 2P"', fontSize: '7px', color: typeCol
+        fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: typeCol
       });
       overlay.add(statText);
 
@@ -528,20 +528,20 @@ export class CombatScene extends Phaser.Scene {
     // Pagination controls
     if (totalPages > 1) {
       const pageLabel = this.add.text(panelX, panelY + panelH / 2 - 38, `Page ${page + 1} / ${totalPages}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#888888'
       }).setOrigin(0.5);
       overlay.add(pageLabel);
 
       if (page > 0) {
         const prevBtn = this.add.text(panelX - 100, panelY + panelH / 2 - 38, '< PREV', {
-          fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4fc3f7'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#4fc3f7'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         prevBtn.on('pointerdown', () => { this._deckPage--; this._closeDeckOverlay(); this._showDeckOverlay(); });
         overlay.add(prevBtn);
       }
       if (page < totalPages - 1) {
         const nextBtn = this.add.text(panelX + 100, panelY + panelH / 2 - 38, 'NEXT >', {
-          fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4fc3f7'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#4fc3f7'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         nextBtn.on('pointerdown', () => { this._deckPage++; this._closeDeckOverlay(); this._showDeckOverlay(); });
         overlay.add(nextBtn);
@@ -550,7 +550,7 @@ export class CombatScene extends Phaser.Scene {
 
     // Close button
     const closeBtn = this.add.text(panelX, panelY + panelH / 2 - 16, '[ CLOSE ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#e94560'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     closeBtn.on('pointerdown', () => this._closeDeckOverlay());
     overlay.add(closeBtn);
@@ -598,7 +598,7 @@ export class CombatScene extends Phaser.Scene {
       const col = _statusColors[k] || '#aaaaaa';
       const displayName = _statusNames[k] || k;
       const badge = this.add.text(i * 72 - statuses.length * 36 + 36, 0, `${displayName}\u00d7${v}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: col,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: col,
         backgroundColor: '#111111', padding: { x: 5, y: 3 }
       }).setOrigin(0.5).setInteractive({ useHandCursor: false });
       let tipTimer = null, tipObj = null;
@@ -658,7 +658,7 @@ export class CombatScene extends Phaser.Scene {
     pillBorder.lineStyle(1, intentColor, 0.8);
     pillBorder.strokeRoundedRect(-pillW / 2, -14, pillW, 28, 8);
     const pillText = this.add.text(0, 0, intentBadge, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffffff'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#ffffff'
     }).setOrigin(0.5);
     // Hit zone for hover/tap tooltip
     const pillHit = this.add.rectangle(0, 0, pillW, 28, 0x000000, 0).setInteractive({ useHandCursor: true });
@@ -705,7 +705,7 @@ export class CombatScene extends Phaser.Scene {
       const col = _pStatusColors[k] || '#aaaaaa';
       const label = `${_pStatusNames[k] || k}\u00d7${v}`;
       const pbadge = this.add.text(pBadgeOffsetX, 0, label, {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: col,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: col,
         backgroundColor: '#111111', padding: { x: 5, y: 3 }
       }).setOrigin(0, 0.5).setInteractive({ useHandCursor: false });
       let ptipTimer = null, ptipObj = null;
@@ -788,7 +788,7 @@ export class CombatScene extends Phaser.Scene {
 
     if (this.hand.length === 0) {
       this._emptyHandText = this.add.text(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 120, 'No cards in hand', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555555'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#555555'
       }).setOrigin(0.5);
       return;
     }
@@ -853,13 +853,13 @@ export class CombatScene extends Phaser.Scene {
 
       // Texts
       const nameText = this.add.text(0, -61, card.name, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XXS,
         color: canPlay ? '#f0ead6' : '#666666',
         wordWrap: { width: 104 }, align: 'center'
       }).setOrigin(0.5).setDepth(3);
 
       const costText = this.add.text(-cardW / 2 + 8, -cardH / 2 + 8, `${cost}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: canPlay ? '#ffd700' : '#555555'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: canPlay ? '#ffd700' : '#555555'
       }).setDepth(3);
 
       const descText = this.add.text(0, 36, card.description, {
@@ -871,7 +871,7 @@ export class CombatScene extends Phaser.Scene {
       // Keyboard shortcut hint — only show for first 6 cards
       const keyLabels = ['1','2','3','4','5','6'];
       const keyHint = i < 6 ? this.add.text(cardW / 2 - 8, cardH / 2 - 10, keyLabels[i], {
-        fontFamily: '"Press Start 2P"', fontSize: '7px', color: canPlay ? '#ffd70099' : '#33333399'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: canPlay ? '#ffd70099' : '#33333399'
       }).setOrigin(1, 1).setDepth(4).setAlpha(0.6) : null;
 
       container.add([shadow, bg, border, pip, ...artItems, nameText, costText, descText, ...(keyHint ? [keyHint] : [])]);
@@ -1142,13 +1142,13 @@ export class CombatScene extends Phaser.Scene {
 
     // Title
     const title = this.add.text(W / 2, 60, `SCRY — choose up to ${keepLimit} card${keepLimit !== 1 ? 's' : ''} to keep`, {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#ffd700',
       stroke: '#000000', strokeThickness: 2
     }).setOrigin(0.5).setDepth(21);
     overlay.add(title);
 
     const subtitle = this.add.text(W / 2, 84, 'Click a card to keep it (gold). Others go to bottom of draw pile.', {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#aaaaaa'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#aaaaaa'
     }).setOrigin(0.5).setDepth(21);
     overlay.add(subtitle);
 
@@ -1194,13 +1194,13 @@ export class CombatScene extends Phaser.Scene {
       const pip = this.add.rectangle(cardW / 2 - 10, -cardH / 2 + 10, 18, 18, typeColor).setDepth(3);
 
       const nameText = this.add.text(0, -61, card ? card.name : '?', {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#f0ead6',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#f0ead6',
         wordWrap: { width: 104 }, align: 'center'
       }).setOrigin(0.5).setDepth(3);
 
       const cost = card ? card.cost : '?';
       const costText = this.add.text(-cardW / 2 + 8, -cardH / 2 + 8, `${cost}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#ffd700'
       }).setDepth(3);
 
       const descText = this.add.text(0, 36, card ? card.description : '', {
@@ -1244,7 +1244,7 @@ export class CombatScene extends Phaser.Scene {
     btnBorder.lineStyle(2, 0xffd700);
     btnBorder.strokeRect(W / 2 - 100, btnY - 22, 200, 44);
     const btnText = this.add.text(W / 2, btnY, 'CONFIRM', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#ffd700'
     }).setOrigin(0.5).setDepth(23);
     const btnZone = this.add.rectangle(W / 2, btnY, 200, 44, 0xffffff, 0)
       .setDepth(24).setInteractive({ useHandCursor: true });
@@ -1451,7 +1451,7 @@ export class CombatScene extends Phaser.Scene {
     this.time.delayedCall(delay, () => {
       const victoryBg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 500, 90, 0x000000, 0.85).setDepth(20);
       this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, `VICTORY!  +${goldGain} 💰`, {
-        fontFamily: '"Press Start 2P"', fontSize: '28px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_HERO, color: '#ffd700'
       }).setOrigin(0.5).setDepth(21);
 
       this.time.delayedCall(1500, () => {
@@ -1554,18 +1554,18 @@ export class CombatScene extends Phaser.Scene {
     // Type banner
     const typeBanner = this.add.rectangle(0, -H / 2 + 18, W, 32, typeColor, 0.3);
     const typeLabel = this.add.text(0, -H / 2 + 18, card.type.toUpperCase(), {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffffff'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#ffffff'
     }).setOrigin(0.5);
 
     // Card name
     const nameText = this.add.text(0, -H / 2 + 50, card.name, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: isUpgraded ? '#ffd700' : '#f0d080',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: isUpgraded ? '#ffd700' : '#f0d080',
       wordWrap: { width: W - 20 }, align: 'center'
     }).setOrigin(0.5);
 
     // Cost
     const costLabel = this.add.text(0, -H / 2 + 76, `Cost: ${cost} ⚡`, {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffcc44'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#ffcc44'
     }).setOrigin(0.5);
 
     // Separator
@@ -1575,7 +1575,7 @@ export class CombatScene extends Phaser.Scene {
 
     // Description
     const descText = this.add.text(0, -H / 2 + 130, card.description, {
-      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#cccccc',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#cccccc',
       wordWrap: { width: 260 }, align: 'center'
     }).setOrigin(0.5);
 
@@ -1584,7 +1584,7 @@ export class CombatScene extends Phaser.Scene {
 
     if (isUpgraded) {
       const upgBadge = this.add.text(0, H / 2 - 22, '✦ UPGRADED', {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#ffd700'
       }).setOrigin(0.5);
       items.push(upgBadge);
     }
@@ -1598,10 +1598,10 @@ export class CombatScene extends Phaser.Scene {
 
       const upgBg = this.add.rectangle(0, H / 2 - 38, W, 64, 0x1a1a08, 0.9);
       const upgHeader = this.add.text(0, dividerY + 12, upgradeLabel, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#ffd700'
       }).setOrigin(0.5);
       const upgDescText = this.add.text(0, dividerY + 34, upgradeDesc, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffe080',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#ffe080',
         wordWrap: { width: W - 24 }, align: 'center'
       }).setOrigin(0.5);
 
@@ -1626,7 +1626,7 @@ export class CombatScene extends Phaser.Scene {
     border.lineStyle(2, intentColor);
     border.strokeRect(-W / 2, -H / 2, W, H);
     const descText = this.add.text(0, 0, move.desc, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#cccccc',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#cccccc',
       wordWrap: { width: W - 20 }, align: 'center'
     }).setOrigin(0.5);
     tip.add([bg, border, descText]);
@@ -1656,7 +1656,7 @@ export class CombatScene extends Phaser.Scene {
     border.strokeRect(-W / 2, -H / 2, W, H);
 
     const nameText = this.add.text(0, -H / 2 + 14, name, {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: col
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: col
     }).setOrigin(0.5);
 
     const sep = this.add.graphics();
@@ -1664,7 +1664,7 @@ export class CombatScene extends Phaser.Scene {
     sep.lineBetween(-W / 2 + 10, -H / 2 + 26, W / 2 - 10, -H / 2 + 26);
 
     const descText = this.add.text(0, -H / 2 + 44, desc, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#cccccc',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#cccccc',
       wordWrap: { width: W - 20 }, align: 'center'
     }).setOrigin(0.5, 0);
 
@@ -1691,7 +1691,7 @@ export class CombatScene extends Phaser.Scene {
     this.gs.endRun();
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 480, 90, 0x000000, 0.85).setDepth(20);
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'YOU DIED  😿', {
-      fontFamily: '"Press Start 2P"', fontSize: '30px', color: '#e94560'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_DISPLAY, color: '#e94560'
     }).setOrigin(0.5).setDepth(21);
     this.time.delayedCall(2000, () => this.scene.start('RunSummaryScene', { won: false }));
   }

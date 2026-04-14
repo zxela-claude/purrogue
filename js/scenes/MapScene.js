@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, NODE_TYPES, PERSONALITY, PERSONALITY_THRESHOLD, FERAL_WARNING_THRESHOLD } from '../constants.js';
+import { COLORS, FERAL_WARNING_THRESHOLD, FONT_2XL, FONT_3XL, FONT_LG, FONT_MD, FONT_MD2, FONT_MICRO, FONT_SM, FONT_SM2, FONT_TINY, FONT_TITLE, FONT_XL, FONT_XS, FONT_XXS, NODE_TYPES, PERSONALITY, PERSONALITY_THRESHOLD, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { MapGenerator } from '../MapGenerator.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { ALL_CARDS } from '../data/cards.js';
@@ -66,9 +66,9 @@ export class MapScene extends Phaser.Scene {
     }
 
     // Header — NAN-215: show biome name as act subtitle
-    this.add.text(20, 20, `ACT ${gs.act} — FLOOR ${gs.floor + 1}/7`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 });
-    this.add.text(20, 42, biome.headerSuffix, { fontFamily: '"Press Start 2P"', fontSize: '8px', color: `#${biome.accentColor.toString(16).padStart(6, '0')}`, stroke: '#000000', strokeThickness: 1 });
-    this.add.text(SCREEN_WIDTH - 20, 20, `❤️ ${gs.hp}/${gs.maxHp}  💰 ${gs.gold}`, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(1, 0);
+    this.add.text(20, 20, `ACT ${gs.act} — FLOOR ${gs.floor + 1}/7`, { fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#f0ead6', stroke: '#000000', strokeThickness: 1 });
+    this.add.text(20, 42, biome.headerSuffix, { fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: `#${biome.accentColor.toString(16).padStart(6, '0')}`, stroke: '#000000', strokeThickness: 1 });
+    this.add.text(SCREEN_WIDTH - 20, 20, `❤️ ${gs.hp}/${gs.maxHp}  💰 ${gs.gold}`, { fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#f0ead6', stroke: '#000000', strokeThickness: 1 }).setOrigin(1, 0);
 
     // NAN-126: Floor pip progress indicator
     this._addFloorPips(gs);
@@ -90,7 +90,7 @@ export class MapScene extends Phaser.Scene {
     }
 
     // Settings gear (top-left below act label)
-    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
+    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: FONT_TITLE, color: '#444444' })
       .setOrigin(0, 1).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#aaaaaa'); })
       .on('pointerout',  function() { this.setColor('#444444'); })
@@ -100,7 +100,7 @@ export class MapScene extends Phaser.Scene {
 
     // Help button (bottom-left, next to gear)
     const helpBtn = this.add.text(56, SCREEN_HEIGHT - 20, '[?]', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#444466'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#444466'
     }).setOrigin(0, 1).setInteractive({ useHandCursor: true });
     helpBtn.on('pointerover', function() { this.setColor('#aaaacc'); });
     helpBtn.on('pointerout',  function() { this.setColor('#444466'); });
@@ -117,7 +117,7 @@ export class MapScene extends Phaser.Scene {
     // Shared tooltip objects (reused across all node hovers)
     const tipBg   = this.add.rectangle(0, 0, 120, 28, 0x111122, 0.9).setDepth(20).setVisible(false);
     const tipText = this.add.text(0, 0, '', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#f0ead6'
     }).setOrigin(0.5).setDepth(21).setVisible(false);
 
     const showTip = (x, y, label) => {
@@ -197,13 +197,13 @@ export class MapScene extends Phaser.Scene {
       if (i >= 5) return;
       const y = SCREEN_HEIGHT - 60 - fi * ((SCREEN_HEIGHT - 120) / floors.length);
       this.add.text(x, y - 44, `[${i+1}]`, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#ffd700'
       }).setOrigin(0.5).setDepth(5);
     });
 
     // Deck viewer button (backed by a 200×44 hit zone for mobile)
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 20, '[ VIEW DECK ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#aaaaaa'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#aaaaaa'
     }).setOrigin(0.5);
     this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT - 20, 200, 44, 0xffffff, 0)
       .setInteractive({ useHandCursor: true })
@@ -256,7 +256,7 @@ export class MapScene extends Phaser.Scene {
     border.strokeRect(W/2 - 210, H/2 - 180, 420, 360);
 
     this.add.text(W/2, H/2 - 148, '🛏 REST SITE', {
-      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#f0ead6'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_3XL, color: '#f0ead6'
     }).setOrigin(0.5).setDepth(11);
 
     const healAmt = 8 + (gs.relics.includes('cat_nap') ? 8 : 0);
@@ -269,7 +269,7 @@ export class MapScene extends Phaser.Scene {
       : `REST — Heal ${healAmt} HP`;
     const restColor = noHealing ? '#4fc3f7' : (canHeal ? '#4caf50' : '#555555');
     this.add.text(W/2, H/2 - 80, restLabel, {
-      fontFamily: '"Press Start 2P"', fontSize: '14px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG,
       color: restColor
     }).setOrigin(0.5).setDepth(11)
       .setInteractive({ useHandCursor: noHealing || canHeal })
@@ -285,11 +285,11 @@ export class MapScene extends Phaser.Scene {
       });
     if (noHealing) {
       this.add.text(W/2, H/2 - 58, '✕ HEAL BLOCKED by daily modifier', {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#e94560'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#e94560'
       }).setOrigin(0.5).setDepth(11);
     } else if (!canHeal) {
       this.add.text(W/2, H/2 - 58, '🔥 Feral — healing blocked', {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#e67e22'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#e67e22'
       }).setOrigin(0.5).setDepth(11);
     }
 
@@ -297,7 +297,7 @@ export class MapScene extends Phaser.Scene {
     const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
     const hasUpgradeable = upgradeable.length > 0;
     this.add.text(W/2, H/2 - 20, 'SMITH — Upgrade a card', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG,
       color: hasUpgradeable ? '#ffd700' : '#555555'
     }).setOrigin(0.5).setDepth(11)
       .setInteractive({ useHandCursor: hasUpgradeable })
@@ -310,7 +310,7 @@ export class MapScene extends Phaser.Scene {
     // Option 3: Reflect (remove a card)
     const removable = gs.deck.length > 1; // keep at least 1 card
     this.add.text(W/2, H/2 + 40, 'REFLECT — Remove a card', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG,
       color: removable ? '#e94560' : '#555555'
     }).setOrigin(0.5).setDepth(11)
       .setInteractive({ useHandCursor: removable })
@@ -322,7 +322,7 @@ export class MapScene extends Phaser.Scene {
 
     // Cancel
     this.add.text(W/2, H/2 + 130, '[ LEAVE ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#aaaaaa'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#aaaaaa'
     }).setOrigin(0.5).setDepth(11)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start('MapScene'));
@@ -345,7 +345,7 @@ export class MapScene extends Phaser.Scene {
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
     group.add(bg);
     const title = this.add.text(SCREEN_WIDTH/2, 80, 'REFLECT — Choose a card to remove', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#e94560'
     }).setOrigin(0.5).setDepth(21);
     group.add(title);
 
@@ -364,10 +364,10 @@ export class MapScene extends Phaser.Scene {
       const contextLine = effectDesc ? `${costTypeLabel} · ${effectDesc}` : costTypeLabel;
 
       const btn = this.add.text(x, y - 6, `✕ ${card.name}${isUpgraded ? '+' : ''}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '12px', color: nameColor
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: nameColor
       }).setDepth(21).setInteractive({ useHandCursor: true });
       const ctxText = this.add.text(x, y + 10, contextLine, {
-        fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#7799cc'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#7799cc'
       }).setDepth(21);
       btn.on('pointerover', function() { this.setColor('#e94560'); });
       btn.on('pointerout', function() { this.setColor(nameColor); });
@@ -381,7 +381,7 @@ export class MapScene extends Phaser.Scene {
     });
 
     const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#aaaaaa'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#aaaaaa'
     }).setOrigin(0.5).setDepth(21)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => { group.destroy(true); this.scene.start(returnScene); });
@@ -424,12 +424,12 @@ export class MapScene extends Phaser.Scene {
     group.add(border);
 
     const title = this.add.text(panelX, panelY - panelH / 2 + 22, `FULL DECK — ${gs.deck.length} cards`, {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#4fc3f7'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#4fc3f7'
     }).setOrigin(0.5).setDepth(22);
     group.add(title);
 
     const sub = this.add.text(panelX, panelY - panelH / 2 + 44, '[ESC] or click outside to close', {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#666666'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#666666'
     }).setOrigin(0.5).setDepth(22);
     group.add(sub);
 
@@ -458,7 +458,7 @@ export class MapScene extends Phaser.Scene {
       group.add(pip);
 
       const nameText = this.add.text(cx + 18, cy + 4, card.name + (isUpgraded ? '+' : ''), {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: isUpgraded ? '#ffd700' : '#f0ead6'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: isUpgraded ? '#ffd700' : '#f0ead6'
       }).setDepth(22);
       group.add(nameText);
 
@@ -470,7 +470,7 @@ export class MapScene extends Phaser.Scene {
       if (blockEffect) statParts.push(`BLK:${blockEffect.value}`);
 
       const statText = this.add.text(cx + 18, cy + 18, statParts.join('  '), {
-        fontFamily: '"Press Start 2P"', fontSize: '7px', color: typeCol
+        fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: typeCol
       }).setDepth(22);
       group.add(statText);
 
@@ -483,7 +483,7 @@ export class MapScene extends Phaser.Scene {
     });
 
     const closeBtn = this.add.text(panelX, panelY + panelH / 2 - 16, '[ CLOSE ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#e94560'
     }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
     closeBtn.on('pointerdown', () => { group.destroy(true); escKey.removeAllListeners(); });
     group.add(closeBtn);
@@ -540,7 +540,7 @@ export class MapScene extends Phaser.Scene {
 
     // Cost (top-left)
     container.add(this.add.text(-CW/2 + 7, -CH/2 + 6, `${card.cost}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#ffd700'
     }));
 
     // Card art
@@ -559,19 +559,19 @@ export class MapScene extends Phaser.Scene {
 
     // Card name
     container.add(this.add.text(0, -70, card.name, {
-      fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#f0ead6',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#f0ead6',
       wordWrap: { width: 110 }, align: 'center'
     }).setOrigin(0.5));
 
     // Description
     container.add(this.add.text(0, 52, card.description, {
-      fontFamily: '"Press Start 2P"', fontSize: '6px', color: tinted ? '#aaffbb' : '#aaaaaa',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MICRO, color: tinted ? '#aaffbb' : '#aaaaaa',
       wordWrap: { width: 114 }, align: 'center'
     }).setOrigin(0.5));
 
     // Rarity label (bottom-left)
     container.add(this.add.text(-CW/2 + 4, CH/2 - 14, card.rarity ? card.rarity[0].toUpperCase() : '', {
-      fontFamily: '"Press Start 2P"', fontSize: '7px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY,
       color: `#${rarityColor.toString(16).padStart(6, '0')}`
     }));
 
@@ -603,7 +603,7 @@ export class MapScene extends Phaser.Scene {
     group.add(border);
 
     const title = this.add.text(SCREEN_WIDTH/2, 58, '⚒  SMITH', {
-      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_3XL, color: '#ffd700'
     }).setOrigin(0.5).setDepth(21);
     group.add(title);
 
@@ -616,14 +616,14 @@ export class MapScene extends Phaser.Scene {
 
     if (upgradeable.length === 0) {
       const t = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'No cards to upgrade!', {
-        fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#aaaaaa'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#aaaaaa'
       }).setOrigin(0.5).setDepth(21);
       group.add(t);
     } else {
       // ── Left panel: card list ─────────────────────────────────────────────
       const listX = 200;
       group.add(this.add.text(listX, 100, 'Choose a card:', {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#aaaaaa'
       }).setOrigin(0.5).setDepth(21));
 
       // ── Right panel: before/after preview ────────────────────────────────
@@ -633,23 +633,23 @@ export class MapScene extends Phaser.Scene {
       const afterX  = SCREEN_WIDTH - 180;
 
       const beforeLabel = this.add.text(beforeX, previewLabelY, 'BEFORE', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#888888'
       }).setOrigin(0.5).setDepth(21).setAlpha(0);
       group.add(beforeLabel);
 
       const afterLabel = this.add.text(afterX, previewLabelY, 'AFTER', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#44ff88'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#44ff88'
       }).setOrigin(0.5).setDepth(21).setAlpha(0);
       group.add(afterLabel);
 
       const arrowLabel = this.add.text((beforeX + afterX)/2, previewY, '→', {
-        fontFamily: '"Press Start 2P"', fontSize: '22px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_TITLE, color: '#ffd700'
       }).setOrigin(0.5).setDepth(21).setAlpha(0);
       group.add(arrowLabel);
 
       // Upgrade button (shown when a card is selected)
       const upgradeBtn = this.add.text(afterX, previewY + 120, '[ UPGRADE ]', {
-        fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#ffd700'
       }).setOrigin(0.5).setDepth(22).setAlpha(0);
       group.add(upgradeBtn);
 
@@ -707,15 +707,15 @@ export class MapScene extends Phaser.Scene {
 
         const rowBg = this.add.rectangle(listX, y, 300, 42, 0x000000, 0).setDepth(21).setInteractive({ useHandCursor: true });
         const btn = this.add.text(listX + 10, y - 8, `► ${card.name}`, {
-          fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#f0ead6'
         }).setOrigin(0, 0.5).setDepth(22);
 
         const effectHint = this.add.text(listX + 10, y + 10, effectLine, {
-          fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#7799cc'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#7799cc'
         }).setOrigin(0, 0.5).setDepth(22);
 
         const rarityDot = this.add.text(listX - 120, y, '●', {
-          fontFamily: '"Press Start 2P"', fontSize: '10px',
+          fontFamily: '"Press Start 2P"', fontSize: FONT_SM,
           color: card.rarity === 'rare' ? '#ffd700' : card.rarity === 'uncommon' ? '#22cc77' : '#888888'
         }).setOrigin(0.5).setDepth(22);
 
@@ -752,7 +752,7 @@ export class MapScene extends Phaser.Scene {
     }
 
     const cancelBtn = this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 42, '[ CANCEL ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#e94560'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#e94560'
     }).setOrigin(0.5).setDepth(21)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => { destroyPreviews(); group.destroy(true); this.scene.start('MapScene'); });
@@ -781,7 +781,7 @@ export class MapScene extends Phaser.Scene {
         // Star for boss floor
         const starColor = isCurrent ? '#ffd700' : (isCompleted ? '#666666' : '#444444');
         this.add.text(px, pipY, '★', {
-          fontSize: '14px', color: starColor
+          fontSize: FONT_LG, color: starColor
         }).setOrigin(0.5).setStroke('#000000', 2);
       } else {
         // Pip circle
@@ -797,7 +797,7 @@ export class MapScene extends Phaser.Scene {
           gfx.lineStyle(1, 0x888888, 0.6);
           gfx.strokeCircle(px, pipY, PIP_R);
           this.add.text(px, pipY, '✓', {
-            fontSize: '8px', color: '#888888'
+            fontSize: FONT_XXS, color: '#888888'
           }).setOrigin(0.5);
         } else {
           gfx.fillStyle(0x222233, 1.0);
@@ -811,7 +811,7 @@ export class MapScene extends Phaser.Scene {
     // NAN-126: Boss warning — pulsing red text when floor === 5 (one before boss)
     if (gs.floor === 5) {
       const warning = this.add.text(SCREEN_WIDTH / 2, 68, '⚠ BOSS NEXT', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#e94560',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#e94560',
         stroke: '#000000', strokeThickness: 2
       }).setOrigin(0.5);
       this.tweens.add({
@@ -854,7 +854,7 @@ export class MapScene extends Phaser.Scene {
       const moodName = MOOD_LABELS[p.mood] || p.mood;
 
       this.add.text(cx - BAR_W / 2 - 4, 20, moodName, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: col,
         stroke: '#000000', strokeThickness: 1
       }).setOrigin(1, 0);
 
@@ -867,7 +867,7 @@ export class MapScene extends Phaser.Scene {
       gfx.fillRect(cx - BAR_W / 2, BAR_Y, BAR_W, BAR_H);
 
       this.add.text(cx + BAR_W / 2 + 4, 20, 'LOCKED', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: col,
         stroke: '#000000', strokeThickness: 1
       }).setOrigin(0, 0);
     } else {
@@ -886,7 +886,7 @@ export class MapScene extends Phaser.Scene {
       const moodName = MOOD_LABELS[dominant.key] || dominant.key;
 
       this.add.text(cx - BAR_W / 2 - 4, 20, moodName, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: col,
         stroke: '#000000', strokeThickness: 1
       }).setOrigin(1, 0);
 
@@ -901,7 +901,7 @@ export class MapScene extends Phaser.Scene {
       }
 
       this.add.text(cx + BAR_W / 2 + 4, 20, `${count}/${threshold}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: col,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: col,
         stroke: '#000000', strokeThickness: 1
       }).setOrigin(0, 0);
     }
@@ -913,7 +913,7 @@ export class MapScene extends Phaser.Scene {
 
     const btnText = `🎒 Relics (${gs.relics.length})`;
     const btn = this.add.text(SCREEN_WIDTH - 20, SCREEN_HEIGHT - 20, btnText, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#aaaaaa',
       stroke: '#000000', strokeThickness: 1
     }).setOrigin(1, 1).setDepth(8).setInteractive({ useHandCursor: true });
 
@@ -961,14 +961,14 @@ export class MapScene extends Phaser.Scene {
       panelGroup.add(border);
 
       const title = this.add.text(PANEL_X + PANEL_W / 2, PANEL_Y + 10, 'RELICS', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#ffd700',
         stroke: '#000000', strokeThickness: 1
       }).setOrigin(0.5, 0).setDepth(11);
       panelGroup.add(title);
 
       if (gs.relics.length === 0) {
         const none = this.add.text(PANEL_X + 8, PANEL_Y + 30, 'None yet', {
-          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#555555'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#555555'
         }).setDepth(11);
         panelGroup.add(none);
         return;
@@ -987,7 +987,7 @@ export class MapScene extends Phaser.Scene {
         panelGroup.add(rowZone);
 
         const nameLabel = this.add.text(PANEL_X + 8, rowY + 4, name, {
-          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#f0ead6',
+          fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#f0ead6',
           stroke: '#000000', strokeThickness: 1
         }).setDepth(12);
         panelGroup.add(nameLabel);
@@ -997,7 +997,7 @@ export class MapScene extends Phaser.Scene {
           if (tooltipObj) { tooltipObj.destroy(); tooltipObj = null; }
           if (desc) {
             tooltipObj = this.add.text(PANEL_X + 8, rowY + ROW_H - 2, desc, {
-              fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#aaaaaa',
+              fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#aaaaaa',
               wordWrap: { width: PANEL_W - 16 }, lineSpacing: 2
             }).setDepth(13);
           }
@@ -1057,12 +1057,12 @@ export class MapScene extends Phaser.Scene {
 
     // Header
     this.add.text(pX, pY - pH / 2 + 11, '👻 GHOST RUN', {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#9966dd'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#9966dd'
     }).setOrigin(0.5).setDepth(6);
 
     // Ghost info line
     this.add.text(pX, pY - pH / 2 + 26, `${ghostEmoji}  ${ghost.score}pts  ${ghost.won ? '(WIN)' : `Act${ghost.act}`}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#888899'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#888899'
     }).setOrigin(0.5).setDepth(6);
 
     // Comparison line
@@ -1071,12 +1071,12 @@ export class MapScene extends Phaser.Scene {
       ? (ahead ? `▲ +${diff}pts ahead` : `▼ −${diff}pts behind`)
       : (playerScore > 0 ? `▲ past ghost` : `ghost was here`);
     this.add.text(pX, pY - pH / 2 + 43, compText, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: compColor
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: compColor
     }).setOrigin(0.5).setDepth(6);
 
     // Player score
     this.add.text(pX, pY - pH / 2 + 58, `You: ${playerScore}pts`, {
-      fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#cccccc'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#cccccc'
     }).setOrigin(0.5).setDepth(6);
   }
 
@@ -1090,17 +1090,17 @@ export class MapScene extends Phaser.Scene {
     border.strokeRect(W/2 - 260, H/2 - 160, 520, 320);
 
     this.add.text(W/2, H/2 - 120, '⚠️ GOING FERAL', {
-      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#e67e22'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_3XL, color: '#e67e22'
     }).setOrigin(0.5).setDepth(32);
 
     this.add.text(W/2, H/2 - 55, 'Your combat instincts are taking over.\nGoing FERAL doubles all damage,\nbut you can NEVER heal again.', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#f0ead6',
       align: 'center', lineSpacing: 8
     }).setOrigin(0.5).setDepth(32);
 
     // Accept
     const acceptBtn = this.add.text(W/2 - 90, H/2 + 60, '[ GO FERAL ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#e67e22'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#e67e22'
     }).setOrigin(0.5).setDepth(32).setInteractive({ useHandCursor: true });
 
     acceptBtn.on('pointerover', () => acceptBtn.setColor('#ff9944'));
@@ -1116,7 +1116,7 @@ export class MapScene extends Phaser.Scene {
 
     // Decline
     const declineBtn = this.add.text(W/2 + 90, H/2 + 60, '[ STAY CALM ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4fc3f7'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4fc3f7'
     }).setOrigin(0.5).setDepth(32).setInteractive({ useHandCursor: true });
 
     declineBtn.on('pointerover', () => declineBtn.setColor('#88ddff'));
@@ -1155,7 +1155,7 @@ export class MapScene extends Phaser.Scene {
     group.add(border);
 
     const titleText = this.add.text(panelX, panelY - panelH / 2 + 26, 'QUICK REFERENCE', {
-      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#4fc3f7',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_2XL, color: '#4fc3f7',
     }).setOrigin(0.5).setDepth(42);
     group.add(titleText);
 
@@ -1207,14 +1207,14 @@ export class MapScene extends Phaser.Scene {
 
     sections.forEach(sec => {
       const heading = this.add.text(leftX, curY, sec.heading, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: sec.color,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: sec.color,
       }).setDepth(42);
       group.add(heading);
       curY += headingH;
 
       sec.lines.forEach(line => {
         const t = this.add.text(leftX + 8, curY, line, {
-          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#c0b8a8',
+          fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#c0b8a8',
         }).setDepth(42);
         group.add(t);
         curY += lineH;
@@ -1225,7 +1225,7 @@ export class MapScene extends Phaser.Scene {
 
     // Close button
     const closeBtn = this.add.text(panelX, panelY + panelH / 2 - 22, '[ CLOSE ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#e94560',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#e94560',
     }).setOrigin(0.5).setDepth(42).setInteractive({ useHandCursor: true });
     closeBtn.on('pointerover', function() { this.setColor('#ff7799'); });
     closeBtn.on('pointerout',  function() { this.setColor('#e94560'); });
@@ -1249,7 +1249,7 @@ export class MapScene extends Phaser.Scene {
     borderGfx.lineStyle(1, color, 0.7);
     borderGfx.strokeRect(20, 662, W - 40, 36);
     const bannerTxt = this.add.text(W / 2, 680, `${icon}  Your cat feels ${label}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '9px', color: hexStr,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: hexStr,
     }).setOrigin(0.5).setDepth(51);
 
     this.time.delayedCall(4000, () => {

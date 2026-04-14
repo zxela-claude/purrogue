@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT } from '../constants.js';
+import { FONT_HEADER, FONT_LG, FONT_MD, FONT_MD2, FONT_SM, FONT_SM2, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { SoundManager } from '../SoundManager.js';
 import { MusicManager } from '../MusicManager.js';
 import { PurrSettings } from '../PurrSettings.js';
@@ -38,7 +38,7 @@ export class SettingsScene extends Phaser.Scene {
 
     // Title
     this.add.text(PANEL_X, PANEL_Y - 256, 'SETTINGS', {
-      fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#e94560',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#e94560',
     }).setOrigin(0.5);
 
     // Divider under title
@@ -57,7 +57,7 @@ export class SettingsScene extends Phaser.Scene {
     // Fullscreen button
     const isFs = !!document.fullscreenElement;
     this._fsLabel = this.add.text(PANEL_X, PANEL_Y - 50, this._fsText(isFs), {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#f0ead6',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#ffd700'); })
       .on('pointerout',  function() { this.setColor('#f0ead6'); })
@@ -72,7 +72,7 @@ export class SettingsScene extends Phaser.Scene {
 
     // Section label
     this.add.text(PANEL_X, PANEL_Y + 10, 'ACCESSIBILITY', {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#e94560',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#e94560',
     }).setOrigin(0.5);
 
     // 1) Colorblind Mode dropdown (cycle button)
@@ -107,7 +107,7 @@ export class SettingsScene extends Phaser.Scene {
 
     // Close button
     this.add.text(PANEL_X + PANEL_W / 2 - 20, PANEL_Y - PANEL_H / 2 + 16, '✕', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#888888',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#888888',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#e94560'); })
       .on('pointerout',  function() { this.setColor('#888888'); })
@@ -124,12 +124,12 @@ export class SettingsScene extends Phaser.Scene {
     const labelX = PANEL_X - PANEL_W / 2 + 24;
 
     this.add.text(labelX, rowY, label, {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#888888',
     }).setOrigin(0, 0.5);
 
     const btnX = labelX + 84;
     const btn = this.add.text(btnX, rowY, initialOn ? 'ON' : 'OFF', {
-      fontFamily: '"Press Start 2P"', fontSize: '11px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2,
       color: initialOn ? '#4caf50' : '#e94560',
     }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
 
@@ -179,7 +179,7 @@ export class SettingsScene extends Phaser.Scene {
   _makeAccessibilityLabel(rowY, label) {
     const labelX = PANEL_X - PANEL_W / 2 + 24;
     this.add.text(labelX, rowY, label, {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#888888',
     }).setOrigin(0, 0.5);
   }
 
@@ -192,7 +192,7 @@ export class SettingsScene extends Phaser.Scene {
     let idx = initialIndex;
 
     const btn = this.add.text(btnX, rowY, `[ ${options[idx]} ]`, {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#f0ead6',
     }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
 
     btn.on('pointerover', function() { this.setColor('#ffd700'); });
@@ -215,7 +215,7 @@ export class SettingsScene extends Phaser.Scene {
     let on = initialOn;
 
     const btn = this.add.text(btnX, rowY, on ? 'ON' : 'OFF', {
-      fontFamily: '"Press Start 2P"', fontSize: '11px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2,
       color: on ? '#4caf50' : '#e94560',
     }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
 
@@ -248,7 +248,7 @@ export class SettingsScene extends Phaser.Scene {
     presets.forEach((p, i) => {
       const isActive = Math.abs(p.value - initialScale) < 0.01;
       const btn = this.add.text(startX + i * spacing, rowY, p.label, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM,
         color: isActive ? '#ffd700' : '#f0ead6',
       }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
 

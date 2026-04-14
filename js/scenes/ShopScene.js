@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
+import { COLORS, FONT_HEADER, FONT_LG, FONT_MD, FONT_MD2, FONT_SM, FONT_SM2, FONT_TINY, FONT_TITLE, FONT_XS, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { RELICS } from '../data/relics.js';
 import { ALL_CARDS } from '../data/cards.js';
 import { PurrSettings } from '../PurrSettings.js';
@@ -19,8 +19,8 @@ export class ShopScene extends Phaser.Scene {
       this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
     }
 
-    this.add.text(SCREEN_WIDTH/2, 30, '🛒 SHOP', { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffd700' }).setOrigin(0.5);
-    this.add.text(SCREEN_WIDTH/2, 58, `💰 ${gs.gold} gold`, { fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, 30, '🛒 SHOP', { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#ffd700' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, 58, `💰 ${gs.gold} gold`, { fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#f0ead6' }).setOrigin(0.5);
 
     // Preserve shop inventory across restarts so buying one item doesn't re-roll the others
     const noGold = gs.isDaily && gs.dailyModifier && gs.dailyModifier.id === 'no_gold';
@@ -36,7 +36,7 @@ export class ShopScene extends Phaser.Scene {
     const shopRelics = gs.shopInventory.relics;
 
     // ── Cards section ─────────────────────────────────────────────
-    this.add.text(SCREEN_WIDTH/2, 90, '— CARDS —', { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555577' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, 90, '— CARDS —', { fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#555577' }).setOrigin(0.5);
 
     const displayCount = Math.max(1, shopCards.length);
     const cardSpacing = Math.min(260, Math.floor((SCREEN_WIDTH - 120) / displayCount));
@@ -50,7 +50,7 @@ export class ShopScene extends Phaser.Scene {
       const canAfford = noGold || gs.gold >= price;
       this._buildShopCard(x, cardCenterY, card, i, price, canAfford, gs, noGold);
       this.add.text(x, cardCenterY - CARD_H/2 - 14, `[${i+1}]`, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#ffd700'
       }).setOrigin(0.5);
     });
 
@@ -58,15 +58,15 @@ export class ShopScene extends Phaser.Scene {
     const bareMetal = gs.hasModifier && gs.hasModifier('bare_metal');
     const relicSectionY = cardCenterY + CARD_H / 2 + 58;
 
-    this.add.text(SCREEN_WIDTH/2, relicSectionY - 24, '— RELICS —', { fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555577' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, relicSectionY - 24, '— RELICS —', { fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#555577' }).setOrigin(0.5);
 
     if (bareMetal) {
       this.add.text(SCREEN_WIDTH / 2, relicSectionY + 28, '🪨 Bare Metal — no relics available', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555555'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#555555'
       }).setOrigin(0.5);
     } else if (shopRelics.length === 0) {
       this.add.text(SCREEN_WIDTH / 2, relicSectionY + 28, 'All relics collected', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#555555'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#555555'
       }).setOrigin(0.5);
     } else {
       const relicCount = shopRelics.length;
@@ -90,15 +90,15 @@ export class ShopScene extends Phaser.Scene {
         }
         const textOffsetX = this.textures.exists(iconKey) ? 16 : 0;
         this.add.text(x + textOffsetX, relicSectionY + 4, relic.name, {
-          fontFamily: '"Press Start 2P"', fontSize: '12px', color: canAfford ? '#ffd700' : '#666666',
+          fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: canAfford ? '#ffd700' : '#666666',
           wordWrap: { width: 220 }, align: 'center'
         }).setOrigin(0.5);
         this.add.text(x + textOffsetX, relicSectionY + 26, relic.desc, {
-          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#aaaaaa',
+          fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#aaaaaa',
           wordWrap: { width: 220 }, align: 'center'
         }).setOrigin(0.5);
         this.add.text(x, relicSectionY + 56, `💰 ${price}g`, {
-          fontFamily: '"Press Start 2P"', fontSize: '12px', color: canAfford ? '#ffd700' : '#666666'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: canAfford ? '#ffd700' : '#666666'
         }).setOrigin(0.5);
 
         if (canAfford) {
@@ -123,12 +123,12 @@ export class ShopScene extends Phaser.Scene {
     const removalY = relicSectionY + 118;
 
     this.add.text(SCREEN_WIDTH/2, removalY, '━━━━━━━━━━━━━━━━━━━━━', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#333355'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#333355'
     }).setOrigin(0.5);
 
     const removeLabel = this.add.text(SCREEN_WIDTH/2, removalY + 28,
       `REMOVE A CARD — 💰 ${removalCost}g`,
-      { fontFamily: '"Press Start 2P"', fontSize: '13px', color: canRemove ? '#e94560' : '#555555' }
+      { fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: canRemove ? '#e94560' : '#555555' }
     ).setOrigin(0.5);
 
     if (canRemove) {
@@ -139,14 +139,14 @@ export class ShopScene extends Phaser.Scene {
     }
 
     this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 28, '[ LEAVE SHOP ] (ESC)', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#e94560'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
       gs.shopInventory = null;
       this.scene.start('MapScene');
     });
 
     // Settings gear button (NAN-245: accessible from shop)
-    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: '22px', color: '#444444' })
+    this.add.text(20, SCREEN_HEIGHT - 20, '⚙', { fontSize: FONT_TITLE, color: '#444444' })
       .setOrigin(0, 1).setDepth(10).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#aaaaaa'); })
       .on('pointerout',  function() { this.setColor('#444444'); })
@@ -213,7 +213,7 @@ export class ShopScene extends Phaser.Scene {
 
     // Cost (top-left)
     container.add(this.add.text(-CARD_W/2 + 8, -CARD_H/2 + 6, `${card.cost}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: canAfford ? '#ffd700' : '#444444'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: canAfford ? '#ffd700' : '#444444'
     }));
 
     // Card art (center zone)
@@ -228,27 +228,27 @@ export class ShopScene extends Phaser.Scene {
 
     // Card name
     container.add(this.add.text(0, -63, card.name, {
-      fontFamily: '"Press Start 2P"', fontSize: '7px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY,
       color: canAfford ? '#f0ead6' : '#555566',
       wordWrap: { width: 100 }, align: 'center'
     }).setOrigin(0.5));
 
     // Rarity initial (bottom-left)
     container.add(this.add.text(-CARD_W/2 + 4, CARD_H/2 - 14, card.rarity ? card.rarity[0].toUpperCase() : '', {
-      fontFamily: '"Press Start 2P"', fontSize: '7px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY,
       color: canAfford ? `#${rarityColor.toString(16).padStart(6, '0')}` : '#333333'
     }));
 
     // Description
     container.add(this.add.text(0, 38, card.description, {
-      fontFamily: '"Press Start 2P"', fontSize: '7px',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY,
       color: canAfford ? '#aaaaaa' : '#444444',
       wordWrap: { width: 104 }, align: 'center'
     }).setOrigin(0.5));
 
     // Price below card
     this.add.text(x, cy + CARD_H / 2 + 16, noGold ? 'FREE' : `💰 ${price}g`, {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: canAfford ? '#ffd700' : '#555555'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: canAfford ? '#ffd700' : '#555555'
     }).setOrigin(0.5);
 
     // Interactivity
@@ -295,7 +295,7 @@ export class ShopScene extends Phaser.Scene {
     const bg = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100, COLORS.PANEL).setDepth(20);
     group.add(bg);
     group.add(this.add.text(SCREEN_WIDTH/2, 80, `REMOVE A CARD — costs ${cost}g`, {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#e94560'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#e94560'
     }).setOrigin(0.5).setDepth(21));
 
     const removable = gs.deck.slice(0, gs.deck.length - 1);
@@ -305,7 +305,7 @@ export class ShopScene extends Phaser.Scene {
       const col = i % 4, row = Math.floor(i / 4);
       const x = 220 + col * 220, y = 160 + row * 46;
       const btn = this.add.text(x, y, `✕ ${card.name}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#f0ead6'
       }).setDepth(21).setInteractive({ useHandCursor: true });
       btn.on('pointerover', function() { this.setColor('#e94560'); });
       btn.on('pointerout', function() { this.setColor('#f0ead6'); });
@@ -320,7 +320,7 @@ export class ShopScene extends Phaser.Scene {
     });
 
     group.add(this.add.text(SCREEN_WIDTH/2, SCREEN_HEIGHT - 55, '[ CANCEL ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#aaaaaa'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#aaaaaa'
     }).setOrigin(0.5).setDepth(21)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => group.destroy(true)));

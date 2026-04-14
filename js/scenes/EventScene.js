@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
+import { COLORS, FONT_HEADER, FONT_LG, FONT_MD2, FONT_SM2, FONT_XL, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { RELICS } from '../data/relics.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { getBiome } from '../DungeonBuilding.js';
@@ -206,9 +206,9 @@ export class EventScene extends Phaser.Scene {
     } else {
       this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
     }
-    this.add.text(SCREEN_WIDTH/2, 100, '❓ EVENT', { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#4fc3f7' }).setOrigin(0.5);
-    this.add.text(SCREEN_WIDTH/2, 160, event.title, { fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#f0ead6' }).setOrigin(0.5);
-    this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#aaaaaa', wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, 100, '❓ EVENT', { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#4fc3f7' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, 160, event.title, { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#f0ead6' }).setOrigin(0.5);
+    this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#aaaaaa', wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
 
     const totalH = event.choices.length * 80;
     const choiceStartY = Math.max(300, (300 + 700) / 2 - totalH / 2);
@@ -219,7 +219,7 @@ export class EventScene extends Phaser.Scene {
       const btnColor = canAfford ? '#f0ead6' : '#666666';
       const keyHint = i < 5 ? `[${i+1}] ` : '';
       const btn = this.add.text(SCREEN_WIDTH/2, choiceStartY + i * choiceSpacing, `${keyHint}► ${choice.label}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '15px', color: btnColor,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: btnColor,
         wordWrap: { width: 700 }, align: 'center'
       }).setOrigin(0.5).setInteractive({ useHandCursor: canAfford });
 
@@ -273,17 +273,17 @@ export class EventScene extends Phaser.Scene {
 
     // Warning text
     this.add.text(boxX, boxY - 70, '⚠ Are you sure?', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#ffd700'
     }).setOrigin(0.5).setDepth(12);
 
     this.add.text(boxX, boxY - 10, choice.confirmText, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#f0ead6',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#f0ead6',
       wordWrap: { width: boxW - 60 }, align: 'center'
     }).setOrigin(0.5).setDepth(12);
 
     // Confirm button
     const confirmBtn = this.add.text(boxX - 120, boxY + 80, '✓ CONFIRM [Y]', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4caf50',
       backgroundColor: '#1a3a1a', padding: { x: 14, y: 8 }
     }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
 
@@ -299,7 +299,7 @@ export class EventScene extends Phaser.Scene {
 
     // Cancel button
     const cancelBtn = this.add.text(boxX + 120, boxY + 80, '✗ CANCEL [N/ESC]', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ef5350',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#ef5350',
       backgroundColor: '#3a1a1a', padding: { x: 14, y: 8 }
     }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
 
@@ -343,7 +343,7 @@ export class EventScene extends Phaser.Scene {
 
   _showGoldGainToast(message, callback) {
     const toast = this.add.text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 20, `💰 ${message}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffd700',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#ffd700',
       stroke: '#000000', strokeThickness: 3
     }).setOrigin(0.5).setDepth(20).setAlpha(0);
     this.tweens.add({ targets: toast, alpha: 1, y: SCREEN_HEIGHT / 2 - 60, duration: 300, onComplete: () => {
@@ -359,7 +359,7 @@ export class EventScene extends Phaser.Scene {
   _showGoldToast(message) {
     if (this._goldToast) return; // debounce
     const toast = this.add.text(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 80, `💰 ${message}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#ffd700',
       backgroundColor: '#1a1a2e', padding: { x: 14, y: 8 }
     }).setOrigin(0.5).setDepth(20).setAlpha(0);
     this._goldToast = toast;

@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
+import { COLORS, FONT_HEADER, FONT_MD, FONT_SM, FONT_SM2, FONT_XL, FONT_XS, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { ALL_CARDS } from '../data/cards.js';
 import { PurrSettings } from '../PurrSettings.js';
@@ -32,7 +32,7 @@ export class RewardScene extends Phaser.Scene {
 
     // Title
     this.add.text(W/2, 55, 'CHOOSE A CARD', {
-      fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffd700',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#ffd700',
       stroke: '#7a6000', strokeThickness: 3
     }).setOrigin(0.5);
 
@@ -44,7 +44,7 @@ export class RewardScene extends Phaser.Scene {
     const displayCount = choices.length;
     if (displayCount < count) {
       this.add.text(W / 2, 560, 'No more cards available', {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#888888'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#888888'
       }).setOrigin(0.5);
     }
 
@@ -64,7 +64,7 @@ export class RewardScene extends Phaser.Scene {
 
       // Key hint above card
       const keyLabel = this.add.text(0, -cardH/2 - 20, `[${i+1}]`, {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#ffd700'
       }).setOrigin(0.5);
       cardGroup.add(keyLabel);
 
@@ -87,20 +87,20 @@ export class RewardScene extends Phaser.Scene {
       const typeBanner = this.add.rectangle(0, -cardH/2 + 18, cardW, 36, typeColor, 0.25);
       cardGroup.add(typeBanner);
       const typeLabel = this.add.text(0, -cardH/2 + 18, card.type.toUpperCase(), {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: typeLabelColor
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: typeLabelColor
       }).setOrigin(0.5);
       cardGroup.add(typeLabel);
 
       // Card name
       const nameText = this.add.text(0, -cardH/2 + 54, card.name, {
-        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#f0ead6',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#f0ead6',
         wordWrap: { width: cardW - 20 }, align: 'center'
       }).setOrigin(0.5);
       cardGroup.add(nameText);
 
       // Cost
       const costText = this.add.text(0, -cardH/2 + 84, `Cost: ${card.cost} ⚡`, {
-        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#ffd700'
       }).setOrigin(0.5);
       cardGroup.add(costText);
 
@@ -121,7 +121,7 @@ export class RewardScene extends Phaser.Scene {
 
       // Description
       const descText = this.add.text(0, -cardH/2 + 185, card.description, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#aaaaaa',
         wordWrap: { width: cardW - 24 }, align: 'center'
       }).setOrigin(0.5);
       cardGroup.add(descText);
@@ -135,7 +135,7 @@ export class RewardScene extends Phaser.Scene {
           badgeBorder.lineStyle(1, 0x4caf50, 0.8);
           badgeBorder.strokeRect(-cardW/2 + 10, cardH/2 - 42, cardW - 20, 28);
           const badgeText = this.add.text(0, cardH/2 - 28, `✨ ${mood} upgrade ready`, {
-            fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#4caf50'
+            fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#4caf50'
           }).setOrigin(0.5);
           cardGroup.add(badge);
           cardGroup.add(badgeBorder);
@@ -166,7 +166,7 @@ export class RewardScene extends Phaser.Scene {
 
     // Skip
     this.add.text(W/2, H - 40, '[ SKIP ] (S)', {
-      fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#888888'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#888888'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#cccccc'); })
       .on('pointerout',  function() { this.setColor('#888888'); })

@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS } from '../constants.js';
+import { COLORS, FONT_HERO, FONT_MD, FONT_MD2, FONT_SM, FONT_SM2, FONT_XXS, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { RELICS } from '../data/relics.js';
 import { PurrSettings } from '../PurrSettings.js';
@@ -96,7 +96,7 @@ export class RunSummaryScene extends Phaser.Scene {
     const resultStr  = this.won ? '🎉  VICTORY!  🎉' : '😿  DEFEATED';
     const resultColor = this.won ? '#ffd700' : '#e94560';
     const title = this.add.text(W/2, 44, resultStr, {
-      fontFamily: '"Press Start 2P"', fontSize: '28px', color: resultColor,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_HERO, color: resultColor,
       stroke: '#000000', strokeThickness: 4
     }).setOrigin(0.5).setAlpha(0);
     this.tweens.add({ targets: title, alpha: 1, y: 38, duration: 500, ease: 'Back.easeOut' });
@@ -107,7 +107,7 @@ export class RunSummaryScene extends Phaser.Scene {
       : `RUN SUMMARY — ${ascLabel}`;
     const subTitleColor = (snap && snap.isDaily) ? '#00e5ff' : (snap && snap.ascension > 0) ? '#ffd700' : '#555577';
     const subTitle = this.add.text(W/2, 78, subTitleText, {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: subTitleColor
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: subTitleColor
     }).setOrigin(0.5).setAlpha(0);
     this.tweens.add({ targets: subTitle, alpha: 1, duration: 400, delay: 200 });
 
@@ -136,7 +136,7 @@ export class RunSummaryScene extends Phaser.Scene {
     // Panel header
     this.add.rectangle(leftX + leftW/2, panelTop + 18, leftW, 34, 0x1a1a3e);
     this.add.text(leftX + leftW/2, panelTop + 18, 'STATS', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4fc3f7'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#4fc3f7'
     }).setOrigin(0.5);
 
     const statRows = [
@@ -159,12 +159,12 @@ export class RunSummaryScene extends Phaser.Scene {
       const rowY = panelTop + 44 + i * 32;
       if (i % 2 === 1) this.add.rectangle(leftX + leftW/2, rowY, leftW - 4, 30, 0xffffff, 0.03);
       this.add.text(leftX + 14, rowY, row.label, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#777799'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#777799'
       }).setOrigin(0, 0.5);
       const valueColor = row.color || '#f0ead6';
       if (typeof row.value === 'number' && row.value > 0) {
         const vt = this.add.text(leftX + leftW - 14, rowY, '0', {
-          fontFamily: '"Press Start 2P"', fontSize: '10px', color: valueColor
+          fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: valueColor
         }).setOrigin(1, 0.5);
         this.tweens.addCounter({
           from: 0, to: row.value, duration: 800, delay: 300 + i * 70,
@@ -172,7 +172,7 @@ export class RunSummaryScene extends Phaser.Scene {
         });
       } else {
         this.add.text(leftX + leftW - 14, rowY, String(row.value), {
-          fontFamily: '"Press Start 2P"', fontSize: '10px', color: valueColor
+          fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: valueColor
         }).setOrigin(1, 0.5);
       }
     });
@@ -186,7 +186,7 @@ export class RunSummaryScene extends Phaser.Scene {
     this.add.rectangle(rightX + rightW/2, panelTop + 18, rightW, 34, 0x1a1a3e);
     const relicCount = snap.relics.length;
     this.add.text(rightX + rightW/2, panelTop + 18, `RELICS  (${relicCount})`, {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#ffd700'
     }).setOrigin(0.5);
 
     // Build relic lookup
@@ -195,7 +195,7 @@ export class RunSummaryScene extends Phaser.Scene {
 
     if (relicCount === 0) {
       this.add.text(rightX + rightW/2, panelTop + rightPanelH/2, 'No relics collected', {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#444466'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#444466'
       }).setOrigin(0.5);
     } else {
       snap.relics.forEach((rid, i) => {
@@ -205,11 +205,11 @@ export class RunSummaryScene extends Phaser.Scene {
         const rName = relic ? relic.name : rid;
         const rDesc = relic ? relic.desc : '';
         this.add.text(rightX + 14, rowY, rName, {
-          fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#ffd700'
         }).setOrigin(0, 0);
         if (rDesc) {
           this.add.text(rightX + 14, rowY + 18, rDesc, {
-            fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#888899',
+            fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#888899',
             wordWrap: { width: rightW - 28 }
           }).setOrigin(0, 0);
         }
@@ -254,7 +254,7 @@ export class RunSummaryScene extends Phaser.Scene {
     badges.forEach((b, i) => {
       const bx = startX + i * segW;
       this.add.text(bx, badgeY, `Act ${b.act} ${b.symbol}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: b.color,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: b.color,
         stroke: '#000000', strokeThickness: 1
       }).setOrigin(0.5);
     });
@@ -271,7 +271,7 @@ export class RunSummaryScene extends Phaser.Scene {
     border.lineStyle(2, 0x4caf50, 0.9);
     border.strokeRect(W/2 - btnW/2, btnY - btnH/2, btnW, btnH);
     const label = this.add.text(W/2, btnY, 'RETURN TO MENU', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4caf50'
     }).setOrigin(0.5);
 
     btn.on('pointerover', () => { btn.setFillStyle(0x0a3a0a); label.setColor('#6cd66c'); });
@@ -283,7 +283,7 @@ export class RunSummaryScene extends Phaser.Scene {
 
     // Hint text: also transitions automatically after 30s if player doesn't click
     this.add.text(W/2, H - 16, 'or wait — auto-returning in 30s', {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#333355'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#333355'
     }).setOrigin(0.5);
     this.time.delayedCall(30000, () => {
       this.registry.set('gameState', null);
@@ -304,7 +304,7 @@ export class RunSummaryScene extends Phaser.Scene {
     border.lineStyle(2, 0x4fc3f7, 0.8);
     border.strokeRect(btnX - btnW/2, btnY - btnH/2, btnW, btnH);
     const label = this.add.text(btnX, btnY, 'SHARE RUN', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4fc3f7'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#4fc3f7'
     }).setOrigin(0.5);
 
     btn.on('pointerover', () => { btn.setFillStyle(0x0a2a3a); label.setColor('#7fd8f8'); });
@@ -338,7 +338,7 @@ export class RunSummaryScene extends Phaser.Scene {
     this.add.graphics().setDepth(101).lineStyle(1, 0x4fc3f7).strokeRect(W/2 - boxW/2, H/2 - boxH/2, boxW, boxH);
 
     this.add.text(W/2, H/2 - boxH/2 + 18, 'Copy this text:', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4fc3f7'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#4fc3f7'
     }).setOrigin(0.5).setDepth(102);
 
     // Use a DOM textarea for the actual text selection
@@ -349,14 +349,14 @@ export class RunSummaryScene extends Phaser.Scene {
       color: '#f0ead6',
       border: '1px solid #4fc3f7',
       fontFamily: 'monospace',
-      fontSize: '11px',
+      fontSize: FONT_SM2,
       resize: 'none',
       padding: '6px',
     }, text).setDepth(102);
     if (ta.node) { ta.node.select(); }
 
     const closeBtn = this.add.text(W/2, H/2 + boxH/2 - 16, '[ CLOSE ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#aaaaaa'
     }).setOrigin(0.5).setDepth(102).setInteractive({ useHandCursor: true });
     closeBtn.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
     overlay.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
@@ -396,7 +396,7 @@ export class RunSummaryScene extends Phaser.Scene {
     this.add.graphics().lineStyle(1, Phaser.Display.Color.HexStringToColor(color).color, 0.5)
       .strokeRect(W / 2 - bannerW / 2, bannerY - 14, bannerW, 28);
     this.add.text(W / 2, bannerY, `🐱 ${msg}`, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color,
     }).setOrigin(0.5);
   }
 }

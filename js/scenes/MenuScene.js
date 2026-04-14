@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, HERO_CLASSES } from '../constants.js';
+import { COLORS, FONT_2XL, FONT_3XL, FONT_BANNER, FONT_LG, FONT_MD, FONT_MD2, FONT_MICRO, FONT_SM, FONT_SM2, FONT_TINY, FONT_XL, FONT_XS, FONT_XXS, HERO_CLASSES, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { GameState } from '../GameState.js';
 import { DeckCode } from '../DeckCode.js';
 import { MusicManager } from '../MusicManager.js';
@@ -47,7 +47,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     this.add.text(W/2, 178, 'A  Cat  Roguelike', {
-      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#f0ead6'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_2XL, color: '#f0ead6'
     }).setOrigin(0.5).setAlpha(0.7);
 
     // ── Continue run ─────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export class MenuScene extends Phaser.Scene {
 
     // ── Hero select label ─────────────────────────────────────────────────────
     this.add.text(W/2, 285, '— CHOOSE YOUR CAT —', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#888888'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#888888'
     }).setOrigin(0.5);
 
     // ── Hero cards ────────────────────────────────────────────────────────────
@@ -89,12 +89,12 @@ export class MenuScene extends Phaser.Scene {
     dailyBorder.lineStyle(2, 0x00e5ff, 0.85);
     dailyBorder.strokeRect(W/2 - dailyBtnW/2, dailyBtnY - dailyBtnH/2, dailyBtnW, dailyBtnH);
     this.add.text(W/2, dailyBtnY, '📅 DAILY CHALLENGE', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#00e5ff'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#00e5ff'
     }).setOrigin(0.5).setDepth(1);
 
     if (dailyBest) {
       this.add.text(W/2, dailyBtnY + dailyBtnH/2 + 10, `Best: ${dailyBest.score}pts  (${dailyBest.won ? 'WIN' : 'defeat'})`, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#00897b'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#00897b'
       }).setOrigin(0.5);
     }
 
@@ -108,7 +108,7 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(2);
     const startBtnBorder = this.add.graphics().setDepth(2);
     const startBtnText = this.add.text(W/2, startBtnY, '', {
-      fontFamily: '"Press Start 2P"', fontSize: '15px', color: '#4caf50'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#4caf50'
     }).setOrigin(0.5).setDepth(3).setAlpha(0);
     let selectedHeroKey = null;
     let selectedHeroData = null;
@@ -174,15 +174,15 @@ export class MenuScene extends Phaser.Scene {
       }
 
       this.add.text(x, cardY + 28, hero.name, {
-        fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#f0ead6'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#f0ead6'
       }).setOrigin(0.5);
 
       this.add.text(x, cardY + 54, HERO_FLAVOUR[key], {
-        fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#888888'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#888888'
       }).setOrigin(0.5);
 
       this.add.text(x, cardY + 80, `HP: ${hero.hp}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4caf50'
       }).setOrigin(0.5);
 
       card.on('pointerover', () => {
@@ -205,7 +205,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // ── Settings gear ─────────────────────────────────────────────────────────
-    this.add.text(24, H - 24, '⚙', { fontSize: '24px', color: '#444444' })
+    this.add.text(24, H - 24, '⚙', { fontSize: FONT_BANNER, color: '#444444' })
       .setOrigin(0, 1).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#aaaaaa'); })
       .on('pointerout',  function() { this.setColor('#444444'); })
@@ -215,7 +215,7 @@ export class MenuScene extends Phaser.Scene {
 
     // ── How to Play button ────────────────────────────────────────────────────
     this.add.text(W - 24, H - 24, '[ ? HOW TO PLAY ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#7777aa'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#7777aa'
     }).setOrigin(1, 1).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#8888cc'); })
       .on('pointerout',  function() { this.setColor('#7777aa'); })
@@ -225,7 +225,7 @@ export class MenuScene extends Phaser.Scene {
 
     // ── Import deck code ──────────────────────────────────────────────────────
     this.add.text(W/2, H - 52, '[ IMPORT DECK CODE ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#444444'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#444444'
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
       .on('pointerover', function() { this.setColor('#888888'); })
       .on('pointerout',  function() { this.setColor('#444444'); })
@@ -256,7 +256,7 @@ export class MenuScene extends Phaser.Scene {
 
     // "BEST RUNS" header
     this.add.text(panelX, panelTop + 10, 'BEST RUNS', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#ffd700'
     }).setOrigin(0.5);
 
     const tabsTop    = panelTop + 24;
@@ -284,7 +284,7 @@ export class MenuScene extends Phaser.Scene {
     TABS.forEach((t, ti) => {
       const tx  = panelX - panelW / 2 + ti * TAB_W + TAB_W / 2;
       const lbl = this.add.text(tx, tabsTop + TAB_H / 2, t, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#777799'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#777799'
       }).setOrigin(0.5);
       tabLabels[t] = lbl;
 
@@ -319,7 +319,7 @@ export class MenuScene extends Phaser.Scene {
 
       if (visible.length === 0) {
         const empty = this.add.text(panelX, contentTop + ROW_H / 2 + 4, 'No runs yet', {
-          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#555577'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#555577'
         }).setOrigin(0.5);
         rowContainer.push(empty);
         return;
@@ -339,11 +339,11 @@ export class MenuScene extends Phaser.Scene {
         const resultCol = s.won ? '#4caf50' : '#e94560';
 
         const rank = this.add.text(panelX - panelW / 2 + 8, rowY, `${i + 1}.`, {
-          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#555577'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#555577'
         }).setOrigin(0, 0.5);
 
         const heroTxt = this.add.text(panelX - panelW / 2 + 30, rowY, heroEmoji, {
-          fontSize: '13px'
+          fontSize: FONT_MD2
         }).setOrigin(0, 0.5);
 
         const dotGfx = this.add.graphics();
@@ -352,15 +352,15 @@ export class MenuScene extends Phaser.Scene {
 
         const heroLabel = this.add.text(panelX - panelW / 2 + 66, rowY,
           s.hero ? s.hero.slice(0, 3) : '???',
-          { fontFamily: '"Press Start 2P"', fontSize: '8px', color: resultCol }
+          { fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: resultCol }
         ).setOrigin(0, 0.5);
 
         const actLabel = this.add.text(panelX - panelW / 2 + 118, rowY, `Act${s.act}`, {
-          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#aaaaaa'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#aaaaaa'
         }).setOrigin(0, 0.5);
 
         const scoreTxt = this.add.text(panelX + panelW / 2 - 8, rowY, `${scoreVal}pts`, {
-          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#ffd700'
+          fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#ffd700'
         }).setOrigin(1, 0.5);
 
         rowContainer.push(rank, heroTxt, dotGfx, heroLabel, actLabel, scoreTxt);
@@ -381,23 +381,23 @@ export class MenuScene extends Phaser.Scene {
     const earned = meta.achievements || [];
     const achTop = contentTop + MAX_ROWS * ROW_H + 24;
     this.add.text(panelX, achTop, 'ACHIEVEMENTS', {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#888888'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#888888'
     }).setOrigin(0.5);
     // shared tooltip objects (created once, repositioned on hover)
     const tipBg = this.add.rectangle(0, 0, 160, 40, 0x111122, 0.95)
       .setStrokeStyle(1, 0x4444aa).setDepth(50).setVisible(false).setOrigin(0.5, 1);
     const tipLabel = this.add.text(0, 0, '', {
-      fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#ffffff', wordWrap: { width: 148 }
+      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#ffffff', wordWrap: { width: 148 }
     }).setDepth(51).setVisible(false).setOrigin(0.5, 1);
     const tipSub = this.add.text(0, 0, '', {
-      fontFamily: '"Press Start 2P"', fontSize: '6px', color: '#aaaacc', wordWrap: { width: 148 }
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MICRO, color: '#aaaacc', wordWrap: { width: 148 }
     }).setDepth(51).setVisible(false).setOrigin(0.5, 1);
 
     ACHIEVEMENT_DEFS.forEach((def, i) => {
       const ax = panelX - panelW / 2 + 14 + i * (panelW / ACHIEVEMENT_DEFS.length);
       const ay = achTop + 22;
       const unlocked = earned.includes(def.id);
-      const badge = this.add.text(ax, ay, def.emoji, { fontSize: '18px' })
+      const badge = this.add.text(ax, ay, def.emoji, { fontSize: FONT_3XL })
         .setOrigin(0, 0.5)
         .setAlpha(unlocked ? 1 : 0.2);
       badge.setInteractive({ useHandCursor: true });
@@ -474,24 +474,24 @@ export class MenuScene extends Phaser.Scene {
 
     // Header
     this.add.text(mX, mY - mH/2 + 28, '📅 DAILY CHALLENGE', {
-      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#00e5ff'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_2XL, color: '#00e5ff'
     }).setOrigin(0.5).setDepth(12);
 
     this.add.text(mX, mY - mH/2 + 60, dailySeed, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaacc'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#aaaacc'
     }).setOrigin(0.5).setDepth(12);
 
     // Modifier name
     this.add.text(mX, mY - 40, `Today's Modifier:`, {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#888888'
     }).setOrigin(0.5).setDepth(12);
 
     this.add.text(mX, mY - 12, dailyModifier.name, {
-      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_3XL, color: '#ffd700'
     }).setOrigin(0.5).setDepth(12);
 
     this.add.text(mX, mY + 24, dailyModifier.desc, {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#aaaaaa',
       wordWrap: { width: mW - 60 }, align: 'center'
     }).setOrigin(0.5).setDepth(12);
 
@@ -500,13 +500,13 @@ export class MenuScene extends Phaser.Scene {
     if (best) {
       this.add.text(mX, mY + 62,
         `Best today: ${best.score}pts  ${best.won ? '(WIN)' : '(defeat)'}  as ${best.hero}`,
-        { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#00897b' }
+        { fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#00897b' }
       ).setOrigin(0.5).setDepth(12);
       // NAN-175: Ghost run hint when a record exists with checkpoints
       if (best.checkpoints && best.checkpoints.length > 0) {
         this.add.text(mX, mY + 78,
           '👻 Ghost run active — race your best on the map!',
-          { fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#6644aa',
+          { fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#6644aa',
             wordWrap: { width: mW - 80 }, align: 'center' }
         ).setOrigin(0.5).setDepth(12);
       }
@@ -514,7 +514,7 @@ export class MenuScene extends Phaser.Scene {
 
     // Hero select label
     this.add.text(mX, mY + 90, 'Choose your hero to start:', {
-      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#555577'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#555577'
     }).setOrigin(0.5).setDepth(12);
 
     // Hero play buttons
@@ -528,7 +528,7 @@ export class MenuScene extends Phaser.Scene {
       btnBorder.lineStyle(2, hero.color, 0.8);
       btnBorder.strokeRect(bx - 64, by - 18, 128, 36);
       this.add.text(bx, by, `${hero.emoji} ${hero.name}`, {
-        fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#f0ead6'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#f0ead6'
       }).setOrigin(0.5).setDepth(13);
 
       btn.on('pointerover', () => btn.setFillStyle(0x1a1a3e));
@@ -568,7 +568,7 @@ export class MenuScene extends Phaser.Scene {
 
     // Close button
     const closeBtn = this.add.text(mX + mW/2 - 12, mY - mH/2 + 12, '✕', {
-      fontFamily: '"Press Start 2P"', fontSize: '14px', color: '#555577'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#555577'
     }).setOrigin(1, 0).setDepth(13).setInteractive({ useHandCursor: true });
     closeBtn.on('pointerover', () => closeBtn.setColor('#e94560'));
     closeBtn.on('pointerout',  () => closeBtn.setColor('#555577'));
@@ -596,12 +596,12 @@ export class MenuScene extends Phaser.Scene {
     border.strokeRect(mX - mW/2, mY - mH/2, mW, mH);
 
     this.add.text(mX, mY - mH/2 + 28, 'DIFFICULTY', {
-      fontFamily: '"Press Start 2P"', fontSize: '18px', color: '#ffd700',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_3XL, color: '#ffd700',
       stroke: '#000000', strokeThickness: 2
     }).setOrigin(0.5).setDepth(22);
 
     this.add.text(mX, mY - mH/2 + 54, 'Choose your ascension tier', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#888888'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#888888'
     }).setOrigin(0.5).setDepth(22);
 
     // Tier buttons: Normal + A1..A(unlocked) + locked remaining
@@ -642,7 +642,7 @@ export class MenuScene extends Phaser.Scene {
       const bx = startX + i * (btnW + gap);
       const bg = this.add.rectangle(bx, btnY, btnW, btnH, 0x1a1a2e).setDepth(22);
       const lbl = this.add.text(bx, btnY, t.label, {
-        fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#aaaaaa'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#aaaaaa'
       }).setOrigin(0.5).setDepth(23);
       const btnBorder = this.add.graphics().setDepth(22);
       btnBorder.lineStyle(1, 0x334466);
@@ -666,7 +666,7 @@ export class MenuScene extends Phaser.Scene {
     beginBorder.lineStyle(2, 0x4caf50, 0.9);
     beginBorder.strokeRect(mX - 100, beginY - 19, 200, 38);
     const beginLabel = this.add.text(mX, beginY, 'BEGIN RUN', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4caf50'
     }).setOrigin(0.5).setDepth(23);
     beginBg.on('pointerover', () => { beginBg.setFillStyle(0x0a3a0a); beginLabel.setColor('#6cd66c'); });
     beginBg.on('pointerout',  () => { beginBg.setFillStyle(0x0a2a0a); beginLabel.setColor('#4caf50'); });
@@ -732,7 +732,7 @@ export class MenuScene extends Phaser.Scene {
     border.strokeRect(mX - mW/2, mY - mH/2, mW, mH);
 
     this.add.text(mX, mY - mH/2 + 24, '✨ RUN BONUSES UNLOCKED', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#ffd700',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#ffd700',
     }).setOrigin(0.5).setDepth(DEPTH + 2);
 
     let selectedRelic = null;   // null = default (no starter relic)
@@ -746,7 +746,7 @@ export class MenuScene extends Phaser.Scene {
       const gfx = this.add.graphics().setDepth(DEPTH + 2);
       gfx.lineStyle(2, color, active ? 0.9 : 0.3).strokeRect(x - 100, y - 17, 200, 34);
       const txt = this.add.text(x, y, label, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: active ? '#c8e6c9' : '#666666'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: active ? '#c8e6c9' : '#666666'
       }).setOrigin(0.5).setDepth(DEPTH + 3);
       const setActive = (on, activeColor) => {
         bg.setFillStyle(on ? 0x1a2a00 : 0x0d0d1a);
@@ -762,7 +762,7 @@ export class MenuScene extends Phaser.Scene {
       const relicData  = RELICS.find(r => r.id === relicId);
       const relicLabel = relicData ? relicData.name.toUpperCase() : relicId.replace(/_/g,' ').toUpperCase();
       this.add.text(mX, contentY, 'STARTER RELIC', {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#888888'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#888888'
       }).setOrigin(0.5).setDepth(DEPTH + 2);
       contentY += 20;
 
@@ -787,7 +787,7 @@ export class MenuScene extends Phaser.Scene {
     if (hasUnlockedDeck) {
       const alt = HERO_ALT_DECKS[newGs.hero];
       this.add.text(mX, contentY, 'STARTER DECK', {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#888888'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#888888'
       }).setOrigin(0.5).setDepth(DEPTH + 2);
       contentY += 20;
 
@@ -806,7 +806,7 @@ export class MenuScene extends Phaser.Scene {
         stdBtn.setActive(false, 0x4caf50);
       });
       this.add.text(mX + 110, rowY + 22, alt.tip, {
-        fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#555577'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#555577'
       }).setOrigin(0.5).setDepth(DEPTH + 2);
       contentY += 56;
     }
@@ -817,7 +817,7 @@ export class MenuScene extends Phaser.Scene {
     const beginGfx = this.add.graphics().setDepth(DEPTH + 2);
     beginGfx.lineStyle(2, 0x4caf50, 0.9).strokeRect(mX - 110, btnY - 19, 220, 38);
     const beginTxt = this.add.text(mX, btnY, 'BEGIN RUN', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4caf50'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4caf50'
     }).setOrigin(0.5).setDepth(DEPTH + 3);
     beginBg.on('pointerover', () => { beginBg.setFillStyle(0x0a3a0a); beginTxt.setColor('#6cd66c'); });
     beginBg.on('pointerout',  () => { beginBg.setFillStyle(0x0a2a0a); beginTxt.setColor('#4caf50'); });
@@ -862,17 +862,17 @@ export class MenuScene extends Phaser.Scene {
     border.strokeRect(mX - mW/2, mY - mH/2, mW, mH);
 
     this.add.text(mX, mY - mH/2 + 26, 'MODIFIERS (optional)', {
-      fontFamily: '"Press Start 2P"', fontSize: '16px', color: '#ffd700',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_2XL, color: '#ffd700',
       stroke: '#000000', strokeThickness: 2
     }).setOrigin(0.5).setDepth(32);
 
     this.add.text(mX, mY - mH/2 + 50, 'Toggle to increase difficulty and score', {
-      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#666688'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#666688'
     }).setOrigin(0.5).setDepth(32);
 
     // Multiplier preview text
     const multText = this.add.text(mX, mY + 108, 'Score multiplier: ×1.0', {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: '#ffd700'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#ffd700'
     }).setOrigin(0.5).setDepth(32);
 
     const updateMult = () => {
@@ -900,7 +900,7 @@ export class MenuScene extends Phaser.Scene {
       btnBgs[mod.id] = bg;
 
       const label = this.add.text(bx - btnW/2 + 12, by, `${mod.emoji} ${mod.label}  —  ${mod.desc}  (×${mod.mult})`, {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#aaaaaa'
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#aaaaaa'
       }).setOrigin(0, 0.5).setDepth(33);
       btnLabels[mod.id] = label;
 
@@ -931,7 +931,7 @@ export class MenuScene extends Phaser.Scene {
     beginBorder.lineStyle(2, 0x4caf50, 0.9);
     beginBorder.strokeRect(mX - 190, beginY - 19, 200, 38);
     const beginLabel = this.add.text(mX - 90, beginY, 'BEGIN RUN', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4caf50'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#4caf50'
     }).setOrigin(0.5).setDepth(33);
     beginBg.on('pointerover', () => { beginBg.setFillStyle(0x0a3a0a); beginLabel.setColor('#6cd66c'); });
     beginBg.on('pointerout',  () => { beginBg.setFillStyle(0x0a2a0a); beginLabel.setColor('#4caf50'); });
@@ -948,7 +948,7 @@ export class MenuScene extends Phaser.Scene {
     skipBorder.lineStyle(2, 0x444466, 0.7);
     skipBorder.strokeRect(mX + 30, beginY - 19, 160, 38);
     const skipLabel = this.add.text(mX + 110, beginY, 'SKIP', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#666688'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#666688'
     }).setOrigin(0.5).setDepth(33);
     skipBg.on('pointerover', () => { skipBg.setFillStyle(0x1a1a2e); skipLabel.setColor('#aaaaaa'); });
     skipBg.on('pointerout',  () => { skipBg.setFillStyle(0x0d0d1a); skipLabel.setColor('#666688'); });
@@ -983,17 +983,17 @@ export class MenuScene extends Phaser.Scene {
 
     // Title
     container.add(this.add.text(boxX, boxY - 115, 'IMPORT DECK CODE', {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: '#4fc3f7'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4fc3f7'
     }).setOrigin(0.5));
 
     // Instruction
     container.add(this.add.text(boxX, boxY - 80, 'Paste your deck code below, then press IMPORT:', {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#aaaaaa'
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#aaaaaa'
     }).setOrigin(0.5));
 
     // Status / feedback text
     const statusText = this.add.text(boxX, boxY + 80, '', {
-      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ef5350',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#ef5350',
       wordWrap: { width: boxW - 40 }, align: 'center'
     }).setOrigin(0.5);
     container.add(statusText);
@@ -1035,7 +1035,7 @@ export class MenuScene extends Phaser.Scene {
 
     // IMPORT button
     const importBtn = this.add.text(boxX - 110, boxY + 115, '[ IMPORT ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4caf50',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#4caf50',
       backgroundColor: '#1a3a1a', padding: { x: 12, y: 7 }
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     importBtn.on('pointerover', function() { this.setColor('#a5d6a7'); });
@@ -1060,7 +1060,7 @@ export class MenuScene extends Phaser.Scene {
 
     // CANCEL button
     const cancelBtn = this.add.text(boxX + 110, boxY + 115, '[ CANCEL ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#ef5350',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#ef5350',
       backgroundColor: '#3a1a1a', padding: { x: 12, y: 7 }
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     cancelBtn.on('pointerover', function() { this.setColor('#ef9a9a'); });
@@ -1088,13 +1088,13 @@ export class MenuScene extends Phaser.Scene {
     // Header
     this.add.rectangle(panelX, panelTop + 18, panelW, 34, 0x1a1a3e);
     this.add.text(panelX, panelTop + 18, 'YOUR CAT', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#e94560',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#e94560',
     }).setOrigin(0.5);
 
     if (profile.totalRuns === 0) {
       // Empty state
       this.add.text(panelX, panelTop + panelH / 2, 'Play your first run\nto shape your cat', {
-        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#444466',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#444466',
         align: 'center', lineSpacing: 8,
       }).setOrigin(0.5);
       return;
@@ -1110,10 +1110,10 @@ export class MenuScene extends Phaser.Scene {
       : profile.dominant === 'cunning' ? profile.cunning : 0;
 
     this.add.text(panelX, panelTop + 58, moodName, {
-      fontFamily: '"Press Start 2P"', fontSize: '13px', color: moodColor,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: moodColor,
     }).setOrigin(0.5);
     this.add.text(panelX, panelTop + 80, `${domPct}%`, {
-      fontFamily: '"Press Start 2P"', fontSize: '11px', color: moodColor,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: moodColor,
     }).setOrigin(0.5);
 
     // Personality bars
@@ -1127,7 +1127,7 @@ export class MenuScene extends Phaser.Scene {
     barTraits.forEach((t, i) => {
       const rowY = panelTop + 108 + i * 34;
       this.add.text(barLeft, rowY, t.label, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#777799',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#777799',
       }).setOrigin(0, 0.5);
       // Track bg
       this.add.rectangle(barLeft + barMaxW / 2, rowY + 14, barMaxW, 10, 0x1a1a3e);
@@ -1135,7 +1135,7 @@ export class MenuScene extends Phaser.Scene {
       const fillW = Math.max(4, Math.round(barMaxW * t.pct / 100));
       this.add.rectangle(barLeft + fillW / 2, rowY + 14, fillW, 10, t.col, 0.85);
       this.add.text(barLeft + barMaxW + 4, rowY + 14, `${t.pct}%`, {
-        fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#888899',
+        fontFamily: '"Press Start 2P"', fontSize: FONT_TINY, color: '#888899',
       }).setOrigin(0, 0.5);
     });
 
@@ -1145,7 +1145,7 @@ export class MenuScene extends Phaser.Scene {
     const wins  = runs.filter(r => r.won).length;
     const winRate = runs.length > 0 ? Math.round(wins / runs.length * 100) : 0;
     this.add.text(panelX, panelTop + 218, `${profile.totalRuns} runs  ·  ${winRate}% win rate`, {
-      fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#555577',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#555577',
     }).setOrigin(0.5);
 
     // Streak
@@ -1153,7 +1153,7 @@ export class MenuScene extends Phaser.Scene {
       const streakStr = profile.winStreak >= 2 ? `🔥 ${profile.winStreak} win streak` : `💀 ${profile.lossStreak} loss streak`;
       const streakCol = profile.winStreak >= 2 ? '#ffd700' : '#e94560';
       this.add.text(panelX, panelTop + 240, streakStr, {
-        fontFamily: '"Press Start 2P"', fontSize: '8px', color: streakCol,
+        fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: streakCol,
       }).setOrigin(0.5);
     }
 
@@ -1163,7 +1163,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     this.add.graphics().lineStyle(1, 0x4fc3f7, 0.6).strokeRect(panelX - (panelW - 16) / 2, shareBtnY - 14, panelW - 16, 28);
     const shareLabel = this.add.text(panelX, shareBtnY, 'SHARE MY CAT', {
-      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#4fc3f7',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#4fc3f7',
     }).setOrigin(0.5);
     shareBg.on('pointerover', () => { shareBg.setFillStyle(0x0a2a3a); shareLabel.setColor('#7fd8f8'); });
     shareBg.on('pointerout',  () => { shareBg.setFillStyle(0x0a1a2a); shareLabel.setColor('#4fc3f7'); });
@@ -1201,18 +1201,18 @@ export class MenuScene extends Phaser.Scene {
     this.add.rectangle(W / 2, H / 2, boxW, boxH, 0x0d0d1a, 1).setDepth(101);
     this.add.graphics().setDepth(101).lineStyle(1, 0x4fc3f7).strokeRect(W / 2 - boxW / 2, H / 2 - boxH / 2, boxW, boxH);
     this.add.text(W / 2, H / 2 - boxH / 2 + 18, 'Share your cat:', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#4fc3f7',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#4fc3f7',
     }).setOrigin(0.5).setDepth(102);
 
     const ta = this.add.dom(W / 2, H / 2 + 16, 'textarea', {
       width: (boxW - 32) + 'px', height: '90px',
       background: '#0d1a2a', color: '#f0ead6', border: '1px solid #4fc3f7',
-      fontFamily: 'monospace', fontSize: '12px', resize: 'none', padding: '6px',
+      fontFamily: 'monospace', fontSize: FONT_MD, resize: 'none', padding: '6px',
     }, shareText).setDepth(102);
     if (ta.node) ta.node.select();
 
     const closeBtn = this.add.text(W / 2, H / 2 + boxH / 2 - 16, '[ CLOSE ]', {
-      fontFamily: '"Press Start 2P"', fontSize: '10px', color: '#aaaaaa',
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#aaaaaa',
     }).setOrigin(0.5).setDepth(102).setInteractive({ useHandCursor: true });
     closeBtn.on('pointerdown', () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
     overlay.on('pointerdown',  () => { overlay.destroy(); closeBtn.destroy(); if (ta) ta.destroy(); });
