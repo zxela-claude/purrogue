@@ -272,8 +272,9 @@ export class MapScene extends Phaser.Scene {
       fontFamily: '"Press Start 2P"', fontSize: '14px',
       color: restColor
     }).setOrigin(0.5).setDepth(11)
-      .setInteractive({ useHandCursor: true })
+      .setInteractive({ useHandCursor: noHealing || canHeal })
       .on('pointerdown', () => {
+        if (!noHealing && !canHeal) return;
         if (noHealing) {
           gs.playerBlock = (gs.playerBlock || 0) + 8;
           gs.save();
@@ -285,6 +286,10 @@ export class MapScene extends Phaser.Scene {
     if (noHealing) {
       this.add.text(W/2, H/2 - 58, '✕ HEAL BLOCKED by daily modifier', {
         fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#e94560'
+      }).setOrigin(0.5).setDepth(11);
+    } else if (!canHeal) {
+      this.add.text(W/2, H/2 - 58, '🔥 Feral — healing blocked', {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#e67e22'
       }).setOrigin(0.5).setDepth(11);
     }
 
