@@ -927,13 +927,13 @@ export class MenuScene extends Phaser.Scene {
       });
     });
 
-    // BEGIN RUN button
+    // BEGIN RUN button — centered pair: 200 + 20gap + 160 = 380px, symmetric around mX
     const beginY = mY + mH/2 - 44;
-    const beginBg = this.add.rectangle(mX - 80, beginY, 200, 38, 0x0a2a0a).setDepth(32).setInteractive({ useHandCursor: true });
+    const beginBg = this.add.rectangle(mX - 90, beginY, 200, 38, 0x0a2a0a).setDepth(32).setInteractive({ useHandCursor: true });
     const beginBorder = this.add.graphics().setDepth(32);
     beginBorder.lineStyle(2, 0x4caf50, 0.9);
-    beginBorder.strokeRect(mX - 80 - 100, beginY - 19, 200, 38);
-    const beginLabel = this.add.text(mX - 80, beginY, 'BEGIN RUN', {
+    beginBorder.strokeRect(mX - 190, beginY - 19, 200, 38);
+    const beginLabel = this.add.text(mX - 90, beginY, 'BEGIN RUN', {
       fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#4caf50'
     }).setOrigin(0.5).setDepth(33);
     beginBg.on('pointerover', () => { beginBg.setFillStyle(0x0a3a0a); beginLabel.setColor('#6cd66c'); });
@@ -946,11 +946,11 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // SKIP button
-    const skipBg = this.add.rectangle(mX + 80, beginY, 160, 38, 0x0d0d1a).setDepth(32).setInteractive({ useHandCursor: true });
+    const skipBg = this.add.rectangle(mX + 110, beginY, 160, 38, 0x0d0d1a).setDepth(32).setInteractive({ useHandCursor: true });
     const skipBorder = this.add.graphics().setDepth(32);
     skipBorder.lineStyle(2, 0x444466, 0.7);
-    skipBorder.strokeRect(mX + 80 - 80, beginY - 19, 160, 38);
-    const skipLabel = this.add.text(mX + 80, beginY, 'SKIP', {
+    skipBorder.strokeRect(mX + 30, beginY - 19, 160, 38);
+    const skipLabel = this.add.text(mX + 110, beginY, 'SKIP', {
       fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#666688'
     }).setOrigin(0.5).setDepth(33);
     skipBg.on('pointerover', () => { skipBg.setFillStyle(0x1a1a2e); skipLabel.setColor('#aaaaaa'); });
