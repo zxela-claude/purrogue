@@ -230,9 +230,10 @@ export class EventScene extends Phaser.Scene {
           if (choice.requiresConfirm) {
             this._showConfirmModal(gs, choice);
           } else {
+            const goldBefore = gs.gold;
             choice.action(gs);
             gs.save();
-            this.scene.start('MapScene');
+            this._navigateAfterAction(gs, goldBefore);
           }
         });
       } else {
@@ -251,9 +252,10 @@ export class EventScene extends Phaser.Scene {
         if (!canAfford) { this._showGoldToast(`Need ${choice.goldCost}g (have ${gs.gold}g)`); return; }
         if (choice.requiresConfirm) { this._showConfirmModal(gs, choice); return; }
         this._eventChosen = true;
+        const goldBefore = gs.gold;
         choice.action(gs);
         gs.save();
-        this.scene.start('MapScene');
+        this._navigateAfterAction(gs, goldBefore);
       });
     });
   }
@@ -289,9 +291,10 @@ export class EventScene extends Phaser.Scene {
     confirmBtn.on('pointerout', function() { this.setColor('#4caf50'); });
     confirmBtn.on('pointerdown', () => {
       this._eventChosen = true;
+      const goldBefore = gs.gold;
       choice.action(gs);
       gs.save();
-      this.scene.start('MapScene');
+      this._navigateAfterAction(gs, goldBefore);
     });
 
     // Cancel button
@@ -314,9 +317,10 @@ export class EventScene extends Phaser.Scene {
       if (!this._confirmOpen) return;
       this._confirmOpen = false;
       this._eventChosen = true;
+      const goldBefore = gs.gold;
       choice.action(gs);
       gs.save();
-      this.scene.start('MapScene');
+      this._navigateAfterAction(gs, goldBefore);
     });
     ['N','ESC'].forEach(k => {
       this.input.keyboard.on(`keydown-${k}`, () => {
@@ -326,6 +330,30 @@ export class EventScene extends Phaser.Scene {
         this.children.list.filter(c => c.depth >= 11).forEach(c => c.destroy());
       });
     });
+  }
+
+  _navigateAfterAction(gs, goldBefore) {
+    const goldDelta = gs.gold - goldBefore;
+    if (goldDelta > 0) {
+      this._showGoldGainToast(`+${goldDelta}g`, () => this.scene.start('MapScene'));
+    } else {
+      this.scene.start('MapScene');
+    }
+  }
+
+  _showGoldGainToast(message, callback) {
+    const toast = this.add.text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 20, `💰 ${message}`, {
+      fontFamily: '"Press Start 2P"', fontSize: '20px', color: '#ffd700',
+      stroke: '#000000', strokeThickness: 3
+    }).setOrigin(0.5).setDepth(20).setAlpha(0);
+    this.tweens.add({ targets: toast, alpha: 1, y: SCREEN_HEIGHT / 2 - 60, duration: 300, onComplete: () => {
+      this.time.delayedCall(600, () => {
+        this.tweens.add({ targets: toast, alpha: 0, duration: 250, onComplete: () => {
+          toast.destroy();
+          if (callback) callback();
+        }});
+      });
+    }});
   }
 
   _showGoldToast(message) {
