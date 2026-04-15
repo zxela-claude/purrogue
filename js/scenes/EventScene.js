@@ -12,6 +12,8 @@ const EVENT_CATEGORY_STYLES = {
   energy:  { tint: 0x003333, tintAlpha: 0.22, badgeColor: '#26c6da', label: '* ENERGY'   },
   risk:    { tint: 0x4e0000, tintAlpha: 0.22, badgeColor: '#ef5350', label: '! DANGER'   },
   mystery: { tint: 0x2a0040, tintAlpha: 0.22, badgeColor: '#ab47bc', label: '? MYSTERY'  },
+  // NAN-263: Catnap — most powerful event, gold-tier visual weight
+  catnap:  { tint: 0x3d2b00, tintAlpha: 0.40, badgeColor: '#ffd700', label: '★ LEGENDARY REST' },
 };
 
 const EVENTS = [
@@ -158,7 +160,8 @@ const EVENTS = [
     }},
     { label: 'Stay out of it (nothing)', action: gs => {} }
   ]},
-  { title: 'Catnap', desc: 'An irresistibly warm patch of sunlight. You could sleep the whole floor away...', choices: [
+  // NAN-263: catnap is most powerful event — full heal + skip reward — needs gold-tier visual
+  { title: 'Catnap', desc: 'An irresistibly warm patch of sunlight. You could sleep the whole floor away...', category: 'catnap', choices: [
     { label: 'Sleep it off (heal to full HP, skip rewards)', action: gs => {
       gs.heal(gs.maxHp);
       gs.skipNextReward = true;
@@ -234,8 +237,21 @@ export class EventScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(1);
     }
 
-    this.add.text(SCREEN_WIDTH/2, 165, event.title, { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#f0ead6' }).setOrigin(0.5);
-    this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#aaaaaa', wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
+    // NAN-263: Catnap gets gold title + animated pulsing border to signal legendary power
+    const isCatnap = event.category === 'catnap';
+    const titleColor = isCatnap ? '#ffd700' : '#f0ead6';
+    this.add.text(SCREEN_WIDTH/2, 165, event.title, { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: titleColor }).setOrigin(0.5);
+
+    if (isCatnap) {
+      // Pulsing gold border rectangle framing the event panel
+      const border = this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20, 760, 600).setDepth(1).setStrokeStyle(3, 0xffd700).setFillStyle(0, 0);
+      this.tweens.add({ targets: border, alpha: { from: 0.3, to: 1 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      // Decorative star row beneath the title
+      this.add.text(SCREEN_WIDTH/2, 197, '★  ★  ★', { fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ffd700' }).setOrigin(0.5).setDepth(1);
+    }
+
+    const descColor = isCatnap ? '#ffe082' : '#aaaaaa';
+    this.add.text(SCREEN_WIDTH/2, isCatnap ? 240 : 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: descColor, wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
 
     const totalH = event.choices.length * 80;
     const choiceStartY = Math.max(300, (300 + 700) / 2 - totalH / 2);
