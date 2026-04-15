@@ -154,6 +154,40 @@ describe('GameState', () => {
     });
   });
 
+  // ── NAN-272: run stats tracking ───────────────────────────────────────────
+  describe('runStats gold tracking', () => {
+    it('tracks gold_earned via gainGold', () => {
+      gs.gainGold(30);
+      expect(gs.runStats.gold_earned).toBe(30);
+    });
+
+    it('tracks gold_spent via spendGold', () => {
+      gs.spendGold(20);
+      expect(gs.runStats.gold_spent).toBe(20);
+    });
+
+    it('gainGold applies golden_ball multiplier and tracks actual amount', () => {
+      gs.addRelic('golden_ball');
+      gs.gainGold(20);
+      // golden_ball: floor(20 * 1.25) = 25
+      expect(gs.runStats.gold_earned).toBe(25);
+      expect(gs.gold).toBe(75); // 50 starting + 25
+    });
+
+    it('startRun sets run_start_ms', () => {
+      const before = Date.now();
+      gs.startRun('WARRIOR');
+      const after = Date.now();
+      expect(gs.runStats.run_start_ms).toBeGreaterThanOrEqual(before);
+      expect(gs.runStats.run_start_ms).toBeLessThanOrEqual(after);
+    });
+
+    it('runStats card tracking fields initialise empty', () => {
+      expect(gs.runStats.card_play_counts).toEqual({});
+      expect(gs.runStats.card_damage).toEqual({});
+    });
+  });
+
   // ── personality tracking ──────────────────────────────────────────────────
   describe('trackPersonality', () => {
     it('increments feisty on attack card plays', () => {

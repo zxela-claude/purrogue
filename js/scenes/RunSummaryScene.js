@@ -1,6 +1,7 @@
 import { COLORS, FONT_HERO, FONT_MD, FONT_MD2, FONT_SM, FONT_SM2, FONT_XXS, SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 import { RELICS } from '../data/relics.js';
+import { ALL_CARDS } from '../data/cards.js';
 import { PurrSettings } from '../PurrSettings.js';
 import { GameState } from '../GameState.js';
 
@@ -44,23 +45,50 @@ export class RunSummaryScene extends Phaser.Scene {
     // Capture a snapshot of gs data before it is cleared
     const gs = this.registry.get('gameState');
     if (gs) {
+      const now = Date.now();
+      const elapsedMs = gs.runStats.run_start_ms ? now - gs.runStats.run_start_ms : 0;
+
+      // Build card name lookup
+      const cardNameDb = {};
+      ALL_CARDS.forEach(c => { cardNameDb[c.id] = c.name; });
+
+      // Top 3 cards by damage dealt
+      const cardDamage = gs.runStats.card_damage || {};
+      const topDamageCards = Object.entries(cardDamage)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([id, dmg]) => ({ name: cardNameDb[id] || id, dmg }));
+
+      // Most played card
+      const cardPlays = gs.runStats.card_play_counts || {};
+      const mostPlayedEntry = Object.entries(cardPlays)
+        .sort((a, b) => b[1] - a[1])[0] || null;
+      const mostPlayedCard = mostPlayedEntry
+        ? { name: cardNameDb[mostPlayedEntry[0]] || mostPlayedEntry[0], count: mostPlayedEntry[1] }
+        : null;
+
       this.snapshot = {
-        hero:          gs.hero,
-        act:           gs.act,
-        floor:         gs.floor,
-        mood:          gs.getDominantPersonality(),
-        relics:        [...(gs.relics || [])],
-        deckSize:      gs.deck.length,
-        damageDealt:   gs.runStats.damage_dealt,
-        damageTaken:   gs.runStats.damage_taken,
-        cardsPlayed:   gs.runStats.cards_played,
-        enemiesKilled: gs.runStats.enemies_killed,
-        turns:         gs.runStats.turns,
-        isDaily:       gs.isDaily || false,
-        dailySeed:     gs.dailySeed || null,
-        dailyModifier: gs.dailyModifier || null,
-        ascension:     gs.ascension || 0,
-        score:         gs.computeScore(this.won),
+        hero:           gs.hero,
+        act:            gs.act,
+        floor:          gs.floor,
+        mood:           gs.getDominantPersonality(),
+        relics:         [...(gs.relics || [])],
+        deckSize:       gs.deck.length,
+        damageDealt:    gs.runStats.damage_dealt,
+        damageTaken:    gs.runStats.damage_taken,
+        cardsPlayed:    gs.runStats.cards_played,
+        enemiesKilled:  gs.runStats.enemies_killed,
+        turns:          gs.runStats.turns,
+        goldEarned:     gs.runStats.gold_earned || 0,
+        goldSpent:      gs.runStats.gold_spent || 0,
+        elapsedMs,
+        topDamageCards,
+        mostPlayedCard,
+        isDaily:        gs.isDaily || false,
+        dailySeed:      gs.dailySeed || null,
+        dailyModifier:  gs.dailyModifier || null,
+        ascension:      gs.ascension || 0,
+        score:          gs.computeScore(this.won),
       };
       // Save daily score before run is ended
       if (gs.isDaily) {
@@ -129,7 +157,7 @@ export class RunSummaryScene extends Phaser.Scene {
     const panelTop  = 112;
 
     // ── Left panel: run stats ─────────────────────────────────────────────────
-    const leftPanelH = 370;
+    const leftPanelH = 440;
     this.add.rectangle(leftX + leftW/2, panelTop + leftPanelH/2, leftW, leftPanelH, 0x0d0d1a, 0.88);
     this.add.graphics().lineStyle(1, 0x334466).strokeRect(leftX, panelTop, leftW, leftPanelH);
 
@@ -138,6 +166,12 @@ export class RunSummaryScene extends Phaser.Scene {
     this.add.text(leftX + leftW/2, panelTop + 18, 'STATS', {
       fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#4fc3f7'
     }).setOrigin(0.5);
+
+    // Format elapsed time as m:ss
+    const elapsedSec = snap.elapsedMs ? Math.floor(snap.elapsedMs / 1000) : 0;
+    const elapsedStr = elapsedSec > 0
+      ? `${Math.floor(elapsedSec / 60)}m ${String(elapsedSec % 60).padStart(2, '0')}s`
+      : '—';
 
     const statRows = [
       { label: 'Result',         value: this.won ? 'VICTORY' : 'DEFEAT', color: this.won ? '#ffd700' : '#e94560' },
@@ -152,6 +186,9 @@ export class RunSummaryScene extends Phaser.Scene {
       { label: 'Cards Played',   value: snap.cardsPlayed },
       { label: 'Enemies Killed', value: snap.enemiesKilled },
       { label: 'Turns',          value: snap.turns },
+      { label: 'Gold Earned',    value: snap.goldEarned, color: '#ffd700' },
+      { label: 'Gold Spent',     value: snap.goldSpent,  color: '#ff9966' },
+      { label: 'Time',           value: elapsedStr },
       { label: 'Score',          value: snap.score, color: '#ffd700' },
     ];
 
@@ -177,7 +214,7 @@ export class RunSummaryScene extends Phaser.Scene {
       }
     });
 
-    // ── Right panel: relics ────────────────────────────────────────────────────
+    // ── Right panel: relics + card highlights ─────────────────────────────────
     const rightPanelH = leftPanelH;
     this.add.rectangle(rightX + rightW/2, panelTop + rightPanelH/2, rightW, rightPanelH, 0x0d0d1a, 0.88);
     this.add.graphics().lineStyle(1, 0x334466).strokeRect(rightX, panelTop, rightW, rightPanelH);
@@ -193,15 +230,20 @@ export class RunSummaryScene extends Phaser.Scene {
     const relicDb = {};
     RELICS.forEach(r => { relicDb[r.id] = r; });
 
+    const relicRowH = 38;
+    const maxRelicRows = 5;
+    const relicAreaH = maxRelicRows * relicRowH;
+
     if (relicCount === 0) {
-      this.add.text(rightX + rightW/2, panelTop + rightPanelH/2, 'No relics collected', {
+      this.add.text(rightX + rightW/2, panelTop + 38 + relicAreaH/2, 'No relics collected', {
         fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#444466'
       }).setOrigin(0.5);
     } else {
-      snap.relics.forEach((rid, i) => {
+      const displayRelics = snap.relics.slice(0, maxRelicRows);
+      displayRelics.forEach((rid, i) => {
         const relic = relicDb[rid];
-        const rowY = panelTop + 48 + i * 46;
-        if (i % 2 === 1) this.add.rectangle(rightX + rightW/2, rowY + 8, rightW - 4, 44, 0xffffff, 0.03);
+        const rowY = panelTop + 42 + i * relicRowH;
+        if (i % 2 === 1) this.add.rectangle(rightX + rightW/2, rowY + 8, rightW - 4, relicRowH - 2, 0xffffff, 0.03);
         const rName = relic ? relic.name : rid;
         const rDesc = relic ? relic.desc : '';
         this.add.text(rightX + 14, rowY, rName, {
@@ -214,6 +256,52 @@ export class RunSummaryScene extends Phaser.Scene {
           }).setOrigin(0, 0);
         }
       });
+      if (snap.relics.length > maxRelicRows) {
+        this.add.text(rightX + rightW/2, panelTop + 42 + maxRelicRows * relicRowH - 10, `+${snap.relics.length - maxRelicRows} more`, {
+          fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#555577'
+        }).setOrigin(0.5);
+      }
+    }
+
+    // ── Card highlights sub-section ────────────────────────────────────────────
+    const hlTop = panelTop + 42 + relicAreaH;
+    this.add.rectangle(rightX + rightW/2, hlTop + 14, rightW, 26, 0x1a1a2e);
+    this.add.graphics().lineStyle(1, 0x2a2a4e).strokeRect(rightX, hlTop, rightW, 26);
+    this.add.text(rightX + rightW/2, hlTop + 13, 'CARD HIGHLIGHTS', {
+      fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#aa88ff'
+    }).setOrigin(0.5);
+
+    let hlY = hlTop + 32;
+
+    if (snap.topDamageCards && snap.topDamageCards.length > 0) {
+      this.add.text(rightX + 14, hlY, 'Top Damage:', {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#777799'
+      }).setOrigin(0, 0.5);
+      hlY += 18;
+      snap.topDamageCards.forEach((c, i) => {
+        if (i % 2 === 1) this.add.rectangle(rightX + rightW/2, hlY, rightW - 4, 20, 0xffffff, 0.03);
+        this.add.text(rightX + 20, hlY, c.name, {
+          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#e0c0ff'
+        }).setOrigin(0, 0.5);
+        this.add.text(rightX + rightW - 14, hlY, `${c.dmg} dmg`, {
+          fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#ff8888'
+        }).setOrigin(1, 0.5);
+        hlY += 22;
+      });
+    }
+
+    if (snap.mostPlayedCard) {
+      hlY += 4;
+      this.add.text(rightX + 14, hlY, 'Most Played:', {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: '#777799'
+      }).setOrigin(0, 0.5);
+      hlY += 18;
+      this.add.text(rightX + 20, hlY, snap.mostPlayedCard.name, {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#e0c0ff'
+      }).setOrigin(0, 0.5);
+      this.add.text(rightX + rightW - 14, hlY, `×${snap.mostPlayedCard.count}`, {
+        fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#88ccff'
+      }).setOrigin(1, 0.5);
     }
 
     // ── Buttons ───────────────────────────────────────────────────────────────

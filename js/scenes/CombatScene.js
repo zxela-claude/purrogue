@@ -980,6 +980,7 @@ export class CombatScene extends Phaser.Scene {
     const prevMoodLocked = this.gs.personality.mood;
     this.gs.trackPersonality(card.type);
     this.gs.runStats.cards_played++;
+    this.gs.runStats.card_play_counts[card.id] = (this.gs.runStats.card_play_counts[card.id] || 0) + 1;
     this.lastPlayedCard = card;
 
     // NAN-48: show toast when personality changes this turn
@@ -1043,6 +1044,7 @@ export class CombatScene extends Phaser.Scene {
 
     const dmg = results.filter(r => r.type === 'damage').reduce((s, r) => s + r.amount, 0);
     this.gs.runStats.damage_dealt += dmg;
+    if (dmg > 0) this.gs.runStats.card_damage[card.id] = (this.gs.runStats.card_damage[card.id] || 0) + dmg;
     if (dmg > 0) {
       this._flashAttack();
       const ex = this.enemySprite?.x ?? SCREEN_WIDTH / 2;
@@ -1296,6 +1298,7 @@ export class CombatScene extends Phaser.Scene {
       this.playerStatuses = player.statuses;
       const dmg = results.filter(r => r.type === 'damage').reduce((s, r) => s + r.amount, 0);
       this.gs.runStats.damage_dealt += dmg;
+      if (dmg > 0) this.gs.runStats.card_damage[cardToReplay.id] = (this.gs.runStats.card_damage[cardToReplay.id] || 0) + dmg;
       if (dmg > 0) this._showDamageNumber(this.enemySprite?.x ?? SCREEN_WIDTH / 2, (this.enemySprite?.y ?? 200) - 50, dmg);
       this._updateStatsDisplay();
       if (this.enemy.hp <= 0) { this._enemyDefeated(); return; }

@@ -38,7 +38,12 @@ export class GameState {
       damage_taken: 0,
       cards_played: 0,
       enemies_killed: 0,
-      turns: 0
+      turns: 0,
+      gold_earned: 0,
+      gold_spent: 0,
+      run_start_ms: null,
+      card_play_counts: {},   // cardId → play count
+      card_damage: {},        // cardId → total damage dealt
     };
     this.combat = null;     // transient combat state
     this.pendingEnergyBonus = 0;
@@ -84,7 +89,7 @@ export class GameState {
       if (profile.winStreak >= 3)  this.catMoodModifier = 'confident';
       else if (profile.lossStreak >= 3) this.catMoodModifier = 'frustrated';
     }
-
+    this.runStats.run_start_ms = Date.now();
     // Glass Cannon: halve maxHp (runModifiers set before startRun via reset, apply after hero stats)
     // Note: runModifiers is applied after startRun call in MenuScene via gs.runModifiers assignment
     this.save();
@@ -146,12 +151,15 @@ export class GameState {
 
   gainGold(amount) {
     const multiplier = this.relics.includes('golden_ball') ? 1.25 : 1;
-    this.gold += Math.floor(amount * multiplier);
+    const gained = Math.floor(amount * multiplier);
+    this.gold += gained;
+    this.runStats.gold_earned += gained;
     this.save();
   }
 
   spendGold(amount) {
     this.gold = Math.max(0, this.gold - amount);
+    this.runStats.gold_spent += amount;
     this.save();
   }
 
