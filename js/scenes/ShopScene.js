@@ -228,7 +228,7 @@ export class ShopScene extends Phaser.Scene {
 
     // Card name
     container.add(this.add.text(0, -63, card.name, {
-      fontFamily: '"Press Start 2P"', fontSize: FONT_TINY,
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM,
       color: canAfford ? '#f0ead6' : '#555566',
       wordWrap: { width: 100 }, align: 'center'
     }).setOrigin(0.5));
