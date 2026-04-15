@@ -4,16 +4,26 @@ import { PersonalitySystem } from '../PersonalitySystem.js';
 import { getBiome } from '../DungeonBuilding.js';
 import { PurrSettings } from '../PurrSettings.js';
 
+// NAN-258: category metadata for per-event visual distinction
+const EVENT_CATEGORY_STYLES = {
+  heal:    { tint: 0x1b5e20, tintAlpha: 0.22, badgeColor: '#4caf50', label: '+ HEALING'  },
+  trade:   { tint: 0x4e2c00, tintAlpha: 0.22, badgeColor: '#ffc107', label: '$ TRADE'    },
+  card:    { tint: 0x0d1b3e, tintAlpha: 0.22, badgeColor: '#42a5f5', label: '# CARD'     },
+  energy:  { tint: 0x003333, tintAlpha: 0.22, badgeColor: '#26c6da', label: '* ENERGY'   },
+  risk:    { tint: 0x4e0000, tintAlpha: 0.22, badgeColor: '#ef5350', label: '! DANGER'   },
+  mystery: { tint: 0x2a0040, tintAlpha: 0.22, badgeColor: '#ab47bc', label: '? MYSTERY'  },
+};
+
 const EVENTS = [
-  { title: 'Mysterious Fisherman', desc: 'A fisherman offers you fish. Take it?', choices: [
+  { title: 'Mysterious Fisherman', desc: 'A fisherman offers you fish. Take it?', category: 'heal', choices: [
     { label: 'Take the fish (+15 HP)', action: gs => { if (PersonalitySystem.canHeal(gs.getDominantPersonality())) gs.heal(15); } },
     { label: 'Decline (nothing)', action: gs => {} }
   ]},
-  { title: 'Ancient Cat Shrine', desc: 'A golden shrine pulses with energy.', choices: [
+  { title: 'Ancient Cat Shrine', desc: 'A golden shrine pulses with energy.', category: 'heal', choices: [
     { label: 'Pray (+1 max HP, -5 HP)', action: gs => { gs.maxHp++; gs.hp = Math.max(1, gs.hp - 5); } },
     { label: 'Ignore (nothing)', action: gs => {} }
   ]},
-  { title: 'Suspicious Dog', desc: 'A dog wants to trade.', choices: [
+  { title: 'Suspicious Dog', desc: 'A dog wants to trade.', category: 'trade', choices: [
     { label: 'Trade (lose 30g, gain relic)', goldCost: 30, action: gs => {
       if (gs.gold >= 30) {
         gs.spendGold(30);
@@ -30,7 +40,7 @@ const EVENTS = [
     }},
     { label: 'Attack! (deal 10 dmg to next enemy)', action: gs => { gs.pendingEnemyDamage = (gs.pendingEnemyDamage || 0) + 10; } }
   ]},
-  { title: 'The Old Cat', desc: 'A wise elder offers wisdom.', choices: [
+  { title: 'The Old Cat', desc: 'A wise elder offers wisdom.', category: 'card', choices: [
     { label: 'Listen (upgrade a random card)', action: gs => {
       const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
       if (upgradeable.length > 0) {
@@ -40,11 +50,11 @@ const EVENTS = [
     }},
     { label: 'Nap instead (+8 HP)', action: gs => { if (PersonalitySystem.canHeal(gs.getDominantPersonality())) gs.heal(8); } }
   ]},
-  { title: 'Catnip Field', desc: 'A massive field of catnip.', choices: [
+  { title: 'Catnip Field', desc: 'A massive field of catnip.', category: 'energy', choices: [
     { label: 'Roll in it! (+1 energy next combat)', action: gs => { gs.pendingEnergyBonus = (gs.pendingEnergyBonus || 0) + 1; } },
     { label: 'Resist (+3 max HP)', action: gs => { gs.maxHp += 3; gs.heal(3); } }
   ]},
-  { title: 'The Yarn Tangle', desc: 'A glorious tangle of yarn sprawls across the path. Something glints inside...', choices: [
+  { title: 'The Yarn Tangle', desc: 'A glorious tangle of yarn sprawls across the path. Something glints inside...', category: 'mystery', choices: [
     { label: 'Untangle it (gain relic, lose 1 card)', requiresConfirm: true, confirmText: 'A random card will be permanently removed from your deck. Continue?', action: gs => {
       const relicPool = ['laser_toy','bell_collar','toy_mouse','lucky_paw','claw_sharpener','warm_blanket'];
       gs.addRelic(relicPool[Math.floor(Math.random() * relicPool.length)]);
@@ -57,12 +67,12 @@ const EVENTS = [
     { label: 'Grab a strand (+10 gold)', action: gs => { gs.gold += 10; gs.save(); } },
     { label: 'Walk past (nothing)', action: gs => {} }
   ]},
-  { title: 'Catnip Stash', desc: 'A hidden cache of premium catnip. The scent is overwhelming.', choices: [
+  { title: 'Catnip Stash', desc: 'A hidden cache of premium catnip. The scent is overwhelming.', category: 'energy', choices: [
     { label: 'Sniff it (+1 energy next combat)', action: gs => { gs.pendingEnergyBonus = (gs.pendingEnergyBonus || 0) + 1; } },
     { label: 'Pocket some (add Catnip Surge card)', action: gs => { gs.addCard('catnip_surge'); } },
     { label: 'Leave it (nothing)', action: gs => {} }
   ]},
-  { title: "The Mysterious Box", desc: "A cardboard box sits in the middle of the path. It could contain anything.", choices: [
+  { title: "The Mysterious Box", desc: "A cardboard box sits in the middle of the path. It could contain anything.", category: 'mystery', choices: [
     { label: "Open it (random: good or bad)", requiresConfirm: true, confirmText: 'The outcome is random — it could heal, grant gold or a relic, or permanently remove a card from your deck. Continue?', action: gs => {
       const outcomes = [
         gs2 => { gs2.heal(20); },
@@ -81,7 +91,7 @@ const EVENTS = [
     }},
     { label: "Leave it (+15 gold)", action: gs => { gs.gold += 15; gs.save(); } }
   ]},
-  { title: 'Rival Cat Encounter', desc: 'A battle-scarred stray blocks your path, eyes locked on yours.', choices: [
+  { title: 'Rival Cat Encounter', desc: 'A battle-scarred stray blocks your path, eyes locked on yours.', category: 'risk', choices: [
     { label: 'Fight! (+25 gold, -8 HP)', action: gs => {
       gs.gold += 25; gs.save();
       gs.hp = Math.max(1, gs.hp - 8); gs.save();
@@ -92,14 +102,14 @@ const EVENTS = [
       gs.addCard(cardPool[Math.floor(Math.random() * cardPool.length)]);
     }}
   ]},
-  { title: 'The Sunny Spot', desc: 'A perfect patch of warm sunlight filters through a broken window.', choices: [
+  { title: 'The Sunny Spot', desc: 'A perfect patch of warm sunlight filters through a broken window.', category: 'heal', choices: [
     { label: 'Rest here (+10 HP)', action: gs => {
       const bonus = gs.getDominantPersonality() === 'cozy' ? 5 : 0;
       gs.heal(10 + bonus);
     }},
     { label: 'Skip it (draw 1 extra card next combat)', action: gs => { gs._pendingDrawBonus = (gs._pendingDrawBonus || 0) + 1; gs.save(); } }
   ]},
-  { title: 'Shiny Vending Machine', desc: 'An ancient machine hums. It wants gold.', choices: [
+  { title: 'Shiny Vending Machine', desc: 'An ancient machine hums. It wants gold.', category: 'trade', choices: [
     { label: 'Pay 50g (random relic)', goldCost: 50, action: gs => {
       if (gs.gold >= 50) {
         gs.spendGold(50);
@@ -109,7 +119,7 @@ const EVENTS = [
     }},
     { label: 'Smash it! (10 dmg to you, 3 gold)', action: gs => { gs.takeDamage(10); gs.gainGold(3); } }
   ]},
-  { title: 'Haunted Litter Box', desc: 'Something stirs within. Dare you look?', choices: [
+  { title: 'Haunted Litter Box', desc: 'Something stirs within. Dare you look?', category: 'card', choices: [
     { label: 'Investigate (upgrade 2 random cards)', action: gs => {
       const upgradeable = gs.deck.filter(id => !/_u(_\w+)?$/.test(id));
       const picks = upgradeable.sort(() => Math.random() - 0.5).slice(0, 2);
@@ -117,7 +127,7 @@ const EVENTS = [
     }},
     { label: 'Walk away (+20 gold)', action: gs => { gs.gainGold(20); } }
   ]},
-  { title: 'Travelling Merchant', desc: 'A robed figure sells forbidden knowledge.', choices: [
+  { title: 'Travelling Merchant', desc: 'A robed figure sells forbidden knowledge.', category: 'trade', choices: [
     { label: 'Buy a curse (-20g, -1 max HP, draw +1/turn)', goldCost: 20, action: gs => {
       if (gs.gold >= 20) { gs.spendGold(20); gs.maxHp = Math.max(1, gs.maxHp - 1); gs.pendingDrawBonus = (gs.pendingDrawBonus || 0) + 1; }
     }},
@@ -126,11 +136,11 @@ const EVENTS = [
     }},
     { label: 'Ignore (nothing)', action: gs => {} }
   ]},
-  { title: 'Thunderstorm', desc: 'Lightning crackles. The air smells electric.', choices: [
+  { title: 'Thunderstorm', desc: 'Lightning crackles. The air smells electric.', category: 'risk', choices: [
     { label: 'Channel it (+2 Strong next combat)', action: gs => { gs.pendingStatusBonus = gs.pendingStatusBonus || {}; gs.pendingStatusBonus.strong = (gs.pendingStatusBonus.strong || 0) + 2; } },
     { label: 'Shelter (nothing bad happens)', action: gs => {} }
   ]},
-  { title: 'The Doppelganger', desc: 'A cat that looks exactly like you blocks the path.', choices: [
+  { title: 'The Doppelganger', desc: 'A cat that looks exactly like you blocks the path.', category: 'mystery', choices: [
     { label: 'Fight! (take 15 dmg, gain 40 gold)', action: gs => { gs.takeDamage(15); gs.gainGold(40); } },
     { label: 'Befriend it (lose 20g, copy its relic)', goldCost: 20, action: gs => {
       if (gs.gold >= 20) {
@@ -140,7 +150,7 @@ const EVENTS = [
       }
     }}
   ]},
-  { title: 'Turf War', desc: 'A rival gang of cats offers you a temporary alliance before the next fight.', choices: [
+  { title: 'Turf War', desc: 'A rival gang of cats offers you a temporary alliance before the next fight.', category: 'energy', choices: [
     { label: 'Join the brawl (+3 Strong next combat)', action: gs => {
       gs.pendingStatusBonus = gs.pendingStatusBonus || {};
       gs.pendingStatusBonus.strong = (gs.pendingStatusBonus.strong || 0) + 3;
@@ -156,7 +166,7 @@ const EVENTS = [
     }},
     { label: 'Push through (nothing)', action: gs => {} }
   ]},
-  { title: 'Cursed Fish', desc: 'A glowing fish lies on the ground. It smells wrong — but gold coins are stuffed inside its mouth.', choices: [
+  { title: 'Cursed Fish', desc: 'A glowing fish lies on the ground. It smells wrong — but gold coins are stuffed inside its mouth.', category: 'risk', choices: [
     { label: 'Eat it (+40 gold, +5 Poison next combat)', action: gs => {
       gs.gainGold(40);
       gs.pendingStatusBonus = gs.pendingStatusBonus || {};
@@ -166,7 +176,7 @@ const EVENTS = [
     { label: 'Take the gold only (+20 gold)', action: gs => { gs.gainGold(20); gs.save(); } },
     { label: 'Leave it (nothing)', action: gs => {} }
   ]},
-  { title: 'Rival Cat Duel', desc: 'A scarred tom cat challenges you to a duel. Winner takes all.', choices: [
+  { title: 'Rival Cat Duel', desc: 'A scarred tom cat challenges you to a duel. Winner takes all.', category: 'risk', choices: [
     { label: 'Accept (-12 HP, gain random relic)', action: gs => {
       gs.hp = Math.max(1, gs.hp - 12);
       const available = RELICS.filter(r => !gs.relics.includes(r.id));
@@ -175,7 +185,7 @@ const EVENTS = [
     }},
     { label: 'Back down (nothing)', action: gs => {} }
   ]},
-  { title: 'The Toymaker', desc: 'A wizened cat merchant displays a single exquisite, upgraded card under glass.', choices: [
+  { title: 'The Toymaker', desc: 'A wizened cat merchant displays a single exquisite, upgraded card under glass.', category: 'card', choices: [
     { label: 'Buy it (-45 gold, upgraded card)', goldCost: 45, action: gs => {
       if (gs.gold >= 45) {
         gs.spendGold(45);
@@ -206,8 +216,25 @@ export class EventScene extends Phaser.Scene {
     } else {
       this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
     }
-    this.add.text(SCREEN_WIDTH/2, 100, '❓ EVENT', { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#4fc3f7' }).setOrigin(0.5);
-    this.add.text(SCREEN_WIDTH/2, 160, event.title, { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#f0ead6' }).setOrigin(0.5);
+
+    // NAN-258: per-category tint overlay for visual atmosphere distinction
+    const catStyle = EVENT_CATEGORY_STYLES[event.category];
+    if (catStyle) {
+      this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, catStyle.tint, catStyle.tintAlpha).setDepth(0);
+    }
+
+    const headerColor = catStyle ? catStyle.badgeColor : '#4fc3f7';
+    this.add.text(SCREEN_WIDTH/2, 100, '? EVENT', { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: headerColor }).setOrigin(0.5);
+
+    // NAN-258: category badge label shown between header and title
+    if (catStyle) {
+      this.add.text(SCREEN_WIDTH/2, 133, catStyle.label, {
+        fontFamily: '"Press Start 2P"', fontSize: '8px', color: catStyle.badgeColor,
+        padding: { x: 10, y: 4 }
+      }).setOrigin(0.5).setDepth(1);
+    }
+
+    this.add.text(SCREEN_WIDTH/2, 165, event.title, { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#f0ead6' }).setOrigin(0.5);
     this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#aaaaaa', wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
 
     const totalH = event.choices.length * 80;
