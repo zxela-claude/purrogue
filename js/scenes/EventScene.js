@@ -158,7 +158,7 @@ const EVENTS = [
     }},
     { label: 'Stay out of it (nothing)', action: gs => {} }
   ]},
-  { title: 'Catnap', desc: 'An irresistibly warm patch of sunlight. You could sleep the whole floor away...', choices: [
+  { title: 'Catnap', tier: 'legendary', desc: 'An irresistibly warm patch of sunlight. You could sleep the whole floor away...', choices: [
     { label: 'Sleep it off (heal to full HP, skip rewards)', action: gs => {
       gs.heal(gs.maxHp);
       gs.skipNextReward = true;
@@ -217,25 +217,41 @@ export class EventScene extends Phaser.Scene {
       this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, COLORS.BG);
     }
 
+    const isLegendary = event.tier === 'legendary';
+
     // NAN-258: per-category tint overlay for visual atmosphere distinction
     const catStyle = EVENT_CATEGORY_STYLES[event.category];
-    if (catStyle) {
+    if (!isLegendary && catStyle) {
       this.add.rectangle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT, catStyle.tint, catStyle.tintAlpha).setDepth(0);
     }
 
-    const headerColor = catStyle ? catStyle.badgeColor : '#4fc3f7';
-    this.add.text(SCREEN_WIDTH/2, 100, '? EVENT', { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: headerColor }).setOrigin(0.5);
+    if (isLegendary) {
+      // NAN-263: Gold glow panel behind title area
+      this.add.rectangle(SCREEN_WIDTH/2, 170, 780, 180, 0xffd700, 0.12).setDepth(0);
+      this.add.rectangle(SCREEN_WIDTH/2, 170, 780, 180).setDepth(0).setStrokeStyle(2, 0xffd700, 0.9);
+    }
 
-    // NAN-258: category badge label shown between header and title
-    if (catStyle) {
+    const headerLabel = isLegendary ? '✨ LEGENDARY EVENT' : '❓ EVENT';
+    const headerColor = isLegendary ? '#ffd700' : (catStyle ? catStyle.badgeColor : '#4fc3f7');
+    this.add.text(SCREEN_WIDTH/2, 100, headerLabel, { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: headerColor }).setOrigin(0.5);
+
+    // NAN-258: category badge label shown between header and title (non-legendary only)
+    if (!isLegendary && catStyle) {
       this.add.text(SCREEN_WIDTH/2, 133, catStyle.label, {
         fontFamily: '"Press Start 2P"', fontSize: '8px', color: catStyle.badgeColor,
         padding: { x: 10, y: 4 }
       }).setOrigin(0.5).setDepth(1);
     }
 
-    this.add.text(SCREEN_WIDTH/2, 165, event.title, { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: '#f0ead6' }).setOrigin(0.5);
-    this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: '#aaaaaa', wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
+    const titleColor = isLegendary ? '#ffd700' : '#f0ead6';
+    const titleText = this.add.text(SCREEN_WIDTH/2, 165, event.title, { fontFamily: '"Press Start 2P"', fontSize: FONT_HEADER, color: titleColor }).setOrigin(0.5);
+    if (isLegendary) {
+      // NAN-263: Pulsing glow on the title
+      this.tweens.add({ targets: titleText, alpha: 0.65, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+
+    const descColor = isLegendary ? '#ffe082' : '#aaaaaa';
+    this.add.text(SCREEN_WIDTH/2, 230, event.desc, { fontFamily: '"Press Start 2P"', fontSize: FONT_XL, color: descColor, wordWrap: { width: 700 }, align: 'center' }).setOrigin(0.5);
 
     const totalH = event.choices.length * 80;
     const choiceStartY = Math.max(300, (300 + 700) / 2 - totalH / 2);
