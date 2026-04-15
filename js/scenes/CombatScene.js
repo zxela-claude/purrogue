@@ -652,14 +652,16 @@ export class CombatScene extends Phaser.Scene {
     if (_useThreshold) intentBadge = '⚠ ' + intentBadge;
 
     this.enemyIntentContainer.removeAll(true);
-    const pillW = Math.min(200, intentBadge.length * 11 + 32);
+    // Measure actual text width rather than estimating from character count —
+    // pixel fonts have non-uniform glyph widths that make char * constant inaccurate.
+    const pillText = this.add.text(0, 0, intentBadge, {
+      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#ffffff'
+    }).setOrigin(0.5);
+    const pillW = Math.min(200, pillText.width + 24);
     const pillBg = this.add.rectangle(0, 0, pillW, 28, intentColor, 0.25);
     const pillBorder = this.add.graphics();
     pillBorder.lineStyle(1, intentColor, 0.8);
     pillBorder.strokeRoundedRect(-pillW / 2, -14, pillW, 28, 8);
-    const pillText = this.add.text(0, 0, intentBadge, {
-      fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#ffffff'
-    }).setOrigin(0.5);
     // Hit zone for hover/tap tooltip
     const pillHit = this.add.rectangle(0, 0, pillW, 28, 0x000000, 0).setInteractive({ useHandCursor: true });
     pillHit.on('pointerover', () => {
