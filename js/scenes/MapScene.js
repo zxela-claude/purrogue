@@ -56,7 +56,8 @@ export class MapScene extends Phaser.Scene {
     // Background music: return to ambient menu/map track between battles
     MusicManager.getInstance(this).play('menu');
 
-    const mapBgKey = `bg_combat_${Math.min(gs.act || 1, 3)}`;
+    // NAN-255: use distinct map backgrounds instead of the combat backgrounds
+    const mapBgKey = `bg_map_${Math.min(gs.act || 1, 3)}`;
     if (this.textures.exists(mapBgKey)) {
       this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, mapBgKey).setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
       // NAN-215: use biome fog colour as the dark overlay tint
