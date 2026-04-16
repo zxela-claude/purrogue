@@ -134,8 +134,10 @@ export class RewardScene extends Phaser.Scene {
           const badgeBorder = this.add.graphics();
           badgeBorder.lineStyle(1, 0x4caf50, 0.8);
           badgeBorder.strokeRect(-cardW/2 + 10, cardH/2 - 42, cardW - 20, 28);
-          const badgeText = this.add.text(0, cardH/2 - 28, `✨ ${mood} upgrade ready`, {
-            fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#4caf50'
+          const upgradeName = upgradePath.name || 'upgrade';
+          const badgeText = this.add.text(0, cardH/2 - 28, `✨ → ${upgradeName}`, {
+            fontFamily: '"Press Start 2P"', fontSize: FONT_XS, color: '#4caf50',
+            wordWrap: { width: cardW - 28 }
           }).setOrigin(0.5);
           cardGroup.add(badge);
           cardGroup.add(badgeBorder);
