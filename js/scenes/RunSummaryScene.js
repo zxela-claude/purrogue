@@ -369,14 +369,6 @@ export class RunSummaryScene extends Phaser.Scene {
       this.scene.start('MenuScene');
     });
 
-    // Hint text: also transitions automatically after 30s if player doesn't click
-    this.add.text(W/2, H - 16, 'or wait — auto-returning in 30s', {
-      fontFamily: '"Press Start 2P"', fontSize: FONT_XXS, color: '#333355'
-    }).setOrigin(0.5);
-    this.time.delayedCall(30000, () => {
-      this.registry.set('gameState', null);
-      this.scene.start('MenuScene');
-    });
   }
 
   _addShareButton(W, H, snap) {
