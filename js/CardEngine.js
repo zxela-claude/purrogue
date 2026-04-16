@@ -19,15 +19,16 @@ export class CardEngine {
   static resolveEffect(effect, { player, enemy, enemies, relics = [], modifiers = {} }, personality) {
     let value = effect.value || 0;
 
-    // Personality modifiers
-    if (personality === 'feisty' && effect.type === 'damage') value = Math.ceil(value * 1.15);
-    if (personality === 'feral' && effect.type === 'damage') value = value * 2;
+    // Personality modifiers (apply to all damage effect types, including damage_all)
+    const isDamageEffect = effect.type === 'damage' || effect.type === 'damage_all';
+    if (personality === 'feisty' && isDamageEffect) value = Math.ceil(value * 1.15);
+    if (personality === 'feral' && isDamageEffect) value = value * 2;
 
     // NAN-125 Glass Cannon: attack cards deal +50% damage
-    if (modifiers.glass_cannon && effect.type === 'damage') value = Math.ceil(value * 1.5);
+    if (modifiers.glass_cannon && isDamageEffect) value = Math.ceil(value * 1.5);
 
     // Cursed Collar: double damage (stacks multiplicatively with Feral for 4× total)
-    if (relics.includes('cursed_collar') && effect.type === 'damage') value = value * 2;
+    if (relics.includes('cursed_collar') && isDamageEffect) value = value * 2;
     if (personality === 'cozy' && effect.type === 'block') {
       player.hp = Math.min(player.hp + 1, player.maxHp);
     }

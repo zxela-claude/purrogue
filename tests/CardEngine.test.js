@@ -118,6 +118,35 @@ describe('CardEngine.resolveEffect', () => {
     CardEngine.resolveEffect({ type: 'apply_status', status: 'poison', value: 3 }, { player, enemy, relics: ['magnifying_glass'] });
     expect(enemy.statuses.poison).toBe(4);
   });
+
+  // NAN-277: damage_all must also receive personality/relic multipliers
+  it('feisty personality boosts damage_all', () => {
+    const player = makePlayer();
+    const e1 = makeEnemy();
+    const e2 = makeEnemy();
+    CardEngine.resolveEffect(makeEffect('damage_all', 10), { player, enemy: e1, enemies: [e1, e2] }, 'feisty');
+    const expected = 40 - Math.ceil(10 * 1.15); // 29
+    expect(e1.hp).toBe(expected);
+    expect(e2.hp).toBe(expected);
+  });
+
+  it('feral personality doubles damage_all', () => {
+    const player = makePlayer();
+    const e1 = makeEnemy();
+    const e2 = makeEnemy();
+    CardEngine.resolveEffect(makeEffect('damage_all', 10), { player, enemy: e1, enemies: [e1, e2] }, 'feral');
+    expect(e1.hp).toBe(40 - 20);
+    expect(e2.hp).toBe(40 - 20);
+  });
+
+  it('cursed_collar doubles damage_all', () => {
+    const player = makePlayer();
+    const e1 = makeEnemy();
+    const e2 = makeEnemy();
+    CardEngine.resolveEffect(makeEffect('damage_all', 8), { player, enemy: e1, enemies: [e1, e2], relics: ['cursed_collar'] });
+    expect(e1.hp).toBe(40 - 16);
+    expect(e2.hp).toBe(40 - 16);
+  });
 });
 
 // ── tickStatuses ──────────────────────────────────────────────────────────────
