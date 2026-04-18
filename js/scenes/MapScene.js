@@ -547,16 +547,9 @@ export class MapScene extends Phaser.Scene {
     // Card art
     const baseCardId = card.id.replace(/_u(_\w+)?$/, '');
     const artKey = `card_art_${baseCardId}`;
-    if (this.textures && this.textures.exists(artKey)) {
-      container.add(this.add.rectangle(0, -10, 84, 84, 0x000000, 0.3));
-      container.add(this.add.image(0, -10, artKey).setDisplaySize(80, 80));
-    } else {
-      // Placeholder art area
-      const artGfx = this.add.graphics();
-      artGfx.fillStyle(0x000000, 0.3);
-      artGfx.fillRect(-42, -52, 84, 84);
-      container.add(artGfx);
-    }
+    const effectiveArtKey = (this.textures && this.textures.exists(artKey)) ? artKey : 'card_art_fallback';
+    container.add(this.add.rectangle(0, -10, 84, 84, 0x000000, 0.3));
+    container.add(this.add.image(0, -10, effectiveArtKey).setDisplaySize(80, 80));
 
     // Card name
     container.add(this.add.text(0, -70, card.name, {

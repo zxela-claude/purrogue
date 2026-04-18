@@ -227,12 +227,11 @@ export class ShopScene extends Phaser.Scene {
     // Card art (center zone)
     const baseCardId = card.id.replace(/_u(_\w+)?$/, '');
     const artKey = `card_art_${baseCardId}`;
-    if (this.textures.exists(artKey)) {
-      container.add(this.add.rectangle(0, -12, 74, 74, 0x000000, 0.3));
-      const art = this.add.image(0, -12, artKey).setDisplaySize(70, 70);
-      if (!canAfford) art.setTint(0x334455);
-      container.add(art);
-    }
+    const effectiveArtKey = this.textures.exists(artKey) ? artKey : 'card_art_fallback';
+    container.add(this.add.rectangle(0, -12, 74, 74, 0x000000, 0.3));
+    const art = this.add.image(0, -12, effectiveArtKey).setDisplaySize(70, 70);
+    if (!canAfford) art.setTint(0x334455);
+    container.add(art);
 
     // Card name
     container.add(this.add.text(0, -63, card.name, {

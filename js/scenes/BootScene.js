@@ -106,6 +106,21 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    // Generate fallback texture for missing card art (paw silhouette on dark bg)
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    g.fillStyle(0x1a1a2e);
+    g.fillRect(0, 0, 70, 70);
+    // toe pads
+    g.fillStyle(0x3a3a5e);
+    g.fillEllipse(16, 24, 14, 12);
+    g.fillEllipse(30, 18, 14, 12);
+    g.fillEllipse(44, 18, 14, 12);
+    g.fillEllipse(57, 24, 14, 12);
+    // central pad
+    g.fillEllipse(35, 44, 28, 24);
+    g.generateTexture('card_art_fallback', 70, 70);
+    g.destroy();
+
     this.scene.start('MenuScene');
   }
 }

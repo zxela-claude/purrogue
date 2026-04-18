@@ -845,13 +845,12 @@ export class CombatScene extends Phaser.Scene {
       // Card art (middle zone)
       const baseCardId = cardId.replace(/_u(_\w+)?$/, '');
       const artKey = `card_art_${baseCardId}`;
+      const effectiveArtKey = this.textures.exists(artKey) ? artKey : 'card_art_fallback';
       const artItems = [];
-      if (this.textures.exists(artKey)) {
-        const artBg = this.add.rectangle(0, -10, 72, 72, 0x000000, 0.3).setDepth(2);
-        const art = this.add.image(0, -10, artKey).setDisplaySize(70, 70).setDepth(2);
-        if (!canPlay) art.setTint(0x444466);
-        artItems.push(artBg, art);
-      }
+      const artBg = this.add.rectangle(0, -10, 72, 72, 0x000000, 0.3).setDepth(2);
+      const art = this.add.image(0, -10, effectiveArtKey).setDisplaySize(70, 70).setDepth(2);
+      if (!canPlay) art.setTint(0x444466);
+      artItems.push(artBg, art);
 
       // Texts
       const nameText = this.add.text(0, -61, card.name, {

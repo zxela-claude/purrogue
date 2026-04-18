@@ -112,12 +112,11 @@ export class RewardScene extends Phaser.Scene {
 
       // Card art
       const rewardArtKey = `card_art_${card.id}`;
-      if (this.textures.exists(rewardArtKey)) {
-        const artBg = this.add.rectangle(0, -cardH/2 + 135, 72, 72, 0x000000, 0.3);
-        const artImg = this.add.image(0, -cardH/2 + 135, rewardArtKey).setDisplaySize(70, 70);
-        cardGroup.add(artBg);
-        cardGroup.add(artImg);
-      }
+      const effectiveRewardArtKey = this.textures.exists(rewardArtKey) ? rewardArtKey : 'card_art_fallback';
+      const artBg = this.add.rectangle(0, -cardH/2 + 135, 72, 72, 0x000000, 0.3);
+      const artImg = this.add.image(0, -cardH/2 + 135, effectiveRewardArtKey).setDisplaySize(70, 70);
+      cardGroup.add(artBg);
+      cardGroup.add(artImg);
 
       // Description
       const descText = this.add.text(0, -cardH/2 + 185, card.description, {
