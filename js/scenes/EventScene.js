@@ -304,35 +304,42 @@ export class EventScene extends Phaser.Scene {
   }
 
   _showConfirmModal(gs, choice) {
+    // Track all modal objects so we destroy only them (not every depth>=11 object)
+    const modalObjs = [];
+    const _add = obj => { modalObjs.push(obj); return obj; };
+    const _closeModal = () => { modalObjs.forEach(o => { if (o && o.active) o.destroy(); }); };
+
     // Dim overlay
-    const overlay = this.add.rectangle(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.75)
-      .setDepth(10).setInteractive(); // block clicks through
+    _add(this.add.rectangle(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0.75)
+      .setDepth(10).setInteractive()); // block clicks through
 
     // Modal box
     const boxW = 640, boxH = 260;
     const boxX = SCREEN_WIDTH / 2, boxY = SCREEN_HEIGHT / 2;
-    this.add.rectangle(boxX, boxY, boxW, boxH, 0x1a1a2e, 1).setDepth(11);
-    this.add.rectangle(boxX, boxY, boxW, boxH).setDepth(11).setStrokeStyle(2, 0xffd700);
+    _add(this.add.rectangle(boxX, boxY, boxW, boxH, 0x1a1a2e, 1).setDepth(11));
+    _add(this.add.rectangle(boxX, boxY, boxW, boxH).setDepth(11).setStrokeStyle(2, 0xffd700));
 
     // Warning text
-    this.add.text(boxX, boxY - 70, '⚠ Are you sure?', {
+    _add(this.add.text(boxX, boxY - 70, '⚠ Are you sure?', {
       fontFamily: '"Press Start 2P"', fontSize: FONT_LG, color: '#ffd700'
-    }).setOrigin(0.5).setDepth(12);
+    }).setOrigin(0.5).setDepth(12));
 
-    this.add.text(boxX, boxY - 10, choice.confirmText, {
+    _add(this.add.text(boxX, boxY - 10, choice.confirmText, {
       fontFamily: '"Press Start 2P"', fontSize: FONT_SM2, color: '#f0ead6',
       wordWrap: { width: boxW - 60 }, align: 'center'
-    }).setOrigin(0.5).setDepth(12);
+    }).setOrigin(0.5).setDepth(12));
 
     // Confirm button
-    const confirmBtn = this.add.text(boxX - 120, boxY + 80, '✓ CONFIRM [Y]', {
+    const confirmBtn = _add(this.add.text(boxX - 120, boxY + 80, '✓ CONFIRM [Y]', {
       fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4caf50',
       backgroundColor: '#1a3a1a', padding: { x: 14, y: 8 }
-    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true }));
 
     confirmBtn.on('pointerover', function() { this.setColor('#a5d6a7'); });
     confirmBtn.on('pointerout', function() { this.setColor('#4caf50'); });
     confirmBtn.on('pointerdown', () => {
+      if (!this._confirmOpen) return;
+      this._confirmOpen = false;
       this._eventChosen = true;
       const goldBefore = gs.gold;
       choice.action(gs);
@@ -341,22 +348,22 @@ export class EventScene extends Phaser.Scene {
     });
 
     // Cancel button
-    const cancelBtn = this.add.text(boxX + 120, boxY + 80, '✗ CANCEL [N/ESC]', {
+    const cancelBtn = _add(this.add.text(boxX + 120, boxY + 80, '✗ CANCEL [N/ESC]', {
       fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#ef5350',
       backgroundColor: '#3a1a1a', padding: { x: 14, y: 8 }
-    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true }));
 
     cancelBtn.on('pointerover', function() { this.setColor('#ef9a9a'); });
     cancelBtn.on('pointerout', function() { this.setColor('#ef5350'); });
     cancelBtn.on('pointerdown', () => {
+      if (!this._confirmOpen) return;
       this._confirmOpen = false;
-      overlay.destroy();
-      this.children.list.filter(c => c.depth >= 11).forEach(c => c.destroy());
+      _closeModal();
     });
 
-    // Y to confirm, N/ESC to cancel (temporarily gated by _confirmOpen flag)
+    // Y to confirm, N/ESC to cancel — use once() to avoid accumulating duplicate listeners
     this._confirmOpen = true;
-    this.input.keyboard.on('keydown-Y', () => {
+    this.input.keyboard.once('keydown-Y', () => {
       if (!this._confirmOpen) return;
       this._confirmOpen = false;
       this._eventChosen = true;
@@ -366,11 +373,10 @@ export class EventScene extends Phaser.Scene {
       this._navigateAfterAction(gs, goldBefore);
     });
     ['N','ESC'].forEach(k => {
-      this.input.keyboard.on(`keydown-${k}`, () => {
+      this.input.keyboard.once(`keydown-${k}`, () => {
         if (!this._confirmOpen) return;
         this._confirmOpen = false;
-        overlay.destroy();
-        this.children.list.filter(c => c.depth >= 11).forEach(c => c.destroy());
+        _closeModal();
       });
     });
   }
