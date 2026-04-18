@@ -3,6 +3,7 @@ import { GameState } from '../GameState.js';
 import { DeckCode } from '../DeckCode.js';
 import { MusicManager } from '../MusicManager.js';
 import { RELICS } from '../data/relics.js';
+import { ALL_CARDS } from '../data/cards.js';
 import { PurrSettings } from '../PurrSettings.js';
 import { PersonalitySystem } from '../PersonalitySystem.js';
 
@@ -184,6 +185,18 @@ export class MenuScene extends Phaser.Scene {
       this.add.text(x, cardY + 80, `HP: ${hero.hp}`, {
         fontFamily: '"Press Start 2P"', fontSize: FONT_MD2, color: '#4caf50'
       }).setOrigin(0.5);
+
+      // NAN-289: Starting deck preview
+      const deckLines = this._getDeckPreviewLines(key);
+      this.add.text(x, cardY + 96, 'STARTING DECK', {
+        fontFamily: '"Press Start 2P"', fontSize: FONT_MICRO, color: '#444466'
+      }).setOrigin(0.5);
+      deckLines.forEach((line, li) => {
+        this.add.text(x, cardY + 106 + li * 10, line, {
+          fontFamily: '"Press Start 2P"', fontSize: FONT_MICRO, color: '#666688',
+          wordWrap: { width: 238 }, align: 'center'
+        }).setOrigin(0.5);
+      });
 
       card.on('pointerover', () => {
         if (selectedHeroKey !== key) { card.setFillStyle(0x2a2a5e); drawBorder(1); }
@@ -455,6 +468,22 @@ export class MenuScene extends Phaser.Scene {
       ROGUE:   ['r_shiv','r_shiv','r_shiv','r_dodge','r_dodge','r_sprint']
     };
     return starts[heroClass] || [];
+  }
+
+  _getDeckPreviewLines(heroClass) {
+    const deck = this._getStartingDeck(heroClass);
+    const cardDb = {};
+    for (const c of ALL_CARDS) cardDb[c.id] = c.name;
+    const counts = {};
+    for (const id of deck) {
+      const name = cardDb[id] || id;
+      counts[name] = (counts[name] || 0) + 1;
+    }
+    const parts = Object.entries(counts).map(([name, n]) => n > 1 ? `${n}× ${name}` : name);
+    // Split into two lines if > 3 entries, otherwise one line
+    if (parts.length <= 3) return [parts.join('  ·  ')];
+    const mid = Math.ceil(parts.length / 2);
+    return [parts.slice(0, mid).join('  ·  '), parts.slice(mid).join('  ·  ')];
   }
 
   _showDailyModal(dailySeed, dailyModifier) {

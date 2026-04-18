@@ -11,6 +11,7 @@ export class ShopScene extends Phaser.Scene {
   constructor() { super('ShopScene'); }
 
   create() {
+    this.cameras.main.fadeIn(80, 0, 0, 0);
     const gs = this.registry.get('gameState');
     if (this.textures.exists('bg_shop')) {
       this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 'bg_shop').setDisplaySize(SCREEN_WIDTH, SCREEN_HEIGHT).setDepth(-1);
@@ -110,7 +111,7 @@ export class ShopScene extends Phaser.Scene {
               gs.addRelic(relic.id);
               // Remove purchased relic from inventory so remaining relics stay the same
               if (gs.shopInventory) gs.shopInventory.relics.splice(i, 1);
-              this.scene.restart();
+              this._restartWithFade();
             }
           });
         }
@@ -166,7 +167,7 @@ export class ShopScene extends Phaser.Scene {
         if (!noGold) gs.spendGold(price);
         gs.addCard(card.id);
         if (gs.shopInventory) gs.shopInventory.cards.splice(i, 1);
-        this.scene.restart();
+        this._restartWithFade();
       });
     });
     ['Q','W'].forEach((k, i) => {
@@ -178,7 +179,7 @@ export class ShopScene extends Phaser.Scene {
         if (!noGold) gs.spendGold(price);
         gs.addRelic(relic.id);
         if (gs.shopInventory) gs.shopInventory.relics.splice(i, 1);
-        this.scene.restart();
+        this._restartWithFade();
       });
     });
     this.input.keyboard.on('keydown-R', () => {
@@ -188,6 +189,13 @@ export class ShopScene extends Phaser.Scene {
       gs.shopInventory = null;
       this.scene.start('MapScene');
     });
+  }
+
+  _restartWithFade() {
+    if (this._restarting) return;
+    this._restarting = true;
+    const overlay = this.add.rectangle(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT, 0x000000, 0).setDepth(100);
+    this.tweens.add({ targets: overlay, alpha: 1, duration: 80, onComplete: () => this.scene.restart() });
   }
 
   _buildShopCard(x, cy, card, cardIndex, price, canAfford, gs, noGold) {
@@ -272,7 +280,7 @@ export class ShopScene extends Phaser.Scene {
           gs.addCard(card.id);
           // Remove purchased card from inventory so other cards stay the same
           if (gs.shopInventory) gs.shopInventory.cards.splice(cardIndex, 1);
-          this.scene.restart();
+          this._restartWithFade();
         }
       });
     }
@@ -314,7 +322,7 @@ export class ShopScene extends Phaser.Scene {
         gs.spendGold(cost);
         gs.removeCard(cardId);
         group.destroy(true);
-        this.scene.restart();
+        this._restartWithFade();
       });
       group.add(btn);
     });
