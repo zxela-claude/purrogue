@@ -157,15 +157,6 @@ export class RunSummaryScene extends Phaser.Scene {
     const panelTop  = 112;
 
     // ── Left panel: run stats ─────────────────────────────────────────────────
-    const leftPanelH = 440;
-    this.add.rectangle(leftX + leftW/2, panelTop + leftPanelH/2, leftW, leftPanelH, 0x0d0d1a, 0.88);
-    this.add.graphics().lineStyle(1, 0x334466).strokeRect(leftX, panelTop, leftW, leftPanelH);
-
-    // Panel header
-    this.add.rectangle(leftX + leftW/2, panelTop + 18, leftW, 34, 0x1a1a3e);
-    this.add.text(leftX + leftW/2, panelTop + 18, 'STATS', {
-      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#4fc3f7'
-    }).setOrigin(0.5);
 
     // Format elapsed time as m:ss
     const elapsedSec = snap.elapsedMs ? Math.floor(snap.elapsedMs / 1000) : 0;
@@ -192,9 +183,23 @@ export class RunSummaryScene extends Phaser.Scene {
       { label: 'Score',          value: snap.score, color: '#ffd700' },
     ];
 
+    // Use 26px row spacing so all 16 rows (including optional daily modifier) fit inside the panel.
+    // Dynamic panel height ensures rows never overflow into the action buttons below.
+    const rowSpacing = 26;
+    const leftPanelH = Math.max(240, 44 + statRows.length * rowSpacing + 12);
+
+    this.add.rectangle(leftX + leftW/2, panelTop + leftPanelH/2, leftW, leftPanelH, 0x0d0d1a, 0.88);
+    this.add.graphics().lineStyle(1, 0x334466).strokeRect(leftX, panelTop, leftW, leftPanelH);
+
+    // Panel header
+    this.add.rectangle(leftX + leftW/2, panelTop + 18, leftW, 34, 0x1a1a3e);
+    this.add.text(leftX + leftW/2, panelTop + 18, 'STATS', {
+      fontFamily: '"Press Start 2P"', fontSize: FONT_MD, color: '#4fc3f7'
+    }).setOrigin(0.5);
+
     statRows.forEach((row, i) => {
-      const rowY = panelTop + 44 + i * 32;
-      if (i % 2 === 1) this.add.rectangle(leftX + leftW/2, rowY, leftW - 4, 30, 0xffffff, 0.03);
+      const rowY = panelTop + 44 + i * rowSpacing;
+      if (i % 2 === 1) this.add.rectangle(leftX + leftW/2, rowY, leftW - 4, 24, 0xffffff, 0.03);
       this.add.text(leftX + 14, rowY, row.label, {
         fontFamily: '"Press Start 2P"', fontSize: FONT_SM, color: '#777799'
       }).setOrigin(0, 0.5);
